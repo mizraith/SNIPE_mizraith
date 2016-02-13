@@ -1,15 +1,15 @@
 /* **********************************************************************************************
-ProjectName:  SNIPE  ( Serial N I2C Processing Equipment )
+ProjectName:  SNIPE  ( Serial 'n I2C Processing Equipment )
 Author:       Red Byer    
-Date:         1/25/2016
-Grammar Version:   0.5
-Code Version:      0.1
-Link:    http://github.com/mizraith
+Date:         2/12/2016
+Grammar Version:   1.0
+Code Version:      1.0
+Link:     http://github.com/mizraith
 License:  This library is distributed in the hope that it will be useful,
           but WITHOUT ANY WARRANTY; without even the implied warranty of
           MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
           Lesser General Public License for more details. Please give
-          credit where credit is due!   
+          credit where credit is due by including a "Thanks, Red" in your code.
           
 Purpose:   
     SNIPE turns an Arduino into a simple to use lab swiss army
@@ -304,7 +304,7 @@ CHANGELOG:
 #include"mizraith_DateTime.h"   
 
 const DateTime COMPILED_ON = DateTime(__DATE__, __TIME__);
-const String CURRENT_VERSION = "001";
+const String CURRENT_VERSION = "002";
 const String DESCRIPTION = "SNIPE_for_Arduino";
 
 #pragma mark Pinouts
