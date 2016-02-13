@@ -1,7 +1,7 @@
 # SNIPE_mizraith
-_Extensible serial to I2C-and-more tool.  Easily control your Arduino over a comm port._
+**Extensible serial to I2C-and-more tool.  Easily control your Arduino over a comm port.**
 
-**Grammar Version:**   1.0
+_Grammar Version:_   1.0
 
 
 #### License:
