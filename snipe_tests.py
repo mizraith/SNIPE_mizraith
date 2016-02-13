@@ -4,7 +4,18 @@
 # TEST SUITE FOR SNIPE 
 #   You will need python 2.7 and pyserial installed at a minimum.
 #
-# To use:    pyton snipe-tests.py /dev/tty.usbserial1022A
+# To use the test suite, first load up your Arduino with SNIPE and
+# make a note of the comm port (e.g. /dev/tty.usbmodem1411).
+#
+# From your command line, launch the python script as main with
+# the port as the first argument, e.g.:
+#
+#            python SNIPE_tests.py /dev/tty.usbmodem1411
+#
+# Sit back and watch python hammer your little Arduino and verify
+# that the comm functions and grammar are all correct.  The script
+# provides a full printout of the comm transactions to aid in
+# debugging.
 #
 
 import os
