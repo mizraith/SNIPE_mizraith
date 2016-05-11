@@ -2,25 +2,29 @@
 <project version="4">
   <component name="CMakeRunConfigurationManager" shouldGenerate="true" assignedExecutableTargets="true" buildAllGenerated="true">
     <generated>
-      <config projectName="SNIPE_mizraith" targetName="uno_mizraith_DateTime" />
-      <config projectName="test_clion3" targetName="test_clion3-size" />
-      <config projectName="test_clion3" targetName="upload" />
-      <config projectName="test_clion3" targetName="nano328_EEPROM" />
-      <config projectName="test_clion3" targetName="test_clion3-upload" />
-      <config projectName="SNIPE_mizraith" targetName="SNIPE_mizraith" />
-      <config projectName="SNIPE_mizraith" targetName="SNIPE_mizraith-upload" />
-      <config projectName="test_clion3" targetName="uno_mizraith_DateTime" />
-      <config projectName="SNIPE_mizraith" targetName="uno_EEPROM" />
-      <config projectName="test_clion3" targetName="nano328_mizraith_DateTime" />
-      <config projectName="SNIPE_mizraith" targetName="uno_CORE" />
-      <config projectName="test_clion3" targetName="test_clion3" />
       <config projectName="test_clion3" targetName="nano328b_CORE" />
-      <config projectName="test_clion3" targetName="uno_EEPROM" />
-      <config projectName="test_clion3" targetName="nano328_CORE" />
-      <config projectName="test_clion3" targetName="uno_CORE" />
-      <config projectName="SNIPE_mizraith" targetName="upload" />
+      <config projectName="SNIPE_mizraith" targetName="uno_EEPROM" />
+      <config projectName="SNIPE_mizraith" targetName="uno_CORE" />
+      <config projectName="SNIPE_mizraith" targetName="SNIPE_mizraith-upload" />
+      <config projectName="test_clion3" targetName="nano328_mizraith_DateTime" />
       <config projectName="SNIPE_mizraith" targetName="uno_Wire" />
+      <config projectName="SNIPE_mizraith" targetName="nano328_Wire" />
+      <config projectName="SNIPE_mizraith" targetName="nano328_mizraith_DateTime" />
+      <config projectName="test_clion3" targetName="nano328_EEPROM" />
+      <config projectName="test_clion3" targetName="uno_CORE" />
+      <config projectName="SNIPE_mizraith" targetName="nano328_CORE" />
+      <config projectName="test_clion3" targetName="nano328_CORE" />
+      <config projectName="test_clion3" targetName="test_clion3-upload" />
+      <config projectName="SNIPE_mizraith" targetName="nano328_EEPROM" />
+      <config projectName="test_clion3" targetName="test_clion3-size" />
+      <config projectName="SNIPE_mizraith" targetName="SNIPE_mizraith" />
+      <config projectName="test_clion3" targetName="uno_EEPROM" />
+      <config projectName="SNIPE_mizraith" targetName="uno_mizraith_DateTime" />
+      <config projectName="test_clion3" targetName="upload" />
+      <config projectName="SNIPE_mizraith" targetName="upload" />
+      <config projectName="test_clion3" targetName="test_clion3" />
       <config projectName="SNIPE_mizraith" targetName="SNIPE_mizraith-size" />
+      <config projectName="test_clion3" targetName="uno_mizraith_DateTime" />
     </generated>
   </component>
   <component name="CMakeSettings" AUTO_RELOAD="false" GENERATION_PASS_SYSTEM_ENVIRONMENT="true">
@@ -30,7 +34,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="24711f36-2b45-4b61-b4d8-19e552d41d40" name="Default" comment="Update to SNIPE header info.">
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/misc.xml" afterPath="$PROJECT_DIR$/.idea/misc.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/serialmonitor_settings.xml" afterPath="$PROJECT_DIR$/.idea/serialmonitor_settings.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/test_clion3.iml" afterPath="$PROJECT_DIR$/.idea/test_clion3.iml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/CMakeLists.txt" afterPath="$PROJECT_DIR$/CMakeLists.txt" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/README.md" afterPath="$PROJECT_DIR$/README.md" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/SNIPE_mizraith.ino" afterPath="$PROJECT_DIR$/SNIPE_mizraith.ino" />
     </list>
     <ignored path="test_clion3.iws" />
@@ -55,8 +64,8 @@
       <file leaf-file-name="CMakeLists.txt" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/CMakeLists.txt">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0">
-              <caret line="0" column="19" selection-start-line="0" selection-start-column="19" selection-end-line="0" selection-end-column="19" />
+            <state relative-caret-position="300">
+              <caret line="20" column="40" selection-start-line="20" selection-start-column="40" selection-end-line="20" selection-end-column="40" />
               <folding />
             </state>
           </provider>
@@ -65,22 +74,31 @@
       <file leaf-file-name="SNIPE_mizraith.ino" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/SNIPE_mizraith.ino">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0">
-              <caret line="387" column="10" selection-start-line="376" selection-start-column="0" selection-end-line="387" selection-end-column="10" />
+            <state relative-caret-position="440">
+              <caret line="405" column="0" selection-start-line="405" selection-start-column="0" selection-end-line="405" selection-end-column="56" />
               <folding>
-                <element signature="e#14122#14142#0" expanded="true" />
-                <element signature="e#56974#56987#0" expanded="true" />
-                <element signature="e#57093#57115#0" expanded="true" />
+                <element signature="e#57379#57392#0" expanded="true" />
+                <element signature="e#57498#57520#0" expanded="true" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="SNIPE_tests.py" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/SNIPE_tests.py">
+      <file leaf-file-name="snipe_tests.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/snipe_tests.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.39235413">
+            <state relative-caret-position="195">
               <caret line="13" column="1" selection-start-line="13" selection-start-column="1" selection-end-line="13" selection-end-column="1" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="README.md" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/README.md">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="-3970">
+              <caret line="63" column="0" selection-start-line="63" selection-start-column="0" selection-end-line="71" selection-end-column="0" />
               <folding />
             </state>
           </provider>
@@ -98,18 +116,21 @@
         <option value="$PROJECT_DIR$/test_clion3.ino" />
         <option value="$PROJECT_DIR$/.idea/workspace.xml" />
         <option value="$PROJECT_DIR$/.idea/.name" />
-        <option value="$PROJECT_DIR$/CMakeLists.txt" />
-        <option value="$PROJECT_DIR$/SNIPE_mizraith.ino" />
         <option value="$PROJECT_DIR$/SNIPE_tests.py" />
+        <option value="$PROJECT_DIR$/CMakeLists.txt" />
+        <option value="$PROJECT_DIR$/README.md" />
+        <option value="$PROJECT_DIR$/SNIPE_mizraith.ino" />
       </list>
     </option>
   </component>
-  <component name="JsBuildToolGruntFileManager" detection-done="true" />
-  <component name="JsBuildToolPackageJson" detection-done="true" />
+  <component name="JsBuildToolGruntFileManager" detection-done="true" sorting="DEFINITION_ORDER" />
+  <component name="JsBuildToolPackageJson" detection-done="true" sorting="DEFINITION_ORDER" />
   <component name="JsGulpfileManager">
     <detection-done>true</detection-done>
+    <sorting>DEFINITION_ORDER</sorting>
   </component>
   <component name="ProjectFrameBounds">
+    <option name="x" value="-2" />
     <option name="y" value="23" />
     <option name="width" value="1440" />
     <option name="height" value="873" />
@@ -180,13 +201,14 @@
     <property name="settings.editor.splitter.proportion" value="0.2" />
     <property name="serialMonitor.commands" value="&gt;I2W:0x0000&#10;&gt;I2W:0x0G0F&#10;&gt;I2W:0x0F0D&#10;&gt;I2W:0xFF&#10;&gt;VER:? DESC:? I2A:1 I2B:2 I2S:23 I2W:0x0D0C TID:1234&#10;&gt;I2A:1 I2B:2 I2S:23 I2W:0x0D0C TID:1234&#10;&gt;I2W:0x0D&#10;&gt;I2A:1 I2B:2 I2S:23 I2W:0x0D0C&#10;&gt;I2A:1 I2B:2 I2S:3 I2W:0x0A0&#10;&gt;I2A:120 I2B:2 I2S:23 I2W:0x0A0B" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
   </component>
   <component name="RunManager" selected="Application.SNIPE_mizraith-upload">
-    <configuration default="true" type="CMakeGoogleTestRunConfigurationType" factoryName="Google Test" PASS_PARENT_ENVS="FALSE" PROJECT_NAME="test_clion3" TARGET_NAME="nano328_CORE" CONFIG_NAME="Debug" TEST_MODE="SUITE_TEST">
+    <configuration default="true" type="CMakeGoogleTestRunConfigurationType" factoryName="Google Test" PASS_PARENT_ENVS_2="true" PROJECT_NAME="test_clion3" TARGET_NAME="nano328_CORE" CONFIG_NAME="Debug" TEST_MODE="SUITE_TEST">
       <envs />
       <method />
     </configuration>
-    <configuration default="true" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS="FALSE" PROJECT_NAME="test_clion3" TARGET_NAME="test_clion3" CONFIG_NAME="Debug">
+    <configuration default="true" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="test_clion3" TARGET_NAME="test_clion3" CONFIG_NAME="Debug">
       <envs />
       <method />
     </configuration>
@@ -194,6 +216,7 @@
       <method />
     </configuration>
     <configuration default="true" type="js.build_tools.gulp" factoryName="Gulp.js">
+      <node-interpreter>project</node-interpreter>
       <node-options />
       <gulpfile />
       <tasks />
@@ -204,42 +227,59 @@
     <configuration default="true" type="js.build_tools.npm" factoryName="npm">
       <command value="run-script" />
       <scripts />
+      <node-interpreter value="project" />
       <envs />
       <method />
     </configuration>
-    <configuration default="false" name="SNIPE_mizraith" type="CMakeRunConfiguration" factoryName="Application" WORKING_DIR="" PASS_PARENT_ENVS="FALSE" PROJECT_NAME="SNIPE_mizraith" TARGET_NAME="SNIPE_mizraith" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="SNIPE_mizraith" RUN_TARGET_NAME="SNIPE_mizraith">
+    <configuration default="false" name="SNIPE_mizraith" type="CMakeRunConfiguration" factoryName="Application" WORKING_DIR="" PASS_PARENT_ENVS_2="true" PROJECT_NAME="SNIPE_mizraith" TARGET_NAME="SNIPE_mizraith" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="SNIPE_mizraith" RUN_TARGET_NAME="SNIPE_mizraith">
       <envs />
       <method />
     </configuration>
-    <configuration default="false" name="SNIPE_mizraith-size" type="CMakeRunConfiguration" factoryName="Application" WORKING_DIR="" PASS_PARENT_ENVS="FALSE" PROJECT_NAME="SNIPE_mizraith" TARGET_NAME="SNIPE_mizraith-size" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="SNIPE_mizraith" RUN_TARGET_NAME="SNIPE_mizraith">
+    <configuration default="false" name="SNIPE_mizraith-size" type="CMakeRunConfiguration" factoryName="Application" WORKING_DIR="" PASS_PARENT_ENVS_2="true" PROJECT_NAME="SNIPE_mizraith" TARGET_NAME="SNIPE_mizraith-size" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="SNIPE_mizraith" RUN_TARGET_NAME="SNIPE_mizraith">
       <envs />
       <method />
     </configuration>
-    <configuration default="false" name="SNIPE_mizraith-upload" type="CMakeRunConfiguration" factoryName="Application" WORKING_DIR="" PASS_PARENT_ENVS="FALSE" PROJECT_NAME="SNIPE_mizraith" TARGET_NAME="SNIPE_mizraith-upload" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="SNIPE_mizraith" RUN_TARGET_NAME="SNIPE_mizraith">
+    <configuration default="false" name="SNIPE_mizraith-upload" type="CMakeRunConfiguration" factoryName="Application" WORKING_DIR="" PASS_PARENT_ENVS_2="true" PROJECT_NAME="SNIPE_mizraith" TARGET_NAME="SNIPE_mizraith-upload" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="SNIPE_mizraith" RUN_TARGET_NAME="SNIPE_mizraith">
       <envs />
       <method />
     </configuration>
-    <configuration default="false" name="uno_CORE" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS="FALSE" PROJECT_NAME="SNIPE_mizraith" TARGET_NAME="uno_CORE" CONFIG_NAME="Debug">
+    <configuration default="false" name="uno_CORE" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="SNIPE_mizraith" TARGET_NAME="uno_CORE" CONFIG_NAME="Debug">
       <envs />
       <method />
     </configuration>
-    <configuration default="false" name="uno_EEPROM" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS="FALSE" PROJECT_NAME="SNIPE_mizraith" TARGET_NAME="uno_EEPROM" CONFIG_NAME="Debug">
+    <configuration default="false" name="uno_EEPROM" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="SNIPE_mizraith" TARGET_NAME="uno_EEPROM" CONFIG_NAME="Debug">
       <envs />
       <method />
     </configuration>
-    <configuration default="false" name="uno_mizraith_DateTime" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS="FALSE" PROJECT_NAME="SNIPE_mizraith" TARGET_NAME="uno_mizraith_DateTime" CONFIG_NAME="Debug">
+    <configuration default="false" name="uno_mizraith_DateTime" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="SNIPE_mizraith" TARGET_NAME="uno_mizraith_DateTime" CONFIG_NAME="Debug">
       <envs />
       <method />
     </configuration>
-    <configuration default="false" name="upload" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS="FALSE" PROJECT_NAME="SNIPE_mizraith" TARGET_NAME="upload" CONFIG_NAME="Debug">
+    <configuration default="false" name="upload" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="SNIPE_mizraith" TARGET_NAME="upload" CONFIG_NAME="Debug">
       <envs />
       <method />
     </configuration>
-    <configuration default="false" name="uno_Wire" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS="FALSE" PROJECT_NAME="SNIPE_mizraith" TARGET_NAME="uno_Wire" CONFIG_NAME="Debug">
+    <configuration default="false" name="uno_Wire" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="SNIPE_mizraith" TARGET_NAME="uno_Wire" CONFIG_NAME="Debug">
       <envs />
       <method />
     </configuration>
-    <list size="8">
+    <configuration default="false" name="nano328_CORE" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="SNIPE_mizraith" TARGET_NAME="nano328_CORE" CONFIG_NAME="Debug">
+      <envs />
+      <method />
+    </configuration>
+    <configuration default="false" name="nano328_EEPROM" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="SNIPE_mizraith" TARGET_NAME="nano328_EEPROM" CONFIG_NAME="Debug">
+      <envs />
+      <method />
+    </configuration>
+    <configuration default="false" name="nano328_mizraith_DateTime" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="SNIPE_mizraith" TARGET_NAME="nano328_mizraith_DateTime" CONFIG_NAME="Debug">
+      <envs />
+      <method />
+    </configuration>
+    <configuration default="false" name="nano328_Wire" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="SNIPE_mizraith" TARGET_NAME="nano328_Wire" CONFIG_NAME="Debug">
+      <envs />
+      <method />
+    </configuration>
+    <list size="12">
       <item index="0" class="java.lang.String" itemvalue="Application.SNIPE_mizraith" />
       <item index="1" class="java.lang.String" itemvalue="Application.SNIPE_mizraith-size" />
       <item index="2" class="java.lang.String" itemvalue="Application.SNIPE_mizraith-upload" />
@@ -248,9 +288,15 @@
       <item index="5" class="java.lang.String" itemvalue="Application.uno_mizraith_DateTime" />
       <item index="6" class="java.lang.String" itemvalue="Application.upload" />
       <item index="7" class="java.lang.String" itemvalue="Application.uno_Wire" />
+      <item index="8" class="java.lang.String" itemvalue="Application.nano328_CORE" />
+      <item index="9" class="java.lang.String" itemvalue="Application.nano328_EEPROM" />
+      <item index="10" class="java.lang.String" itemvalue="Application.nano328_mizraith_DateTime" />
+      <item index="11" class="java.lang.String" itemvalue="Application.nano328_Wire" />
     </list>
   </component>
-  <component name="ShelveChangesManager" show_recycled="false" />
+  <component name="ShelveChangesManager" show_recycled="false">
+    <option name="remove_strategy" value="false" />
+  </component>
   <component name="SvnConfiguration">
     <configuration />
   </component>
@@ -259,11 +305,13 @@
       <changelist id="24711f36-2b45-4b61-b4d8-19e552d41d40" name="Default" comment="" />
       <created>1454177385367</created>
       <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
       <updated>1454177385367</updated>
     </task>
     <task id="LOCAL-00001" summary="Update to dates.">
       <created>1455338864941</created>
       <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
       <option name="project" value="LOCAL" />
       <updated>1455338864941</updated>
     </task>
@@ -271,20 +319,20 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="0" y="23" width="1440" height="873" extended-state="6" />
+    <frame x="-2" y="23" width="1440" height="873" extended-state="6" />
     <editor active="true" />
     <layout>
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.2353362" sideWeight="0.5" order="1" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.2911302" sideWeight="0.5" order="1" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="CMake" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32837838" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
-      <window_info id="Serial Monitor" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.32950193" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Serial Monitor" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3290653" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Structure" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.18240343" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Structure" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.17453505" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="true" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
-      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.28169015" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.28040972" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
@@ -317,9 +365,20 @@
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
+    <entry file="file://$PROJECT_DIR$/SNIPE_mizraith.ino">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="387" column="10" selection-start-line="376" selection-start-column="0" selection-end-line="387" selection-end-column="10" />
+          <folding>
+            <element signature="e#57379#57392#0" expanded="true" />
+            <element signature="e#57498#57520#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/CMakeLists.txt">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
+        <state relative-caret-position="0">
           <caret line="0" column="19" selection-start-line="0" selection-start-column="19" selection-end-line="0" selection-end-column="19" />
           <folding />
         </state>
@@ -327,19 +386,52 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/SNIPE_mizraith.ino">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
+        <state relative-caret-position="0">
+          <caret line="387" column="10" selection-start-line="376" selection-start-column="0" selection-end-line="387" selection-end-column="10" />
+          <folding>
+            <element signature="e#57379#57392#0" expanded="true" />
+            <element signature="e#57498#57520#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/snipe_tests.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="13" column="1" selection-start-line="13" selection-start-column="1" selection-end-line="13" selection-end-column="1" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/README_COMPILING_CMAKE.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/CMakeLists.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="19" selection-start-line="0" selection-start-column="19" selection-end-line="0" selection-end-column="19" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/SNIPE_mizraith.ino">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
-            <element signature="e#14122#14142#0" expanded="true" />
-            <element signature="e#56974#56987#0" expanded="true" />
-            <element signature="e#57093#57115#0" expanded="true" />
+            <element signature="e#57379#57392#0" expanded="true" />
+            <element signature="e#57498#57520#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/CMakeLists.txt">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
+        <state relative-caret-position="0">
           <caret line="20" column="33" selection-start-line="20" selection-start-column="33" selection-end-line="20" selection-end-column="33" />
           <folding />
         </state>
@@ -347,19 +439,18 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/SNIPE_mizraith.ino">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
+        <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
-            <element signature="e#14122#14142#0" expanded="true" />
-            <element signature="e#56974#56987#0" expanded="true" />
-            <element signature="e#57093#57115#0" expanded="true" />
+            <element signature="e#57379#57392#0" expanded="true" />
+            <element signature="e#57498#57520#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/CMakeLists.txt">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
+        <state relative-caret-position="0">
           <caret line="20" column="33" selection-start-line="20" selection-start-column="33" selection-end-line="20" selection-end-column="33" />
           <folding />
         </state>
@@ -367,19 +458,18 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/SNIPE_mizraith.ino">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
+        <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
-            <element signature="e#14122#14142#0" expanded="true" />
-            <element signature="e#56974#56987#0" expanded="true" />
-            <element signature="e#57093#57115#0" expanded="true" />
+            <element signature="e#57379#57392#0" expanded="true" />
+            <element signature="e#57498#57520#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/CMakeLists.txt">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
+        <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding />
         </state>
@@ -387,7 +477,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/CMakeLists.txt">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
+        <state relative-caret-position="0">
           <caret line="15" column="23" selection-start-line="15" selection-start-column="23" selection-end-line="15" selection-end-column="23" />
           <folding />
         </state>
@@ -395,19 +485,18 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/SNIPE_mizraith.ino">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
+        <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
-            <element signature="e#14122#14142#0" expanded="true" />
-            <element signature="e#56974#56987#0" expanded="true" />
-            <element signature="e#57093#57115#0" expanded="true" />
+            <element signature="e#57379#57392#0" expanded="true" />
+            <element signature="e#57498#57520#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/CMakeLists.txt">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
+        <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding />
         </state>
@@ -415,7 +504,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/CMakeLists.txt">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
+        <state relative-caret-position="0">
           <caret line="21" column="0" selection-start-line="21" selection-start-column="0" selection-end-line="21" selection-end-column="0" />
           <folding />
         </state>
@@ -423,19 +512,18 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/SNIPE_mizraith.ino">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
+        <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
-            <element signature="e#14122#14142#0" expanded="true" />
-            <element signature="e#56974#56987#0" expanded="true" />
-            <element signature="e#57093#57115#0" expanded="true" />
+            <element signature="e#57379#57392#0" expanded="true" />
+            <element signature="e#57498#57520#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/CMakeLists.txt">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
+        <state relative-caret-position="0">
           <caret line="12" column="0" selection-start-line="12" selection-start-column="0" selection-end-line="12" selection-end-column="0" />
           <folding />
         </state>
@@ -443,19 +531,18 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/SNIPE_mizraith.ino">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
+        <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
-            <element signature="e#14122#14142#0" expanded="true" />
-            <element signature="e#56974#56987#0" expanded="true" />
-            <element signature="e#57093#57115#0" expanded="true" />
+            <element signature="e#57379#57392#0" expanded="true" />
+            <element signature="e#57498#57520#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/CMakeLists.txt">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
+        <state relative-caret-position="0">
           <caret line="7" column="0" selection-start-line="7" selection-start-column="0" selection-end-line="7" selection-end-column="0" />
           <folding />
         </state>
@@ -463,19 +550,18 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/SNIPE_mizraith.ino">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
+        <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
-            <element signature="e#14122#14142#0" expanded="true" />
-            <element signature="e#56974#56987#0" expanded="true" />
-            <element signature="e#57093#57115#0" expanded="true" />
+            <element signature="e#57379#57392#0" expanded="true" />
+            <element signature="e#57498#57520#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/CMakeLists.txt">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
+        <state relative-caret-position="0">
           <caret line="7" column="0" selection-start-line="7" selection-start-column="0" selection-end-line="7" selection-end-column="0" />
           <folding />
         </state>
@@ -483,54 +569,53 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/.idea/.name">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
+        <state relative-caret-position="0">
           <caret line="1" column="0" selection-start-line="1" selection-start-column="0" selection-end-line="1" selection-end-column="0" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/.idea/misc.xml">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
+        <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/.idea/modules.xml">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
+        <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/.idea/test_clion3.iml">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
+        <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/.idea/workspace.xml">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
+        <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/SNIPE_mizraith.ino">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
+        <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
-            <element signature="e#14122#14142#0" expanded="true" />
-            <element signature="e#56974#56987#0" expanded="true" />
-            <element signature="e#57093#57115#0" expanded="true" />
+            <element signature="e#57379#57392#0" expanded="true" />
+            <element signature="e#57498#57520#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/CMakeLists.txt">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
+        <state relative-caret-position="0">
           <caret line="2" column="31" selection-start-line="2" selection-start-column="31" selection-end-line="2" selection-end-column="31" />
           <folding />
         </state>
@@ -538,19 +623,18 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/SNIPE_mizraith.ino">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
+        <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
-            <element signature="e#14122#14142#0" expanded="true" />
-            <element signature="e#56974#56987#0" expanded="true" />
-            <element signature="e#57093#57115#0" expanded="true" />
+            <element signature="e#57379#57392#0" expanded="true" />
+            <element signature="e#57498#57520#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/CMakeLists.txt">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
+        <state relative-caret-position="0">
           <caret line="2" column="31" selection-start-line="2" selection-start-column="31" selection-end-line="2" selection-end-column="31" />
           <folding />
         </state>
@@ -558,19 +642,18 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/SNIPE_mizraith.ino">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
+        <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
-            <element signature="e#14122#14142#0" expanded="true" />
-            <element signature="e#56974#56987#0" expanded="true" />
-            <element signature="e#57093#57115#0" expanded="true" />
+            <element signature="e#57379#57392#0" expanded="true" />
+            <element signature="e#57498#57520#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/CMakeLists.txt">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
+        <state relative-caret-position="0">
           <caret line="2" column="31" selection-start-line="2" selection-start-column="31" selection-end-line="2" selection-end-column="31" />
           <folding />
         </state>
@@ -578,19 +661,18 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/SNIPE_mizraith.ino">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
+        <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
-            <element signature="e#14122#14142#0" expanded="true" />
-            <element signature="e#56974#56987#0" expanded="true" />
-            <element signature="e#57093#57115#0" expanded="true" />
+            <element signature="e#57379#57392#0" expanded="true" />
+            <element signature="e#57498#57520#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/CMakeLists.txt">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
+        <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding />
         </state>
@@ -598,14 +680,14 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/cmake/Platform/Arduino.cmake">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
+        <state relative-caret-position="0">
           <caret line="872" column="29" selection-start-line="872" selection-start-column="12" selection-end-line="872" selection-end-column="29" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/CMakeLists.txt">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
+        <state relative-caret-position="0">
           <caret line="19" column="34" selection-start-line="19" selection-start-column="34" selection-end-line="19" selection-end-column="34" />
           <folding />
         </state>
@@ -613,7 +695,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/CMakeLists.txt">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
+        <state relative-caret-position="0">
           <caret line="19" column="34" selection-start-line="19" selection-start-column="34" selection-end-line="19" selection-end-column="34" />
           <folding />
         </state>
@@ -621,91 +703,98 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/cmake/ArduinoToolchain.cmake">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.6266968">
+        <state relative-caret-position="0">
           <caret line="84" column="4" selection-start-line="84" selection-start-column="4" selection-end-line="84" selection-end-column="4" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/README_COMPILING_CMAKE.txt">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="55" column="35" selection-start-line="55" selection-start-column="35" selection-end-line="55" selection-end-column="35" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/cmake/Platform/Arduino.cmake">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
+        <state relative-caret-position="0">
           <caret line="872" column="29" selection-start-line="872" selection-start-column="12" selection-end-line="872" selection-end-column="29" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/.idea/test_clion3.iml">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
+        <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/.idea/workspace.xml">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
+        <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/.idea/modules.xml">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
+        <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/.idea/misc.xml">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
+        <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/.idea/.name">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
+        <state relative-caret-position="0">
           <caret line="0" column="14" selection-start-line="0" selection-start-column="14" selection-end-line="0" selection-end-column="14" />
         </state>
       </provider>
     </entry>
     <entry file="file://$USER_HOME$/Library/Caches/CLion12/cmake/generated/216a1638/216a1638/Debug/SNIPE_mizraith_SNIPE_mizraith.ino.cpp">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.33333334">
+        <state relative-caret-position="0">
           <caret line="368" column="0" selection-start-line="368" selection-start-column="0" selection-end-line="368" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/README_COMPILING_CMAKE.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="27" column="25" selection-start-line="27" selection-start-column="25" selection-end-line="27" selection-end-column="25" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/CMakeLists.txt">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="0" column="19" selection-start-line="0" selection-start-column="19" selection-end-line="0" selection-end-column="19" />
+        <state relative-caret-position="300">
+          <caret line="20" column="40" selection-start-line="20" selection-start-column="40" selection-end-line="20" selection-end-column="40" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/snipe_tests.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="195">
+          <caret line="13" column="1" selection-start-line="13" selection-start-column="1" selection-end-line="13" selection-end-column="1" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/SNIPE_mizraith.ino">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="387" column="10" selection-start-line="376" selection-start-column="0" selection-end-line="387" selection-end-column="10" />
+        <state relative-caret-position="440">
+          <caret line="405" column="0" selection-start-line="405" selection-start-column="0" selection-end-line="405" selection-end-column="56" />
           <folding>
-            <element signature="e#14122#14142#0" expanded="true" />
-            <element signature="e#56974#56987#0" expanded="true" />
-            <element signature="e#57093#57115#0" expanded="true" />
+            <element signature="e#57379#57392#0" expanded="true" />
+            <element signature="e#57498#57520#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/SNIPE_tests.py">
+    <entry file="file://$PROJECT_DIR$/README.md">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.39235413">
-          <caret line="13" column="1" selection-start-line="13" selection-start-column="1" selection-end-line="13" selection-end-column="1" />
+        <state relative-caret-position="-3970">
+          <caret line="63" column="0" selection-start-line="63" selection-start-column="0" selection-end-line="71" selection-end-column="0" />
           <folding />
         </state>
       </provider>

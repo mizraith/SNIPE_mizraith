@@ -61,6 +61,16 @@ general purpose tool (for <$30 you can replace similar $300 I2C sniffers).
 
 
 
+## Dependencies
+SNIPE currently requires the datetime class.  This class has been extricated
+from the marvelous RTClib from Jeelabs and is available as a standalone
+arduino library called "mizraith_DateTime".
+     See: https://github.com/mizraith/mizraith_DateTime
+
+SNIPE also makes use of the following built-in Arduino libraries: EEPROM, Wire
+
+
+
 ## Serial Protocol:
 The serial protocol aims to be readily extended.  It is based on
 tokens and subtokens.  Optional elements are kept to a minimum.

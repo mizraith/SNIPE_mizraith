@@ -17,5 +17,5 @@ set (Wire_RECURSE True)
 
 set(${CMAKE_PROJECT_NAME}_SKETCH SNIPE_mizraith.ino)
 generate_arduino_firmware(${CMAKE_PROJECT_NAME}
-        BOARD uno
-        PORT /dev/tty.usbmodem1411)
+        BOARD nano328
+        PORT /dev/tty.usbserial-A702Y23H)
