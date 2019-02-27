@@ -1,7 +1,7 @@
 /* **********************************************************************************************
 ProjectName:  SNIPE  ( Serial 'n I2C Processing Equipment )
 Author:       Red Byer    
-Date:         2/12/2016
+Date:         2/27/2019
 
 # SNIPE_mizraith
 _Extensible serial to I2C-and-more tool.  Easily control your Arduino over a comm port._
@@ -12,7 +12,7 @@ _Extensible serial to I2C-and-more tool.  Easily control your Arduino over a com
 #### License:
 <i>The MIT License (MIT)
 
-Copyright (c) 2016 Red Byer
+Copyright (c) 2019 Red Byer
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -415,7 +415,7 @@ debugging.
 #include"mizraith_DateTime.h"   
 
 const DateTime COMPILED_ON = DateTime(__DATE__, __TIME__);
-const String CURRENT_VERSION = "002";
+const String CURRENT_VERSION = "003";
 const String DESCRIPTION = "SNIPE_for_Arduino";
 
 #pragma mark Pinouts
@@ -468,6 +468,7 @@ const char str_I2B  [] PROGMEM = "I2B";     // I2C target byte count
 const char str_I2W  [] PROGMEM = "I2W";     // I2C Write command
 const char str_I2R  [] PROGMEM = "I2R";     // I2C Read command
 const char str_I2F  [] PROGMEM = "I2F";     // I2C Find devices on the bus
+const char str_RAM  [] PROGMEM = "RAM";     // Checks free RAM
 // 4 character commands & identifiers
 const char str_DESC     [] PROGMEM =    "DESC";     // Description identifier/command
 // 5 character commands & identifiers
@@ -609,7 +610,7 @@ void loop() {
         blinky_worker();
     }
 
-    delay(15);
+    //delay(15);
 }
 
 
@@ -707,8 +708,8 @@ void handleInputString() {
     //Note that the ">" has already been removed by this point.
     processing_is_ok = true;  // leave as true....only set false if we encounter an error
 
-    Serial.print(F("# RECEIVED_INPUT->"));
-    Serial.println(input_string);
+    //Serial.print(F("# RECEIVED_INPUT->"));
+    //Serial.println(input_string);
 
     char* token;
     char* tempstring;
@@ -830,6 +831,8 @@ void handleToken(char* ctoken) {
         handle_DESC();
     } else if (strcmp_P(subtokens[0], str_BLINK) == 0) {
         handle_BLINK();
+    } else if (strcmp_P(subtokens[0], str_RAM) == 0) {
+        checkRAM();
     } else {
         processing_is_ok = false;
         // add bad response to outputstring
@@ -1459,9 +1462,18 @@ void handle_I2F() {
             // Use the return value of Wire.endTransmission
             // to see if a device ack'd.
             Wire.beginTransmission(address);
+            //wiresend('a');
+            //Serial.println(F("begin"));
             error = Wire.endTransmission();
+            //I2C_Register=2;
+            //I2C_Address=address;
+            //I2C_Bytes=1;
+            //I2C_Data=uint8_t (['a']);
+            //error=perform_I2C_write_error();
+            //Serial.println(F("end"));
             if (error == 0) {
                 // FOUND one
+                //Serial.println(F("#found one"));
                 resp += address;
                 strcpy_P(buff, str_COMMA);
                 resp += buff;
@@ -1537,7 +1549,7 @@ void serialPrintHeaderString() {
     Serial.println(F("# SNIPE for Arduino"));
     Serial.println(F("#--------------------------------------------------"));
     Serial.println(F("# Red Byer    github.com/mizraith"));
-    Serial.println(F("# VERSION DATE: 2/7/2015"));
+    Serial.println(F("# VERSION DATE: 2/27/2019"));
     Serial.print(F("# COMPILED ON: "));
     Serial.print(COMPILED_ON.month());
     Serial.print(F("/"));
@@ -1803,6 +1815,15 @@ void perform_I2C_write() {
     Wire.endTransmission();
 }
 
+int perform_I2C_write_error() {
+    Wire.beginTransmission(I2C_Address);
+    wiresend(I2C_Register);
+    for (uint8_t i=0; i < I2C_Bytes; i++) {
+        wiresend(I2C_Data[i]);
+    }
+    return Wire.endTransmission();
+}
+
 /*
  * function: perform_I2C_read
  * Given all the I2C settings (I2A, I2B, I2S, data) perform
@@ -1812,7 +1833,7 @@ void perform_I2C_read() {
     Wire.beginTransmission(I2C_Address);
     wiresend(I2C_Register);
     Wire.endTransmission();
-    delay(5);
+    //delay(1);
     Wire.requestFrom(I2C_Address, I2C_Bytes);
     for (uint8_t i=0; i < I2C_Bytes; i++) {
         I2C_Data[i] = wirereceive();
@@ -1853,12 +1874,41 @@ void checkRAMandExitIfLow( uint8_t checkpointnum ) {
     }
 }
 
+void checkRAM() {
+    char buff[10];
+    String resp("");
+    strcpy_P(buff, str_RAM);
+    resp = buff;
+    strcpy_P(buff, str_COLON);
+    resp += buff;
+    if ( (subtokens[1] == NULL ) || (strlen(subtokens[1]) == 0)) {  // didn't give us a long enough token
+        processing_is_ok = false;
+        char err[MAX_ERROR_STRING_LENGTH];
+        strcpy_P(err, str_VALUE_MISSING);
+        resp += err;
+    } else if (strcmp_P(subtokens[1], str_QUERY) == 0)  {
+        int x = freeRam();
+        resp += x;
+    } else {
+        processing_is_ok = false;
+        char err[MAX_ERROR_STRING_LENGTH];
+        strcpy_P(err, str_Q_REQUIRED);
+        resp += err;
+    }
+    strcpy_P(buff, str_SPACE);
+    resp += buff;
+    //Serial.print(F("RESP: "));
+    //Serial.println(resp);
+    output_string.concat(resp);
+}
+
+
 
 //Endpoint for program (really for debugging)
 void gotoEndLoop( void ) {
     Serial.println(F("--->END<---"));
     while (1) {
-        delay(100);
+        //delay(1);
     }
 }
 
