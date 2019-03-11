@@ -1,7 +1,7 @@
 /* **********************************************************************************************
 ProjectName:  SNIPE  ( Serial 'n I2C Processing Equipment )
 Author:       Red Byer    
-Date:         2/27/2019
+Date:         2/28/2019
 
 # SNIPE_mizraith
 _Extensible serial to I2C-and-more tool.  Easily control your Arduino over a comm port._
@@ -1322,7 +1322,7 @@ void handle_I2W() {
             //Serial.print(F("# bytearraylen: ")); Serial.println(bytearraylen, DEC);
             //st1.toCharArray(bytechars, arraylen, 2);  // get a standard C-string array
             convertHexStringToByteArray(hexstring, I2C_Data);
-            printBytesAsDec(I2C_Data, I2C_Bytes);
+            // printBytesAsDec(I2C_Data, I2C_Bytes);
 
             //-----------
             perform_I2C_write();
