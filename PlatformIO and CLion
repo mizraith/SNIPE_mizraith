@@ -1,0 +1,64 @@
+
+1)  Install core:
+https://docs.platformio.org/en/latest/core/installation/index.html#piocore-install-shell-commands
+    Mac, use:   brew install platformio
+    or:   brew reinstall platformio
+
+2) Install unix and unix-like shell commands
+https://docs.platformio.org/en/latest/core/installation/shell-commands.html#unix-and-unix-like
+   edit:   ~/.profile or ~/.zprofile if using zsh
+   I EDITED:   ~/.zshrc    since ~/.zprofile had nothign useful in it
+
+   then>   soruce ~/.zshrc
+
+3) Set up the symlinks <<instead, i just used the sytstem wide symlinks that brew setup>>
+ln -s ~/.platformio/penv/bin/platformio ~/.local/bin/platformio
+ln -s ~/.platformio/penv/bin/pio ~/.local/bin/pio
+ln -s ~/.platformio/penv/bin/piodebuggdb ~/.local/bin/piodebuggdb
+
+4)  Try running  platformio --version on the command line.
+
+
+------------------------- INTEGRATING WITH CLION-------------------------------------
+THEN:   SEE:  https://docs.platformio.org/en/latest/integration/ide/clion.html
+
+Install the PlatforIO plugin for cLion from within the IDE.
+Install the "ini" plugin as well for syntax hightlighting.
+
+It notes that PlatformIO does NOT depend on Cmake.  Instead makes use of the platformio.ini file.
+
+WITHIN CLION:   Tools -> PlatformIO  -> Re-Init
+
+* BUT THE ABOVE DIDN'T WORK ....TIME TO RUN INIT FROM COMMAND LINE*
+>  cd /to/project/folder
+>  pio project init
+
+-------Then I could do Tools->PlatformIO -> Re-Init     and   Clean   and Build----------------------------------
+pio upgrade --dev
+pio project init --ide clion
+Restart CLion.
+
+
+================================================
+Eventually I gave up and built up a new project using:
+pio project initi --ide clion
+
+Then I copied in the other files manually, but this still didn't work.   I still had to:
+1)  Create a Build Configuration (top of CLion).  Don't forget to remove "build" step to avoid double builds.
+    I used the PlatformIO Upload  spec
+2) I had to go to CLion->Settings->Build, Execution Deployment -> Cmake and edit the profile "Name" and "Build Type"
+so that it matched my [env: xxxx] exactly.   Both now read  "nanoatmega328"
+
+Then I did a few Tools->PlatforIO Re-Init.  I deleted all the cmake-....  folders.  Did a Re-init again and then made
+sure Tools-> Cmake was reinited.  Restarted CLion.
+
+Eventually...after all this thrashing....it worked and I was able to build.
+
+
+
+
+
+
+
+
+
