@@ -533,6 +533,7 @@ debugging.~~
 
 *************************************************************************** */
 
+#pragma mark INCLUDES
 #include <Arduino.h>
 #include <avr/pgmspace.h>
 #include <EEPROM.h>
@@ -565,15 +566,15 @@ debugging.~~
 //
 // ARDUINO DEVELOPERS SELECT ONE:
 // NEOPIXELs are build on the board itself, these are the adafruit WS2811 LEDs
+// With platformio.ini you can also pass in the USE_NEOPIXEL_LEDS flag
 //#define USE_NEOPIXEL_LEDS
 // WS2801 is what we will use in production, the underwater larger pixels.
 //define USE_WS2801_LEDS
-
 //now let the defines do their work
 #ifdef USE_NEOPIXEL_LEDS
 //#include "/Users/red/Documents/Computer_Science/ARDUINO_DEVELOPMENT/libraries/Adafruit_Neopixel/Adafruit_NeoPixel.h"
     #include "Adafruit_NeoPixel.h"
-#endif
+#endif  //USE_NEOPIXEL_LEDS
 
 #ifdef USE_WS2801_LEDS
 #include "Adafruit_WS2801.h"
@@ -608,6 +609,7 @@ void handle_SID();
 void handle_TID();
 void handle_VER();
 void handle_DESC();
+void SL_startup_sequence();
 void handle_SLC1();
 void handle_SLC2();
 void handle_SLC3();
@@ -641,8 +643,8 @@ byte getHexNibbleFromChar(char);
 char getCharFromHexNibble(uint8_t);
 void printBytesAsDec(uint8_t*, uint8_t);
 // I2C HELPERS
-void wiresend(uint8_t);
-uint8_t wirereceive();
+static inline void wiresend(uint8_t);
+static inline uint8_t wirereceive();
 void perform_I2C_write();
 int perform_I2C_write_error();
 void perform_I2C_read();
@@ -661,10 +663,12 @@ const String DESCRIPTION = "SNIPE_for_Arduino";
 #define ANALOG_INPUT   A0
 #define LED_PIN        13
 #define RELAY_PIN      6
-#define SL1_PIN        7
+#define SL1_PIN        5    // 7 <<< SHOULD BE 7.  Using 5 for debug only.
 #define SL2_PIN        8
 #define SL3_PIN        9
-#define ALARM_PIN      A6
+#define SLA_PIN      A6
+#define NUMPIXELS      8   // number of pixels per stacklight.  Nominal 24.
+
 
 #pragma mark Constants
 // CONSTANT CHARS
@@ -708,7 +712,13 @@ const char str_VER  [] PROGMEM = "VER";     // Version
 const char str_ARB  [] PROGMEM = "ARB";     // ARB units
 const char str_BIN  [] PROGMEM = "BIN";     // BIN units
 const char str_SLC  [] PROGMEM = "SLC";     // Stack Light Color
+const char str_SLC1  [] PROGMEM = "SLC1";     // Stack Light Color
+const char str_SLC2  [] PROGMEM = "SLC2";     // Stack Light Color
+const char str_SLC3  [] PROGMEM = "SLC3";     // Stack Light Color
 const char str_SLM  [] PROGMEM = "SLM";     // Stack Light Mode
+const char str_SLM1  [] PROGMEM = "SLM1";     // Stack Light Mode
+const char str_SLM2  [] PROGMEM = "SLM2";     // Stack Light Mode
+const char str_SLM3  [] PROGMEM = "SLM3";     // Stack Light Mode
 const char str_SLA  [] PROGMEM = "SLA";     // Stack Light Alarm
 const char str_I2A  [] PROGMEM = "I2A";     // I2C target chip address
 const char str_I2S  [] PROGMEM = "I2S";     // I2C target setting
@@ -735,6 +745,21 @@ const char str_DATA_LENGTH_ERR  [] PROGMEM =    "DATA_LENGTH_ERR";
 const char str_SIDFUN           [] PROGMEM =    "SID";
 //char * const str_SIDFUN PROGMEM = "SID";                // this format does NOT work!
 
+// color and mode constant strings
+const char str_RED              [] PROGMEM =    "RED";
+const char str_ORANGE           [] PROGMEM =    "ORANGE";
+const char str_YELLOW           [] PROGMEM =    "YELLOW";
+const char str_GREEN            [] PROGMEM =    "GREEN";
+const char str_AQUA             [] PROGMEM =    "AQUA";
+const char str_BLUE             [] PROGMEM =    "BLUE";
+const char str_INDIGO           [] PROGMEM =    "INDIGO";
+const char str_VIOLET           [] PROGMEM =    "VIOLET";
+const char str_WHITE            [] PROGMEM =    "WHITE";
+const char str_BLACK            [] PROGMEM =    "BLACK";
+const char str_DEFAULT          [] PROGMEM =    "DEFAULT";
+const char str_FLASH            [] PROGMEM =    "FLASH";
+const char str_PULSE            [] PROGMEM =    "PULSE";
+
 #pragma mark String Lengths
 // STRING LENGTH & EEPROM LOCATION CONSTANTS
 const int MAX_INPUT_LENGTH  = 64;
@@ -752,6 +777,50 @@ char input_string[MAX_INPUT_LENGTH];       // copy of input_buffer for processin
 char * subtokens[MAX_NUMBER_TOKENS];       // Yes, an array of char* pointers.  We should never have 10 subtokens!
 String output_string = "";                 // might as well use the helper libraries supplied by arduino
 //char transaction_ID_string[9];           // Transaction ID, max 8 chars
+
+#pragma mark SLC Variables
+//default mode is solid
+#define MODE_DEFAULT 0
+#define MODE_FLASH   1
+#define MODE_PULSE   2
+//#define MODE_CYLON_RING  3
+// text based colors ... would be cool tos upport
+#define RED  0xFF0000
+#define ORANGE 0xFF5500
+#define YELLOW 0xFFFF00
+#define GREEN 0x00FF00
+#define AQUA 0x00FFFF
+#define BLUE 0x0000FF
+#define INDIGO 0x3300FF
+#define VIOLET 0xFF00FF
+#define WHITE  0xFFFFFF
+#define BLACK  0x000000
+// SLC supporitng variables
+uint32_t SL1_Color = 0;
+uint32_t SL2_Color = 0;
+uint32_t SL3_Color = 0;
+uint8_t SL1_Mode = 0;
+uint8_t SL2_Mode = 0;
+uint8_t SL3_Mode = 0;
+uint16_t SL1_Cycle_ms = 500;
+uint16_t SL2_Cycle_ms = 500;
+uint16_t SL3_Cycle_ms = 500;
+uint8_t SLA_Value = 0;
+unsigned long SL_loop_time = 0;
+unsigned long SL_next_heartbeat = 0;
+
+// Parameter 1 = number of pixels in the strip.
+// Parameter 2 = SLx_PIN ....Digital pin number (most are valid)
+// Parameter 3 = pixel type flags, add together as needed:
+//   NEO_RGB     Pixels are wired for RGB bitstream
+//   NEO_GRB     Pixels are wired for GRB bitstream
+//   NEO_KHZ400  400 KHz bitstream (e.g. FLORA pixels)
+//   NEO_KHZ800  800 KHz bitstream (e.g. High Density LED strip1)
+#ifdef USE_NEOPIXEL_LEDS
+Adafruit_NeoPixel SL1_strip = Adafruit_NeoPixel(NUMPIXELS, SL1_PIN, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel SL2_strip = Adafruit_NeoPixel(NUMPIXELS, SL2_PIN, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel SL3_strip = Adafruit_NeoPixel(NUMPIXELS, SL3_PIN, NEO_GRB + NEO_KHZ800);
+# endif //USE_NEOPIXEL_LEDS
 
 #pragma mark I2C Variables
 // Variables for I2C
@@ -818,7 +887,7 @@ void setup() {
     pinMode(A1, INPUT);
     pinMode(A2, INPUT);
     pinMode(A3, INPUT);
-    pinMode(ALARM_PIN,OUTPUT);
+    pinMode(SLA_PIN,OUTPUT);
     pinMode(2,  OUTPUT);
     pinMode(3,  OUTPUT);
     pinMode(4,  OUTPUT);
@@ -829,7 +898,7 @@ void setup() {
     pinMode(SL3_PIN,OUTPUT);
     pinMode(LED_PIN, OUTPUT);
 
-    digitalWrite(ALARM_PIN, LOW);
+    digitalWrite(SLA_PIN, LOW);
     digitalWrite(2, LOW);
     digitalWrite(3, LOW);
     digitalWrite(4, LOW);
@@ -839,6 +908,9 @@ void setup() {
 
     printSerialInputInstructions();
     printSerialDataStart();
+    SL_loop_time = millis();
+    SL_next_heartbeat = millis();
+    SL_startup_sequence();
 }
 
 
@@ -1457,6 +1529,37 @@ void handle_DESC() {
     output_string.concat(resp);
 }
 
+void SL_startup_sequence() {
+    SL1_Color = RED;
+    SL2_Color = RED;
+    SL3_Color = RED;
+    handle_SLC_worker(1);
+    handle_SLC_worker(2);
+    handle_SLC_worker(3);
+    delay(1000);
+    SL1_Color = YELLOW;
+    SL2_Color = YELLOW;
+    SL3_Color = YELLOW;
+    handle_SLC_worker(1);
+    handle_SLC_worker(2);
+    handle_SLC_worker(3);
+    delay(1000);
+    SL1_Color = GREEN;
+    SL2_Color = GREEN;
+    SL3_Color = GREEN;
+    handle_SLC_worker(1);
+    handle_SLC_worker(2);
+    handle_SLC_worker(3);
+    delay(1000);
+    SL1_Color = BLACK;
+    SL2_Color = BLACK;
+    SL3_Color = BLACK;
+    handle_SLC_worker(1);
+    handle_SLC_worker(2);
+    handle_SLC_worker(3);
+    delay(1000);
+}
+
 void handle_SLC1() {
     handle_SLC_worker(1);
     return;
@@ -1471,8 +1574,72 @@ void handle_SLC3(){
     return;
 }
 
-void handle_SLC_worker(uint8_t) {
-// TODO
+/**
+ * function: handle_SL_worker
+ * sl_num:  which stack light are you controling?  1, 2, or 3
+ * appends:  hex color to output display
+ * Expects values to be in hexadecimal notation (e.g. "0x0AFF")
+ * TODO:  Someday we'll handle basic TEXT string inputs as well.
+ */
+void handle_SLC_worker(uint8_t sl_num) {
+    char buff[10];
+    String resp("");
+    switch(sl_num) {
+        case 1:
+            strcpy_P(buff, str_SLC1);
+            resp = buff;
+            break;
+        case 2:
+            strcpy_P(buff, str_SLC2);
+            resp = buff;
+            break;
+        case 3:
+            strcpy_P(buff, str_SLC3);
+            resp = buff;
+            break;
+        default:
+            char err[MAX_ERROR_STRING_LENGTH];
+            strcpy_P(err, str_VALUE_ERROR);
+            resp += err;
+            break;
+    }
+    strcpy_P(buff, str_COLON);
+    resp += buff;
+/////////////////////////////////////////////////////////////////////////////////
+    boolean append_cb = false;
+    if ( (subtokens[1] == NULL ) || (strlen(subtokens[1]) == 0)) {  // didn't give us a long enough token, e.g. "D2:" or "D2"
+        processing_is_ok = false;
+        char err[MAX_ERROR_STRING_LENGTH];
+        strcpy_P(err, str_VALUE_MISSING);
+        resp += err;
+    } else if (strcmp_P(subtokens[1], str_QUERY) == 0) {
+        resp += digitalRead(sl_num);
+        append_cb = true;
+    } else if (strcmp_P(subtokens[1], str_ON) == 0) {
+        digitalWrite(sl_num, HIGH);
+        resp += digitalRead(sl_num);
+        append_cb = true;
+    } else if (strcmp_P(subtokens[1], str_OFF) == 0) {
+        digitalWrite(sl_num, LOW);
+        resp += digitalRead(sl_num);
+        append_cb = true;
+    } else {                                                 // "D2:3"
+        processing_is_ok = false;
+        char err[MAX_ERROR_STRING_LENGTH];
+        strcpy_P(err, str_VALUE_ERROR);
+        resp += err;
+    }
+
+    if (append_cb) {
+        strcpy_P(buff, str_COLON);
+        resp += buff;
+        strcpy_P(buff, str_BIN);
+        resp += buff;
+    }
+
+    strcpy_P(buff, str_SPACE);
+    resp += buff;
+    output_string.concat(resp);
 }
 void handle_SLM1(){
     handle_SLM_worker(1);
@@ -1511,15 +1678,15 @@ void handle_SLA() {
         strcpy_P(err, str_VALUE_MISSING);
         resp += err;
     } else if (strcmp_P(subtokens[1], str_QUERY) == 0) {
-        resp += digitalRead(ALARM_PIN);
+        resp += digitalRead(SLA_PIN);
         append_cb = true;
     } else if (strcmp_P(subtokens[1], str_ON) == 0) {
-        digitalWrite(ALARM_PIN, HIGH);
-        resp += digitalRead(ALARM_PIN);
+        digitalWrite(SLA_PIN, HIGH);
+        resp += digitalRead(SLA_PIN);
         append_cb = true;
     } else if (strcmp_P(subtokens[1], str_OFF) == 0) {
-        digitalWrite(ALARM_PIN, LOW);
-        resp += digitalRead(ALARM_PIN);
+        digitalWrite(SLA_PIN, LOW);
+        resp += digitalRead(SLA_PIN);
         append_cb = true;
     } else {                                                 // "D2:3"
         processing_is_ok = false;
@@ -1883,10 +2050,10 @@ void serialPrintHeaderString() {
     Serial.println();
     Serial.println(F("#####HEADER#####"));
     Serial.println(F("#--------------------------------------------------"));
-    Serial.println(F("# SNIPE for Arduino"));
+    Serial.println(F("# SNIPE v4 for Arduino"));
     Serial.println(F("#--------------------------------------------------"));
     Serial.println(F("# Red Byer    github.com/mizraith"));
-    Serial.println(F("# VERSION DATE: 2/27/2019"));
+    Serial.println(F("# VERSION DATE: 7/2/2023"));
     Serial.print(F("# COMPILED ON: "));
     Serial.print(COMPILED_ON.month());
     Serial.print(F("/"));
