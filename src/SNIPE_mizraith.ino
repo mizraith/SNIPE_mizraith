@@ -1606,15 +1606,19 @@ void handle_SLC_worker(uint8_t sl_num) {
     strcpy_P(buff, str_COLON);
     resp += buff;
 /////////////////////////////////////////////////////////////////////////////////
-    boolean append_cb = false;
-    if ( (subtokens[1] == NULL ) || (strlen(subtokens[1]) == 0)) {  // didn't give us a long enough token, e.g. "D2:" or "D2"
+    boolean append_cb = false;  // cb stands for :BIN,  colon, bin for adding units.
+    if ( (subtokens[1] == NULL ) || (strlen(subtokens[1]) == 0)) {  // didn't give us a long enough token, e.g. "SLC:" or "SLC"
         processing_is_ok = false;
         char err[MAX_ERROR_STRING_LENGTH];
         strcpy_P(err, str_VALUE_MISSING);
         resp += err;
     } else if (strcmp_P(subtokens[1], str_QUERY) == 0) {
+        // TODO:   append hex response on next line for value.
         resp += digitalRead(sl_num);
         append_cb = true;
+    // TODO:  NEXT compare text
+    // TODO:  Make a get_value_from_token(string-or-hex-string)
+    // TODO:  Next do hex string to number
     } else if (strcmp_P(subtokens[1], str_ON) == 0) {
         digitalWrite(sl_num, HIGH);
         resp += digitalRead(sl_num);
@@ -1623,6 +1627,25 @@ void handle_SLC_worker(uint8_t sl_num) {
         digitalWrite(sl_num, LOW);
         resp += digitalRead(sl_num);
         append_cb = true;
+//  TODO....the next 4 lines goes up earlier
+        char hexprefix[3];             // should be: '0x'
+        hexprefix[0] = subtokens[1][0];
+        hexprefix[1] = subtokens[1][1];
+        hexprefix[2] = NULL;
+    } else if (strcmp_P(hexprefix, str_HEX) == 0) {                      // verify we start with 0x
+        // process the write
+
+        char * hexstring = &subtokens[1][2];
+        //Serial.print(F("# sub st1: ")); Serial.print(hexstring); Serial.print(F("   length: ")); Serial.println(strlen(subtokens[1])) - 2);
+        if ( (strlen(hexstring) == I2C_Bytes * 2)) {                 // st1 contains '0x', so -2 is what we want
+            uint8_t bytearraylen = (I2C_Bytes * 2) + 1;                         // +1 NULL
+            //char bytechars[bytearraylen];
+            //Serial.print(F("# bytearraylen: ")); Serial.println(bytearraylen, DEC);
+            //st1.toCharArray(bytechars, arraylen, 2);  // get a standard C-string array
+            convertHexStringToByteArray(hexstring, I2C_Data);
+            // printBytesAsDec(I2C_Data, I2C_Bytes);
+        }
+
     } else {                                                 // "D2:3"
         processing_is_ok = false;
         char err[MAX_ERROR_STRING_LENGTH];
