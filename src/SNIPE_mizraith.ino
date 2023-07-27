@@ -533,7 +533,11 @@ debugging.~~
 
 *************************************************************************** */
 
+
+
 #pragma mark INCLUDES
+#include <limits.h>
+
 #include <Arduino.h>
 #include <avr/pgmspace.h>
 #include <EEPROM.h>
@@ -642,6 +646,8 @@ void convertByteArrayToHexString(byte *, uint8_t, char *);
 byte getHexNibbleFromChar(char);
 char getCharFromHexNibble(uint8_t);
 void printBytesAsDec(uint8_t*, uint8_t);
+char *unsigned_to_hex_string(unsigned x, char *dest, size_t size);
+char *color_uint_to_hex_string(unsigned x, char *dest, size_t size);
 // I2C HELPERS
 static inline void wiresend(uint8_t);
 static inline uint8_t wirereceive();
@@ -653,10 +659,24 @@ void checkRAMandExitIfLow(uint8_t);
 void checkRAM();
 int freeRam();
 
-
+#pragma mark ApplicationG lobals
 const DateTime COMPILED_ON = DateTime(__DATE__, __TIME__);
 const String CURRENT_VERSION = "003";
 const String DESCRIPTION = "SNIPE_for_Arduino";
+
+# pragma mark Method Shortcuts
+/**
+ * Convenience DEFINES for our color-to-hex string functions.
+ */
+// Use the NO_0x size if you create a macro and don't want the extra "0x" at the beginning.
+// Difference is the +1 vs. +3 for the extra characters
+#define UNS_HEX_STR_SIZE_NO_0x ((sizeof (unsigned)*CHAR_BIT + 3)/4 + 1)
+#define UNS_HEX_STR_SIZE ((sizeof (unsigned)*CHAR_BIT + 3)/4 + 3)
+//                         compound literal v--------------------------v
+#define U2HS(x) unsigned_to_hex_string((x), (char[UNS_HEX_STR_SIZE]) {0}, UNS_HEX_STR_SIZE)
+#define C2HS(x) color_uint_to_hex_string((x), (char[UNS_HEX_STR_SIZE]) {0}, UNS_HEX_STR_SIZE)
+
+
 
 #pragma mark Pinouts
 // PIN OUTS
@@ -1578,12 +1598,15 @@ void handle_SLC3(){
  * function: handle_SL_worker
  * sl_num:  which stack light are you controling?  1, 2, or 3
  * appends:  hex color to output display
+ * Handle Stack Light worker
  * Expects values to be in hexadecimal notation (e.g. "0x0AFF")
  * TODO:  Someday we'll handle basic TEXT string inputs as well.
  */
 void handle_SLC_worker(uint8_t sl_num) {
     char buff[10];
+    char err[MAX_ERROR_STRING_LENGTH];
     String resp("");
+    // Step 1:  Add "SLx" to response
     switch(sl_num) {
         case 1:
             strcpy_P(buff, str_SLC1);
@@ -1598,46 +1621,50 @@ void handle_SLC_worker(uint8_t sl_num) {
             resp = buff;
             break;
         default:
-            char err[MAX_ERROR_STRING_LENGTH];
             strcpy_P(err, str_VALUE_ERROR);
             resp += err;
             break;
     }
+    // "SLx:"
     strcpy_P(buff, str_COLON);
     resp += buff;
-/////////////////////////////////////////////////////////////////////////////////
-    boolean append_cb = false;  // cb stands for :BIN,  colon, bin for adding units.
+    boolean append_cb = false;  // cb stands for :BIN,  Colon-BIN for adding units.
     if ( (subtokens[1] == NULL ) || (strlen(subtokens[1]) == 0)) {  // didn't give us a long enough token, e.g. "SLC:" or "SLC"
         processing_is_ok = false;
-        char err[MAX_ERROR_STRING_LENGTH];
         strcpy_P(err, str_VALUE_MISSING);
         resp += err;
+    // Did we get a Query?   Add our color:   SLx:0xFF00FF
     } else if (strcmp_P(subtokens[1], str_QUERY) == 0) {
-        // TODO:   append hex response on next line for value.
-        resp += digitalRead(sl_num);
-        append_cb = true;
-    // TODO:  NEXT compare text
-    // TODO:  Make a get_value_from_token(string-or-hex-string)
-    // TODO:  Next do hex string to number
-    } else if (strcmp_P(subtokens[1], str_ON) == 0) {
-        digitalWrite(sl_num, HIGH);
-        resp += digitalRead(sl_num);
-        append_cb = true;
-    } else if (strcmp_P(subtokens[1], str_OFF) == 0) {
-        digitalWrite(sl_num, LOW);
-        resp += digitalRead(sl_num);
-        append_cb = true;
-//  TODO....the next 4 lines goes up earlier
-        char hexprefix[3];             // should be: '0x'
+        switch(sl_num) {
+            case 1:
+                resp += C2HS(SL1_Color);  // "color 2 hex string"
+                break;
+            case 2:
+                resp += C2HS(SL2_Color);
+                break;
+            case 3:
+                resp += C2HS(SL3_Color);
+                break;
+            default:
+                strcpy_P(err, str_VALUE_ERROR);
+                resp += err;
+                break;
+        }
+        append_cb = false;
+        // AT THIS POINT we should have a value to set, e.g. "SL1:0x33ff00" gotta convert that to a number
+        char hexprefix[3];             // hexprefix should be: '0x'
         hexprefix[0] = subtokens[1][0];
         hexprefix[1] = subtokens[1][1];
         hexprefix[2] = NULL;
-    } else if (strcmp_P(hexprefix, str_HEX) == 0) {                      // verify we start with 0x
+    } else if (strcmp_P(hexprefix, str_HEX) == 0) {     // verify we start with 0x
         // process the write
-
-        char * hexstring = &subtokens[1][2];
+        // TODO:  Make a get_value_from_token(string-or-hex-string)
+        char * hexstring = &subtokens[1][2];      // from "0x00FF00" --> "00FF00"
         //Serial.print(F("# sub st1: ")); Serial.print(hexstring); Serial.print(F("   length: ")); Serial.println(strlen(subtokens[1])) - 2);
-        if ( (strlen(hexstring) == I2C_Bytes * 2)) {                 // st1 contains '0x', so -2 is what we want
+        // TODO: do we need to double check length?
+        // TODO
+        // TODO
+        if ( (strlen(hexstring) == I2C_Bytes * 2)) {           // st1 contains '0x', so -2 is what we want
             uint8_t bytearraylen = (I2C_Bytes * 2) + 1;                         // +1 NULL
             //char bytechars[bytearraylen];
             //Serial.print(F("# bytearraylen: ")); Serial.println(bytearraylen, DEC);
@@ -2300,9 +2327,60 @@ void printBytesAsDec(uint8_t *data, uint8_t len) {
     Serial.println();
 }
 
+/**
+ * unsigned_to_hex_string
+ * Convert values to hex strings.
+ *
+ * Example use:  See /sandbox/test_hex_conversion.cpp
+ *   U2HS(15);      -->  "0xF"
+ *   C2HS(0x00FF00); -->  "0x00FF00"
+ */
+/**
+ * Convenience DEFINES for our color-to-hex string functions.
+ *   For necessity these are moved to the top of the file.
+ */
+//// Use the NO_0x size if you create a macro and don't want the extra "0x" at the beginning.
+//// Difference is the +1 vs. +3 for the extra characters
+//#define UNS_HEX_STR_SIZE_NO_0x ((sizeof (unsigned)*CHAR_BIT + 3)/4 + 1)
+//#define UNS_HEX_STR_SIZE ((sizeof (unsigned)*CHAR_BIT + 3)/4 + 3)
+////                         compound literal v--------------------------v
+//#define U2HS(x) unsigned_to_hex_string((x), (char[UNS_HEX_STR_SIZE]) {0}, UNS_HEX_STR_SIZE)
+//#define C2HS(x) color_uint_to_hex_string((x), (char[UNS_HEX_STR_SIZE]) {0}, UNS_HEX_STR_SIZE)
 
+char *unsigned_to_hex_string(unsigned x, char *dest, size_t size) {
+    //("0x%X\n", a);
+    snprintf(dest, size, "%X", x);
+    return dest;
+}
 
+/**
+ * color_uint_to_hex_string
+ * Convert color values to hex strings with fixes 6 digit length prepended with "0x"
+ *
+ * Example use:  See /sandbox/test_hex_conversion.cpp
+ *   U2HS(15);      -->  "0x00000F"
+ *   C2HS(0x00FF00); -->  "0x00FF00"
+ */
+// In this cae we return at least 6 digits  0x00FF00.   Could be more if
+// the color value is greater than 0xFFFFFF.
+//  "0x" is prepended for us.
+char *color_uint_to_hex_string(unsigned x, char *dest, size_t size) {
+    snprintf(dest, size, "0x%06X", x);
+    return dest;
+}
 
+/**
+ * function:  uint32_from_hex_string
+ * Given a hex string ("0x1F" or "1F" convert to int value.
+ * NOTE: If you give it something weird, it returns 0.
+ * @param s   your c-string.   "0x0f"  "0f"  "0F"  all accepted
+ * @return
+ */
+uint32_t uint32_from_hex_string(char * s){
+    uint32_t i;
+    sscanf(s, "%x", &i);
+    return i
+}
 
 #pragma mark I2C Helpers
 /***************************************************
