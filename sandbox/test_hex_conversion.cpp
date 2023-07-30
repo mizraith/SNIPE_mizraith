@@ -12,7 +12,7 @@
 #include <limits.h>
 #include <stddef.h>
 #include <stdio.h>
-#include <stdlib.h>
+#include <string.h>
 
 // was +1 for null but we added 2 more chars to allow for "0x" so now it's +3.
 #define UNS_HEX_STR_SIZE ((sizeof (unsigned)*CHAR_BIT + 3)/4 + 3)
@@ -36,6 +36,19 @@ char *color_uint_to_hex_string(unsigned x, char *dest, size_t size) {
 }
 
 
+int atoui(char *in,unsigned int *out)
+{
+    char *p;
+
+    for(p = in; *p; p++)
+        if (*p > '9' || *p < '0')
+            return 1;
+
+    *out = strtoul(in, NULL, 10);
+    return 0;
+}
+
+
 int main() {
     // 3 array are formed v               v        v
     printf("Max: %s   0x00FF00:%s  0x12345678: %s\n", U2HS(UINT_MAX), U2HS(0x00FF00), U2HS(0x12345678));
@@ -47,9 +60,28 @@ int main() {
     // https://www.techiedelight.com/convert-a-hexadecimal-string-to-an-integer-in-cpp/
     int i;
     sscanf("0F", "%x", &i);   // returns 0 if you give it weird characters.  handles "0x0f" "0f" "0F" all fine
-    printf("0F as an int: %s\n", i);
+    printf("0F as an int: %d\n", i);
 
-    // `hs` is valid until the end of the block
+    char str[4][7] = {{"123"},
+                      {"-123"},
+                      {"wewe"},
+                      {"123wew"}};
+    unsigned int ui, uc;
+
+    for(uc = 0; uc < 4; uc++) {
+        if(atoui(str[uc], &ui)) {
+            printf("ERROR: %s\n",str[uc]);
+        }
+        else{
+            printf("OK: %u\n",ui);
+        }
+    }
+
+
+    int Z = atoi("55");
+    printf("atoui --> %d", Z);
+
+
 }
 
 /**

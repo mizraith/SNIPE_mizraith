@@ -346,7 +346,7 @@ case -insensitive- but this could change.
 _SLC commands use [D7] and [D8] and [D9] by default on a nano._
 #### SLC1, SLC2, SLC3
 - **description:** Stack Light Color.  Sets the stack light color.
-- **input argument:** ? or color value as a hexadecimal string. 0xRRGGBB. The leading '0x' is required. If not properly formatted, will be ignored.  Setting to 0x0 will turn the color "black", or off. 
+- **input argument:** ? or color value as a hexadecimal string. 0xRRGGBB. The leading '0x' is required! If not properly formatted, will return a value error.  Setting to 0x0 will turn the color "black", or off. Case insensitive.
   **example:** 
   - command: `>SLC1:0xFF0000`
   - response:`@SLC1:0xFF0000`   The LED on STack Light 1 is now RED.
@@ -362,11 +362,17 @@ _SLC commands use [D7] and [D8] and [D9] by default on a nano._
   - 1:  On, Steady State
   - 2:  On, Pulsing.  Option subtoken for full-cycle blink rate in ms.
   - 3:  On, Flashing.  Optional subtoken for full-cycle blink rate in ms.
+- **cycle rate argument:** <optional>
+  - in milliseconds full cycle time.
+  - MIN: 100   (setting below this -> 100)
+  - MAX: 5000  (setting above this -> 5000)
 - **example:**
   - command: `>SLM1:1`
   - response:`@SLM1:1`   The mode for #1 is ON, Steady State.
-  - command: `>SLM1:3:500`  The mode is now flashing every 500ms
-  - response: `@SLM1:3:500`    
+  - command: `>SLM1:3:500`  The mode for #3 is now flashing every 500ms
+  - response: `@SLM1:3:500`  This would round up to 100ms pulse rate.
+  - command: `>SLM1:3:55`  The mode for #3 is no flashing every 100ms
+  - repsonse: `@SLM1:3:100`  Returns the value it rounded up to.
   - command: `>SLM1:0`
   - response: `@SLM1:0`  The light for stack light #1 is off
 

@@ -96,7 +96,7 @@ protocol that allows you to do the following:
 1. Communicate with any I2C target
    - Extremely useful as a debug bridge.
    - Can be used to enumerate out all accessible I2C targets.
-2. Flip digitial pins on the Arduino.
+2. Flip digital pins on the Arduino.
     - Useful for triggering an interlock or relay.
 3. Read raw A2D values from the Arduino.
     - Useful for reading input conditions over serial port.
@@ -156,10 +156,10 @@ Where .strip() removes whitespace at the front or end of message that
 may have been added.
 
 Note with tokens it is possible to send two or more command tokens
-in a given message.  This results in a single reponse line.
+in a given message.  This results in a single response line.
 Commands are typically processed in the order they are received.
 However, with I2C commands there is some token processing
-precedence (see Commmands).
+precedence (see Commands).
 
 _Note that there is no requirement regarding token order._
 
@@ -175,13 +175,13 @@ The order of subtokens is generally agreed to be one of the following:
 
         <command>:<value>
         <command>:<value>:<units> (shorter form is preferred)
-        <command>:<value>:<optionalvalue>  *new in 4.0, used in stacklights*
+        <command>:<value>:<optional-value>  *new in 4.0, used in stack-lights*
         <identifier>:<value>   (discouraged for longer form)
         <identifier>:<value>:<units>
 
 #### Start Characters:
         '>' is used to **start a normal command** to SNIPE
-        '#' is used to significy a **non-value respone**, like a comment or header string
+        '#' is used to signify a **non-value response**, like a comment or header string
         '@' is used for **value response**
         '!' is used for **error responses**
 
@@ -192,7 +192,7 @@ as a byte, the data is **escaped** by sending it as a hex string, e.g.:
         <command>:0x0AF1
 
 Naturally, certain I2C commands default to interpreting the input string
-as hex.  As a result, the '0x' is required gramatically.  The return
+as hex.  As a result, the '0x' is required grammatically.  The return
 response will also be escaped in a similar matter.
 
 #### Units:
@@ -211,14 +211,14 @@ Identifiers are returned in ALL CAPS, but should be considered
 case -insensitive-.
 
 ##### [A0], A1, A2, A3
-- **description:**  Analog 0:3 pin readback
+- **description:**  Analog 0:3 pin read-back
 - **value range:**  0 - 1024
 - **units:**        ARB
 - **example:**      `@A0:254:ARB`
 - _Note:  A0 is the recommended standard analog input._
 
 ##### D1, D2, D3, D4, D5, [D6]
-- **description:**  Digital 6 readback
+- **description:**  Digital 6 read-back
 - **value range:**  0 : 1
 - **units:**        BIN
 - **example:**      `@D6:0:BIN`
@@ -311,7 +311,7 @@ case -insensitive- but this could change.
   - response: `@SID:MyUno_03`
 
 ##### TID
-- **description:**     Transaction IDs can be included in messages. They will be echoed back in the associated resopnse.
+- **description:**     Transaction IDs can be included in messages. They will be echoed back in the associated response.
                        The intent is to support synchronizing commands and responses.
                        Querying the TID will return the last TID value.
 - **input argument:**  ? or string, less than 8 characters, no spaces please
@@ -352,7 +352,7 @@ case -insensitive- but this could change.
 _SLC commands use [D7] and [D8] and [D9] by default on a nano._
 #### SLC1, SLC2, SLC3
 - **description:** Stack Light Color.  Sets the stack light color.
-- **input argument:** ? or color value as a hexadecimal string. 0xRRGGBB. The leading '0x' is required. If not properly formatted, will be ignored.  Setting to 0x0 will turn the color "black", or off.
+- **input argument:** ? or color value as a hexadecimal string. 0xRRGGBB. The leading '0x' is required! If not properly formatted, will return a value error.  Setting to 0x0 will turn the color "black", or off. Case insensitive.
   **example:**
   - command: `>SLC1:0xFF0000`
   - response:`@SLC1:0xFF0000`   The LED on STack Light 1 is now RED.
@@ -446,11 +446,11 @@ _I2C commands use SCL and SDA pins.  This is [A4] and [A5] on a nano._
   - command:  `>I2R:?`      (re-read from same chip/addr)
   - response: `@I2R:0xA0F3`
   - command:  `>I2A:1 I2R:? TID:14399`
-  - response  `!I2A:1 I2R:0x00`      (inccorrect address?)
+  - response  `!I2A:1 I2R:0x00`      (incorrect address?)
 
 ##### I2F
 - **description:**     Get a listing of chips on the I2C bus
-- **input argument:**  ?      <gramatically required>
+- **input argument:**  ?      <grammatically required>
 - **example:**
   - command:  `>I2F:?`
   - response: `@I2F:1,12,23,113`
@@ -535,10 +535,12 @@ debugging.~~
 
 
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunknown-attributes"
 #pragma mark INCLUDES
 #include <limits.h>
 
-#include <Arduino.h>
+#include <Arduino.h>    // we make good use of String() class
 #include <avr/pgmspace.h>
 #include <EEPROM.h>
 // Uses SCL and SDA pins
@@ -558,7 +560,7 @@ debugging.~~
 // *******************************************************************************************************
 // UNCOMMENT ONE OF THE FOLLOWING TO CHOOSE WITH LEDS YOU ARE WORKING WITH
 //    The Adafruit Neopixel library supports LEDs with WS2811 and WS2812 chips (aka "neopixels")
-//    The Adafruit WS2801 library supports WS2801's.  usLEDwarehouse sells these.
+//    The Adafruit WS2801 library supports WS2801's.  us LED warehouse sells these.
 //
 // DEVELOPER NOTES: USING #defines does not work in CLion under CMake.
 //    !!! CLion / CMake users -- these #defines are commented out and the corresponding flags
@@ -648,6 +650,7 @@ char getCharFromHexNibble(uint8_t);
 void printBytesAsDec(uint8_t*, uint8_t);
 char *unsigned_to_hex_string(unsigned x, char *dest, size_t size);
 char *color_uint_to_hex_string(unsigned x, char *dest, size_t size);
+uint32_t color_uint_from_hex_string(char * s);
 // I2C HELPERS
 static inline void wiresend(uint8_t);
 static inline uint8_t wirereceive();
@@ -658,8 +661,9 @@ void perform_I2C_read();
 void checkRAMandExitIfLow(uint8_t);
 void checkRAM();
 int freeRam();
+void gotoEndLoop();
 
-#pragma mark ApplicationG lobals
+#pragma mark Application Globals
 const DateTime COMPILED_ON = DateTime(__DATE__, __TIME__);
 const String CURRENT_VERSION = "003";
 const String DESCRIPTION = "SNIPE_for_Arduino";
@@ -692,7 +696,7 @@ const String DESCRIPTION = "SNIPE_for_Arduino";
 
 #pragma mark Constants
 // CONSTANT CHARS
-const char char_CMD = '>';
+const char char_CMD = '>';              // expected at start of command, we compare to character
 const char char_CR  = '\r';
 const char char_LF  = '\n';
 
@@ -701,28 +705,30 @@ const char char_LF  = '\n';
 const char str_QUERY [] PROGMEM = "?";    // value query input argument
 const char str_ON    [] PROGMEM = "1";    // binary input argument
 const char str_OFF   [] PROGMEM = "0";    // binary input argument
-const char str_CMD   [] PROGMEM = ">";    // expected at start of command
+//const char str_CMD   [] PROGMEM = ">";    // expected at start of command
 const char str_RESP  [] PROGMEM = "@";    // normal response follows
 const char str_ERR   [] PROGMEM = "!";    // error response follows
-const char str_CMT   [] PROGMEM = "#";    // comment line follows
+//const char str_CMT   [] PROGMEM = "#";    // comment line follows
 const char str_COLON [] PROGMEM = ":";    // sub-token splits on colon
 const char str_SPACE [] PROGMEM = " ";    // tokens split on space
 const char str_COMMA [] PROGMEM = ",";
 
 
 // 2 character commands & identifiers
+const char str_A    [] PROGMEM = "A";
 const char str_A0   [] PROGMEM = "A0";
 const char str_A1   [] PROGMEM = "A1";
 const char str_A2   [] PROGMEM = "A2";
 const char str_A3   [] PROGMEM = "A3";
+const char str_D    [] PROGMEM = "D";
 const char str_D2   [] PROGMEM = "D2";
 const char str_D3   [] PROGMEM = "D3";
 const char str_D4   [] PROGMEM = "D4";
 const char str_D5   [] PROGMEM = "D5";
 const char str_D6   [] PROGMEM = "D6";
-const char str_D7   [] PROGMEM = "D7";
-const char str_D8   [] PROGMEM = "D8";
-const char str_D9   [] PROGMEM = "D9";
+//const char str_D7   [] PROGMEM = "D7";
+//const char str_D8   [] PROGMEM = "D8";
+//const char str_D9   [] PROGMEM = "D9";
 const char str_HEX  [] PROGMEM = "0x";   // when hex...
 
 // 3 character commands & identifiers
@@ -762,23 +768,28 @@ const char str_OUT_OF_RANGE     [] PROGMEM =    "OUT_OF_RANGE";
 const char str_BYTE_SETTING_ERR [] PROGMEM =    "BYTE_SETTING_ERR";      //16 chars longest message
 const char str_NONE_FOUND       [] PROGMEM =    "NONE_FOUND";
 const char str_DATA_LENGTH_ERR  [] PROGMEM =    "DATA_LENGTH_ERR";
-const char str_SIDFUN           [] PROGMEM =    "SID";
+//const char str_SIDFUN           [] PROGMEM =    "SID";
 //char * const str_SIDFUN PROGMEM = "SID";                // this format does NOT work!
 
 // color and mode constant strings
-const char str_RED              [] PROGMEM =    "RED";
-const char str_ORANGE           [] PROGMEM =    "ORANGE";
-const char str_YELLOW           [] PROGMEM =    "YELLOW";
-const char str_GREEN            [] PROGMEM =    "GREEN";
-const char str_AQUA             [] PROGMEM =    "AQUA";
-const char str_BLUE             [] PROGMEM =    "BLUE";
-const char str_INDIGO           [] PROGMEM =    "INDIGO";
-const char str_VIOLET           [] PROGMEM =    "VIOLET";
-const char str_WHITE            [] PROGMEM =    "WHITE";
-const char str_BLACK            [] PROGMEM =    "BLACK";
-const char str_DEFAULT          [] PROGMEM =    "DEFAULT";
-const char str_FLASH            [] PROGMEM =    "FLASH";
-const char str_PULSE            [] PROGMEM =    "PULSE";
+//const char str_RED              [] PROGMEM =    "RED";
+//const char str_ORANGE           [] PROGMEM =    "ORANGE";
+//const char str_YELLOW           [] PROGMEM =    "YELLOW";
+//const char str_GREEN            [] PROGMEM =    "GREEN";
+//const char str_AQUA             [] PROGMEM =    "AQUA";
+//const char str_BLUE             [] PROGMEM =    "BLUE";
+//const char str_INDIGO           [] PROGMEM =    "INDIGO";
+//const char str_VIOLET           [] PROGMEM =    "VIOLET";
+//const char str_WHITE            [] PROGMEM =    "WHITE";
+//const char str_BLACK            [] PROGMEM =    "BLACK";
+//const char str_DEFAULT          [] PROGMEM =    "DEFAULT";
+//const char str_FLASH            [] PROGMEM =    "FLASH";
+//const char str_PULSE            [] PROGMEM =    "PULSE";
+
+// min and max full cycle time for our flash or pulse modes.
+#define kMIN_CYCLE_TIME 100
+#define kMAX_CYCLE_TIME 5000
+
 
 #pragma mark String Lengths
 // STRING LENGTH & EEPROM LOCATION CONSTANTS
@@ -798,13 +809,13 @@ char * subtokens[MAX_NUMBER_TOKENS];       // Yes, an array of char* pointers.  
 String output_string = "";                 // might as well use the helper libraries supplied by arduino
 //char transaction_ID_string[9];           // Transaction ID, max 8 chars
 
-#pragma mark SLC Variables
+#pragma mark Stack Light Variables
 //default mode is solid
 #define MODE_DEFAULT 0
 #define MODE_FLASH   1
 #define MODE_PULSE   2
 //#define MODE_CYLON_RING  3
-// text based colors ... would be cool tos upport
+// text based colors ... would be cool tos support
 #define RED  0xFF0000
 #define ORANGE 0xFF5500
 #define YELLOW 0xFFFF00
@@ -815,17 +826,13 @@ String output_string = "";                 // might as well use the helper libra
 #define VIOLET 0xFF00FF
 #define WHITE  0xFFFFFF
 #define BLACK  0x000000
-// SLC supporitng variables
-uint32_t SL1_Color = 0;
-uint32_t SL2_Color = 0;
-uint32_t SL3_Color = 0;
-uint8_t SL1_Mode = 0;
-uint8_t SL2_Mode = 0;
-uint8_t SL3_Mode = 0;
-uint16_t SL1_Cycle_ms = 500;
-uint16_t SL2_Cycle_ms = 500;
-uint16_t SL3_Cycle_ms = 500;
-uint8_t SLA_Value = 0;
+// STACK LIGHT CONTROLLER supporting variables
+#define kNUM_STACKLIGHTS 3
+uint32_t SL_Colors[kNUM_STACKLIGHTS]    = {0, 0, 0};
+uint8_t SL_Modes[kNUM_STACKLIGHTS]      = {0, 0, 0};
+uint16_t SL_Cycles_ms[kNUM_STACKLIGHTS] = {500, 500, 500};
+//uint8_t SLA_Value = 0;
+// TODO:  Probably nee dto array these also
 unsigned long SL_loop_time = 0;
 unsigned long SL_next_heartbeat = 0;
 
@@ -850,11 +857,10 @@ uint8_t I2C_Bytes    = 0;
 uint8_t I2C_Data[32];       // set large for init...
 
 #pragma mark Analog Variables
-// Analog Input Variables
-uint16_t A0_value = 0;
-uint16_t A1_value = 0;
-uint16_t A2_value = 0;
-uint16_t A3_value = 0;
+#define kNUM_ANALOG_PINS 4
+// Analog Input Variables, conveniently zero indexed
+//                       A0      A1     A2     A3
+uint16_t A_values[kNUM_ANALOG_PINS] = {0, 0, 0, 0};
 
 #pragma mark Message Processing Variables
 // Message Processing Variables
@@ -941,10 +947,13 @@ void setup() {
  ***************************************************/
 void loop() {
     // put your main code here, to run repeatedly:
-    A0_value = analogRead(A0);
-    A1_value = analogRead(A1);
-    A2_value = analogRead(A2);
-    A3_value = analogRead(A3);
+    A_values[0] = analogRead(A0);
+    A_values[1] = analogRead(A1);
+    A_values[2] = analogRead(A2);
+    A_values[3] = analogRead(A3);
+
+    // TODO:  Need to update the LED strip every 50ms perhaps.
+    // TODO:  How to handle flash and strobe.
 
     if (input_string_ready) {
         handleInputString();
@@ -1095,7 +1104,6 @@ void handleInputString() {
     //Serial.print(F("# Total execution (ms): "));
     //Serial.println(totaltime, DEC);
     //checkRAMandExitIfLow(11);
-    return;
 }
 
 
@@ -1113,7 +1121,7 @@ void handleToken(char* ctoken) {
 
     temptoken = strdup(ctoken);
     tokentofree = temptoken;         // keep a pointer around for later use
-    // SPLIT INTO SUBTOKENS AND STORE IN OUR GLOBAL ARRAY so we don't have to do the work again
+    // SPLIT INTO SUBTOKENS AND STORE IN OUR GLOBAL ARRAY, so we don't have to do the work again
     uint8_t i = 0;
     while ((subtoken = strsep(&temptoken, colon)) != NULL) {
         if (subtoken != NULL) {    // a 0-length subtoken _is_ acceptable...maybe there is no value.
@@ -1154,6 +1162,20 @@ void handleToken(char* ctoken) {
         handle_D5();
     } else if (strcmp_P(subtokens[0], str_D6) == 0) {
         handle_D6();
+    } else if (strcmp_P(subtokens[0], str_SLC1) == 0) {
+        handle_SLC1();
+    } else if (strcmp_P(subtokens[0], str_SLC2) == 0) {
+        handle_SLC2();
+    } else if (strcmp_P(subtokens[0], str_SLC3) == 0) {
+        handle_SLC3();
+    } else if (strcmp_P(subtokens[0], str_SLM1) == 0) {
+        handle_SLM1();
+    } else if (strcmp_P(subtokens[0], str_SLM2) == 0) {
+        handle_SLM2();
+    } else if (strcmp_P(subtokens[0], str_SLM3) == 0) {
+        handle_SLM3();
+    } else if (strcmp_P(subtokens[0], str_SLA) == 0) {
+        handle_SLA();
     } else if (strcmp_P(subtokens[0], str_SID) == 0) {     // could use (0 == strcmp(subtokens[0], "SID")) (strcmp_P(subtokens[0], PSTR("SID")) == 0 ) (cmd.equalsIgnoreCase(str_SID))
         handle_SID();
     } else if (strcmp_P(subtokens[0], str_TID) == 0) {
@@ -1235,22 +1257,18 @@ void printSubTokenArray() {
 #pragma mark Command Handling
 void handle_A0() {
     handle_A_worker(0);
-    return;
 }
 
 void handle_A1() {
     handle_A_worker(1);
-    return;
 }
 
 void handle_A2() {
     handle_A_worker(2);
-    return;
 }
 
 void handle_A3() {
     handle_A_worker(3);
-    return;
 }
 
 /**
@@ -1263,26 +1281,12 @@ void handle_A_worker(uint8_t numA) {
     String resp("");
     String port("");
     uint16_t val = 0;
-    switch(numA) {
-        case 0:
-            strcpy_P(buff, str_A0);
-            port = buff;
-            val = A0_value;
-            break;
-        case 1:
-            strcpy_P(buff, str_A1);
-            port = buff;
-            val = A1_value;
-            break;
-        case 2:
-            strcpy_P(buff, str_A2);
-            port = buff;
-            val = A2_value;
-            break;
-        case 3:
-            strcpy_P(buff, str_A3);
-            port = buff;
-            val = A3_value;
+    switch (numA) {
+        case 0 ... (kNUM_ANALOG_PINS - 1):
+            strcpy_P(buff, str_A);
+            resp += buff;
+            resp += numA;  // "A0" make use of that Arduino String += operation
+            val = A_values[numA];   // 0 index lines up nice
             break;
         default:
             char err[MAX_ERROR_STRING_LENGTH];
@@ -1291,8 +1295,7 @@ void handle_A_worker(uint8_t numA) {
             val = 0;
             break;
     }
-    resp = port;
-    strcpy_P(buff, str_COLON);
+    strcpy_P(buff, str_COLON);  //   resp --> "Ax:"
     resp += buff;
 
     if ( (subtokens[1] == NULL ) || (strlen(subtokens[1]) == 0)) {
@@ -1321,27 +1324,22 @@ void handle_A_worker(uint8_t numA) {
 
 void handle_D2() {
     handle_D_worker(2);
-    return;
 }
 
 void handle_D3() {
     handle_D_worker(3);
-    return;
 }
 
 void handle_D4() {
     handle_D_worker(4);
-    return;
 }
 
 void handle_D5() {
     handle_D_worker(5);
-    return;
 }
 
 void handle_D6() {
     handle_D_worker(6);
-    return;
 }
 
 
@@ -1354,34 +1352,18 @@ void handle_D_worker(uint8_t numpin) {
     char buff[10];
     String resp("");
     switch(numpin) {
-        case 2:
-            strcpy_P(buff, str_D2);
-            resp = buff;
-            break;
-        case 3:
-            strcpy_P(buff, str_D3);
-            resp = buff;
-            break;
-        case 4:
-            strcpy_P(buff, str_D4);
-            resp = buff;
-            break;
-        case 5:
-            strcpy_P(buff, str_D5);
-            resp = buff;
-            break;
-        case 6:
-            strcpy_P(buff, str_D6);
-            resp = buff;
+        case 2 ... 6:
+            strcpy_P(buff, str_D);
+            resp += buff;
+            resp += numpin;   // "D4"
             break;
         default:
             char err[MAX_ERROR_STRING_LENGTH];
             strcpy_P(err, str_VALUE_ERROR);
-            resp += err;
             break;
     }
     strcpy_P(buff, str_COLON);
-    resp += buff;
+    resp += buff;                // "Dx:"
 
     boolean append_cb = false;
     if ( (subtokens[1] == NULL ) || (strlen(subtokens[1]) == 0)) {  // didn't give us a long enough token, e.g. "D2:" or "D2"
@@ -1550,53 +1532,29 @@ void handle_DESC() {
 }
 
 void SL_startup_sequence() {
-    SL1_Color = RED;
-    SL2_Color = RED;
-    SL3_Color = RED;
-    handle_SLC_worker(1);
-    handle_SLC_worker(2);
-    handle_SLC_worker(3);
-    delay(1000);
-    SL1_Color = YELLOW;
-    SL2_Color = YELLOW;
-    SL3_Color = YELLOW;
-    handle_SLC_worker(1);
-    handle_SLC_worker(2);
-    handle_SLC_worker(3);
-    delay(1000);
-    SL1_Color = GREEN;
-    SL2_Color = GREEN;
-    SL3_Color = GREEN;
-    handle_SLC_worker(1);
-    handle_SLC_worker(2);
-    handle_SLC_worker(3);
-    delay(1000);
-    SL1_Color = BLACK;
-    SL2_Color = BLACK;
-    SL3_Color = BLACK;
-    handle_SLC_worker(1);
-    handle_SLC_worker(2);
-    handle_SLC_worker(3);
-    delay(1000);
+    uint32_t washcolors[4] = {RED, YELLOW, GREEN, BLACK};
+    for(unsigned long washcolor : washcolors) {
+        for(unsigned long & SL_Color : SL_Colors) {
+            SL_Color = washcolor;   // set each stacklight to our wash color
+        }
+        delay(1000);
+    }
 }
 
 void handle_SLC1() {
     handle_SLC_worker(1);
-    return;
 }
 
 void handle_SLC2(){
     handle_SLC_worker(2);
-    return;
 }
 void handle_SLC3(){
     handle_SLC_worker(3);
-    return;
 }
 
 /**
  * function: handle_SL_worker
- * sl_num:  which stack light are you controling?  1, 2, or 3
+ * sl_num:  which stack light are you controlling?  1, 2, or 3
  * appends:  hex color to output display
  * Handle Stack Light worker
  * Expects values to be in hexadecimal notation (e.g. "0x0AFF")
@@ -1606,107 +1564,206 @@ void handle_SLC_worker(uint8_t sl_num) {
     char buff[10];
     char err[MAX_ERROR_STRING_LENGTH];
     String resp("");
-    // Step 1:  Add "SLx" to response
+    // Step 1:  Add "SLCx" to response
     switch(sl_num) {
-        case 1:
-            strcpy_P(buff, str_SLC1);
+        case 1 ... kNUM_STACKLIGHTS:
+            strcpy_P(buff, str_SLC);
             resp = buff;
-            break;
-        case 2:
-            strcpy_P(buff, str_SLC2);
-            resp = buff;
-            break;
-        case 3:
-            strcpy_P(buff, str_SLC3);
-            resp = buff;
+            resp += sl_num;      // leveraging that String class.
             break;
         default:
             strcpy_P(err, str_VALUE_ERROR);
             resp += err;
             break;
     }
-    // "SLx:"
-    strcpy_P(buff, str_COLON);
+
+    strcpy_P(buff, str_COLON);   // "SLCx"  --> "SLCx:"
     resp += buff;
-    boolean append_cb = false;  // cb stands for :BIN,  Colon-BIN for adding units.
+
+    // STEP 2:  DO WE HAVE SUBTOKENS
     if ( (subtokens[1] == NULL ) || (strlen(subtokens[1]) == 0)) {  // didn't give us a long enough token, e.g. "SLC:" or "SLC"
         processing_is_ok = false;
         strcpy_P(err, str_VALUE_MISSING);
-        resp += err;
-    // Did we get a Query?   Add our color:   SLx:0xFF00FF
-    } else if (strcmp_P(subtokens[1], str_QUERY) == 0) {
-        switch(sl_num) {
-            case 1:
-                resp += C2HS(SL1_Color);  // "color 2 hex string"
-                break;
-            case 2:
-                resp += C2HS(SL2_Color);
-                break;
-            case 3:
-                resp += C2HS(SL3_Color);
-                break;
-            default:
-                strcpy_P(err, str_VALUE_ERROR);
-                resp += err;
-                break;
+        resp += err;   // then we will skip the other processing.
+    // STEP 2A:   WE GOT SUBTOKENS
+    } else {
+        //  STEP 2A   DID WE GET A QUERY?    append our color to the response:   SLCx:0xFF00FF
+        if (strcmp_P(subtokens[1], str_QUERY) == 0) {
+            switch (sl_num) {
+                case 1 ... kNUM_STACKLIGHTS:
+                    resp += C2HS(SL_Colors[sl_num - 1]);  // "color 2 hex string"
+                    break;
+                default:
+                    //we already caught this issue earlier
+                    break;
+            }
         }
-        append_cb = false;
-        // AT THIS POINT we should have a value to set, e.g. "SL1:0x33ff00" gotta convert that to a number
+        // STEP 2B  WE GOT SOME VALUE -- HOPEFULLY HEX
+        // AT THIS POINT we should have a value to set, e.g. "SLC1:0x33ff00" gotta convert that to a number
         char hexprefix[3];             // hexprefix should be: '0x'
         hexprefix[0] = subtokens[1][0];
         hexprefix[1] = subtokens[1][1];
-        hexprefix[2] = NULL;
-    } else if (strcmp_P(hexprefix, str_HEX) == 0) {     // verify we start with 0x
-        // process the write
-        // TODO:  Make a get_value_from_token(string-or-hex-string)
-        char * hexstring = &subtokens[1][2];      // from "0x00FF00" --> "00FF00"
-        //Serial.print(F("# sub st1: ")); Serial.print(hexstring); Serial.print(F("   length: ")); Serial.println(strlen(subtokens[1])) - 2);
-        // TODO: do we need to double check length?
-        // TODO
-        // TODO
-        if ( (strlen(hexstring) == I2C_Bytes * 2)) {           // st1 contains '0x', so -2 is what we want
-            uint8_t bytearraylen = (I2C_Bytes * 2) + 1;                         // +1 NULL
-            //char bytechars[bytearraylen];
-            //Serial.print(F("# bytearraylen: ")); Serial.println(bytearraylen, DEC);
-            //st1.toCharArray(bytechars, arraylen, 2);  // get a standard C-string array
-            convertHexStringToByteArray(hexstring, I2C_Data);
-            // printBytesAsDec(I2C_Data, I2C_Bytes);
+        hexprefix[2] = '\0';      // c-string terminator
+        // VERIFY WE GOT A HEX STRING....HANDLE THAT TOKEN subtoken[1] == "0xYYYYYY"
+        if (strcmp_P(hexprefix, str_HEX) == 0) {     // verify we start with 0x
+            char *hexstring = &subtokens[1][2];      // from "0x00FF00" --> "00FF00"
+            //Serial.print(F("# sub st1: ")); Serial.print(hexstring); Serial.print(F("   length: ")); Serial.println(strlen(subtokens[1])) - 2);
+            uint32_t clr;
+            clr = color_uint_from_hex_string(hexstring);
+            // convert the value we got BACK into a string and echo     "SLCx:0xFF00FF"
+            resp += C2HS(clr);
+            // But don't forget to set teh value
+            switch (sl_num) {
+                case 1 ... kNUM_STACKLIGHTS:
+                    SL_Colors[sl_num - 1] = clr;
+                    break;
+                default:
+                    //we've already caught this issue earlier
+                    break;
+            }
+        // STEP 2C:  NOT A HEX STRING...NOT SURE HOW TO PROCESS
+        } else {                // got some weird token lacking a "0x" up front...SLC1:888  we just won't handle it
+            processing_is_ok = false;
+            char err[MAX_ERROR_STRING_LENGTH];
+            strcpy_P(err, str_VALUE_ERROR);
+            resp += err;
         }
-
-    } else {                                                 // "D2:3"
-        processing_is_ok = false;
-        char err[MAX_ERROR_STRING_LENGTH];
-        strcpy_P(err, str_VALUE_ERROR);
-        resp += err;
-    }
-
-    if (append_cb) {
-        strcpy_P(buff, str_COLON);
-        resp += buff;
-        strcpy_P(buff, str_BIN);
-        resp += buff;
     }
 
     strcpy_P(buff, str_SPACE);
     resp += buff;
     output_string.concat(resp);
 }
+
+/**
+ * Stack light mode workers handlers.
+ */
 void handle_SLM1(){
     handle_SLM_worker(1);
-    return;
-}
-void handle_SLM2(){
-    handle_SLM_worker(2);
-    return;
-}
-void handle_SLM3(){
-    handle_SLM_worker(3);
-    return;
 }
 
-void handle_SLM_worker(uint8_t) {
-// TODO
+void handle_SLM2(){
+    handle_SLM_worker(2);
 }
+
+void handle_SLM3(){
+    handle_SLM_worker(3);
+}
+
+/**
+ * function:  handle_SLM_worker
+ * Handle Stack Light Mode worker.    Given input "SLMx:1"  handle the mode set ("1" in this case).
+ * See protocol def, but here is the shorthand.
+ * NOTE, if you give a funky value it may reset mode to default as we are using atoi and
+ * atoi returns 0 for letters.    Other numbers will be ignored.
+ * - **input values:**
+  - 0:  Off (Same as `SLC:0x0` but retains set color.)
+  - 1:  On, Steady State
+  - 2:  On, Pulsing.  Option subtoken for full-cycle blink rate in ms.
+  - 3:  On, Flashing.  Optional subtoken for full-cycle blink rate in ms.
+  SLM1:3:500  would set stack light #1 to flashing mode with a 500ms full cycle blink rate.
+ */
+void handle_SLM_worker(uint8_t sl_num) {
+    char buff[10];
+    char err[MAX_ERROR_STRING_LENGTH];
+    String resp("");
+    // Step 1:  Add "SLMx" to response
+    switch (sl_num) {
+        case 1 ... kNUM_STACKLIGHTS:
+            strcpy_P(buff, str_SLM);
+            resp = buff;
+            resp += sl_num;   // leverage the Arduino String class
+            break;
+        default:
+            strcpy_P(err, str_VALUE_ERROR);
+            resp += err;
+            break;
+    }
+
+    strcpy_P(buff, str_COLON);    // "SLMx"  --> "SLMx:"
+    resp += buff;
+
+    // STEP 2:  DO WE HAVE SUBTOKENS
+    if ((subtokens[1] == NULL) ||
+        (strlen(subtokens[1]) == 0)) {  // didn't give us a long enough token, e.g. "SLM:" or "SLM"
+        processing_is_ok = false;
+        strcpy_P(err, str_VALUE_MISSING);
+        resp += err;   // then we will skip the other processing.
+        // STEP 2A:   WE GOT SUBTOKENS
+    } else {
+        //  STEP 2A   DID WE GET A QUERY?    append our mode to the response:   SLMx:1
+        if (strcmp_P(subtokens[1], str_QUERY) == 0) {
+            switch (sl_num) {
+                case 1 ... kNUM_STACKLIGHTS:
+                    resp += SL_Modes[sl_num - 1];  // "color 2 hex string"
+                    strcpy_P(buff, str_COLON);
+                    resp += buff;
+                    resp += SL_Cycles_ms[sl_num - 1];
+                    break;
+                default:
+                    //we already caught this issue earlier
+                    break;
+            }
+        }
+        // STEP 2B  WE GOT SOME VALUE, HOPEFULLY IN OUR RANGE
+        // AT THIS POINT we should have a value to set, e.g. "SLM1:2" gotta convert 2nd token to a number
+        // NOTE that atoi returns 0 for just about any non-number
+        int mode = atoi(subtokens[1]);
+        switch (mode) {
+            case MODE_DEFAULT:
+            case MODE_FLASH:
+            case MODE_PULSE:
+                resp += mode;    // append our result: "SLM1:3" -> "SLM1:3" but "SLM1:FUN" -> "SLM1:0" due to atoi
+                //set # to mode, return string
+                switch (sl_num) {
+                    case 1 ... kNUM_STACKLIGHTS:
+                        SL_Modes[sl_num - 1] = mode;
+                        break;
+                    default:
+                        //we caught this earlier
+                        break;
+                }
+                break;
+            default:   // NOTE ONE OF OUR DEFINED MODES
+                strcpy_P(err, str_VALUE_ERROR);
+                resp += err;
+                break;
+        }
+    }
+    // STEP 3:  Check if we were given an OPTIONAL pulse rate and round up or down to our acceptable range.
+    if ((subtokens[2] != NULL) && (strlen(subtokens[2]) != 0)) {
+        // update
+        int cycle = atoi(subtokens[2]);
+        // The following must fully verify cycle
+        if (cycle == 0) {
+            // do nothing
+            strcpy_P(err, str_VALUE_ERROR);
+            resp += err;
+        } else if (cycle < kMIN_CYCLE_TIME) {
+            cycle = 100;
+            resp += cycle;
+        } else if (cycle > kMAX_CYCLE_TIME) {
+            cycle = 5000;
+            resp += cycle;
+        }
+        // NOW SET IT
+        if (cycle != 0) {
+            switch (sl_num) {
+                case 1 ... kNUM_STACKLIGHTS:
+                    SL_Cycles_ms[sl_num - 1] = cycle;
+                    break;
+                default:
+                    //we caught this earlier
+                    break;
+            }
+        }
+    }
+    // STEP 4....we are done!
+    strcpy_P(buff, str_SPACE);
+    resp += buff;
+    output_string.concat(resp);
+}
+
 
 /**
  * function:  handle_SLA
@@ -1738,7 +1795,7 @@ void handle_SLA() {
         digitalWrite(SLA_PIN, LOW);
         resp += digitalRead(SLA_PIN);
         append_cb = true;
-    } else {                                                 // "D2:3"
+    } else {                              // "SLA:238"  Got some weird second token other than 1 or 0
         processing_is_ok = false;
         char err[MAX_ERROR_STRING_LENGTH];
         strcpy_P(err, str_VALUE_ERROR);
@@ -1848,7 +1905,7 @@ void handle_I2W() {
     char hexprefix[3];             // should be: '0x'
     hexprefix[0] = subtokens[1][0];
     hexprefix[1] = subtokens[1][1];
-    hexprefix[2] = NULL;
+    hexprefix[2] = '\0';
 
     if ( (subtokens[1] == NULL ) || (strlen(subtokens[1]) == 0)) {  // didn't give us a long enough token
         processing_is_ok = false;
@@ -1923,7 +1980,7 @@ void handle_I2R() {
     char hexprefix[3];             // should be: '0x'
     hexprefix[0] = subtokens[1][0];
     hexprefix[1] = subtokens[1][1];
-    hexprefix[2] = NULL;
+    hexprefix[2] = '\0';
 
     if ( (subtokens[1] == NULL ) || (strlen(subtokens[1]) == 0)) {  // didn't give us a long enough token
         processing_is_ok = false;
@@ -2125,7 +2182,7 @@ void printString_P( const char str[]) {
     }
 }
 
-void printSerialInputInstructions( void ) {
+void printSerialInputInstructions( ) {
     char * buff[10];
     Serial.println(F("#"));
     Serial.println(F("#--------------------------------------------------"));
@@ -2286,8 +2343,7 @@ void convertByteArrayToHexString( byte* src, uint8_t numbytes, char* target ) {
         target[t] = clower;
         t++;
     }
-    target[t] = NULL;
-    return;
+    target[t] = '\0';
 }
 
 
@@ -2305,6 +2361,7 @@ byte getHexNibbleFromChar(char c) {
     if ((c >= 'a') && (c <= 'f')) {
         return (byte)(c - 'a' + 10);
     }
+    return (byte) 0;
 }
 
 // get the character from the 4-bit 0x0000xxxx
@@ -2314,7 +2371,7 @@ char getCharFromHexNibble(uint8_t b) {
         return (char)(b + '0');
     } else {
         return (char)(b - 10 + 'A');
-    };
+    }
 }
 
 
@@ -2376,10 +2433,12 @@ char *color_uint_to_hex_string(unsigned x, char *dest, size_t size) {
  * @param s   your c-string.   "0x0f"  "0f"  "0F"  all accepted
  * @return
  */
-uint32_t uint32_from_hex_string(char * s){
+uint32_t color_uint_from_hex_string(char * s){
+    long temp;
     uint32_t i;
-    sscanf(s, "%x", &i);
-    return i
+    sscanf(s, "%x", &temp);
+    i = 0xFFFFFF & temp;   // slam down ot 24bits
+    return i;
 }
 
 #pragma mark I2C Helpers
@@ -2397,7 +2456,7 @@ static inline void wiresend(uint8_t x) {
 #endif
 }
 
-static inline uint8_t wirereceive(void) {
+static inline uint8_t wirereceive() {
 #if ARDUINO >= 100
     return Wire.read();
 #else
@@ -2408,7 +2467,7 @@ static inline uint8_t wirereceive(void) {
 
 /*
  * function: perform_I2C_write
- * Given all the I2C settings (I2A, I2B, I2S, data) perorm
+ * Given all the I2C settings (I2A, I2B, I2S, data) perform
  * an I2C write.
  */
 void perform_I2C_write() {
@@ -2507,16 +2566,13 @@ void checkRAM() {
     output_string.concat(resp);
 }
 
-
-
 //Endpoint for program (really for debugging)
-void gotoEndLoop( void ) {
+void gotoEndLoop( ) {
     Serial.println(F("--->END<---"));
     while (1) {
         //delay(1);
     }
 }
-
 
 /**
  * Extremely useful method for checking AVR RAM status.  I've used it extensively and trust it!
@@ -2529,3 +2585,5 @@ int freeRam () {
     return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
 }
 
+
+#pragma clang diagnostic pop
