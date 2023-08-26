@@ -826,8 +826,29 @@ String output_string = "";                 // might as well use the helper libra
 #define VIOLET 0xFF00FF
 #define WHITE  0xFFFFFF
 #define BLACK  0x000000
+
 // STACK LIGHT CONTROLLER supporting variables
+class StackLight {
+public:                         // Access specifier
+    uint32_t color {BLACK};         // default 0 value
+    uint8_t mode {MODE_DEFAULT};    // solid state
+    uint16_t cycle_ms {500};        // 500 ms full cycle time
+    unsigned update_time {0};       // immediate
+    bool flash_is_on {true};
+    bool pulse_going_up {true};
+    void change_mode(uint8_t newmode) {
+        // handle mode switches.  Where we want to keep the color on even when flash/pulse has changed
+        return;
+    }
+};
+
+
+// TODO:   Really should put stack light variables together in a struct or a class
+// TODO:   Then we should be able to put all those structs together in an array
+// TODO:   This would make for easier iteraiton.
 #define kNUM_STACKLIGHTS 3
+StackLight stack_lights[kNUM_STACKLIGHTS];   // our array of classes.
+
 uint32_t SL_Colors[kNUM_STACKLIGHTS]    = {0, 0, 0};
 uint8_t SL_Modes[kNUM_STACKLIGHTS]      = {0, 0, 0};
 uint16_t SL_Cycles_ms[kNUM_STACKLIGHTS] = {500, 500, 500};
@@ -942,7 +963,7 @@ void setup() {
 
 /***************************************************
  ***************************************************
- *   MAIN LOOP 
+ *   MAIN LOOP -- Arduino style
  ***************************************************
  ***************************************************/
 void loop() {
@@ -979,6 +1000,30 @@ void blinky_worker() {
         last_blink_change = millis();
     }
 }
+
+
+void stack_light_flash_worker() {
+    unsigned long current_time = millis();
+
+    // for each stack light, if flash is set, see if it is time to toggle.
+    for (int i=0; i < kNUM_STACKLIGHTS; i++) {
+        if (SL_Modes[i] == MODE_FLASH) {
+            // check to reee if it is time to toggle state
+            // toggle state.
+        }
+    }
+
+    //for(uint8_t & SL_Mode : SL_Modes) {
+
+    if (current_time - blink_start > blink_time) {
+        digitalWrite(LED_PIN, LOW);
+        is_blinking = false;
+    } else if (current_time - last_blink_change > blink_toggle_time_ms) {
+        digitalWrite(LED_PIN, !digitalRead(LED_PIN));
+        last_blink_change = millis();
+    }
+}
+
 
 
 
@@ -1304,7 +1349,7 @@ void handle_A_worker(uint8_t numA) {
         strcpy_P(err, str_VALUE_MISSING);
         resp += err;
     } else if (strcmp_P(subtokens[1], str_QUERY) == 0) {
-        resp += val;                  // Arduino String allows concat of an int, but must be on it's own line
+        resp += val;                  // Arduino String allows concat of an int, but must be on its own line
         strcpy_P(buff, str_COLON);
         resp += buff;
         strcpy_P(buff, str_ARB);
@@ -1624,9 +1669,9 @@ void handle_SLC_worker(uint8_t sl_num) {
         // STEP 2C:  NOT A HEX STRING...NOT SURE HOW TO PROCESS
         } else {                // got some weird token lacking a "0x" up front...SLC1:888  we just won't handle it
             processing_is_ok = false;
-            char err[MAX_ERROR_STRING_LENGTH];
-            strcpy_P(err, str_VALUE_ERROR);
-            resp += err;
+            char valerr[MAX_ERROR_STRING_LENGTH];
+            strcpy_P(valerr, str_VALUE_ERROR);
+            resp += valerr;
         }
     }
 
@@ -1717,7 +1762,11 @@ void handle_SLM_worker(uint8_t sl_num) {
                 //set # to mode, return string
                 switch (sl_num) {
                     case 1 ... kNUM_STACKLIGHTS:
+                        // TODO:  --> control state change.
                         SL_Modes[sl_num - 1] = mode;
+                        // TODO:  If we are switching from Pulse or Flash -> Normal we need to set enable.
+
+
                         break;
                     default:
                         //we caught this earlier
@@ -1924,7 +1973,7 @@ void handle_I2W() {
         resp += datastr;
 
     } else if (strcmp_P(hexprefix, str_HEX) == 0) {                      // verify we start with 0x
-        // process the write
+        // process the command value
         char * hexstring = &subtokens[1][2];
         //Serial.print(F("# sub st1: ")); Serial.print(hexstring); Serial.print(F("   length: ")); Serial.println(strlen(subtokens[1])) - 2);
         if ( (strlen(hexstring) == I2C_Bytes * 2)) {                 // st1 contains '0x', so -2 is what we want
@@ -2175,10 +2224,10 @@ void serialPrintHeaderString() {
 }
 
 void printString_P( const char str[]) {
-    char c;
+    char ch;
     if(!str) return;
-    while( (c = pgm_read_byte(str++))) {
-        Serial.print(c);
+    while( (ch = pgm_read_byte(str++))) {
+        Serial.print(ch);
     }
 }
 
@@ -2351,15 +2400,15 @@ void convertByteArrayToHexString( byte* src, uint8_t numbytes, char* target ) {
 
 // get the 4 bit nibble 0x0000xxxx from a character
 // representing a hexadecimal number
-byte getHexNibbleFromChar(char c) {
-    if ((c >= '0') && (c <= '9')) {
-        return (byte)(c - '0');
+byte getHexNibbleFromChar(char ch) {
+    if ((ch >= '0') && (ch <= '9')) {
+        return (byte)(ch - '0');
     }
-    if ((c >= 'A') && (c <= 'F')){
-        return (byte)(c - 'A' + 10);
+    if ((ch >= 'A') && (ch <= 'F')){
+        return (byte)(ch - 'A' + 10);
     }
-    if ((c >= 'a') && (c <= 'f')) {
-        return (byte)(c - 'a' + 10);
+    if ((ch >= 'a') && (ch <= 'f')) {
+        return (byte)(ch - 'a' + 10);
     }
     return (byte) 0;
 }
@@ -2434,7 +2483,7 @@ char *color_uint_to_hex_string(unsigned x, char *dest, size_t size) {
  * @return
  */
 uint32_t color_uint_from_hex_string(char * s){
-    long temp;
+    unsigned int temp;
     uint32_t i;
     sscanf(s, "%x", &temp);
     i = 0xFFFFFF & temp;   // slam down ot 24bits
@@ -2447,7 +2496,7 @@ uint32_t color_uint_from_hex_string(char * s){
  *   RAM Helpers
  ***************************************************
  ***************************************************/
-// minihelper, thank you Adafruit for this trinket
+// minihelper, thank you, Adafruit for this trinket
 static inline void wiresend(uint8_t x) {
 #if ARDUINO >= 100
     Wire.write((uint8_t)x);
