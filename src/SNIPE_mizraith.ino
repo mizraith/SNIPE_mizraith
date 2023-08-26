@@ -34,14 +34,20 @@ _Changes in 4.0:  Added Stack light commands_.
 #pragma clang diagnostic ignored "-Wunknown-attributes"
 #pragma mark INCLUDES
 #include <limits.h>
-
 #include <Arduino.h>    // we make good use of String() class
 #include <avr/pgmspace.h>
 #include <EEPROM.h>
 // Uses SCL and SDA pins
 #include <Wire.h>
-// included for the datetime class.  Wire.h makes the RTCLib happy.
+// DOWNLOAD on github.com/mizraith  included for the datetime class.  Wire.h makes the RTCLib happy.
 #include"mizraith_DateTime.h"   
+
+// PROJECT LIBRARIES
+#include "SNIPE_ExponentialDecay.h"
+#include "SNIPE_Strings.h"
+#include "SNIPE_ColorUtilities.h"
+#include "SNIPE_GeneralUtilities.h"
+#include "SNIPE_Conversions.h"
 
 #pragma mark DEBUG MODE
 // CLion devs edit in CMakeLists.txt and leave below commented out
@@ -111,6 +117,7 @@ void handle_TID();
 void handle_VER();
 void handle_DESC();
 void SL_startup_sequence();
+void SL_update();
 void handle_SLC1();
 void handle_SLC2();
 void handle_SLC3();
@@ -133,8 +140,6 @@ void printString_P(const char *);
 void printSerialInputInstructions();
 void printSerialDataStart();
 // EEPROM HELPERS
-uint8_t isVirginEEPROM();
-void initEEPROM(int, uint8_t);
 void readSIDFromEEPROM();
 void writeSIDToEEPROM();
 // LOW LEVEL HELPERS
@@ -147,16 +152,11 @@ char *unsigned_to_hex_string(unsigned x, char *dest, size_t size);
 char *color_uint_to_hex_string(unsigned x, char *dest, size_t size);
 uint32_t color_uint_from_hex_string(char * s);
 // I2C HELPERS
-static inline void wiresend(uint8_t);
-static inline uint8_t wirereceive();
 void perform_I2C_write();
 int perform_I2C_write_error();
 void perform_I2C_read();
 // RAM HELPERS
-void checkRAMandExitIfLow(uint8_t);
-void checkRAM();
-int freeRam();
-void gotoEndLoop();
+
 
 #pragma mark Application Globals
 const DateTime COMPILED_ON = DateTime(__DATE__, __TIME__);
@@ -176,7 +176,6 @@ const String DESCRIPTION = "SNIPE_for_Arduino";
 #define C2HS(x) color_uint_to_hex_string((x), (char[UNS_HEX_STR_SIZE]) {0}, UNS_HEX_STR_SIZE)
 
 
-
 #pragma mark Pinouts
 // PIN OUTS
 #define ANALOG_INPUT   A0
@@ -187,99 +186,6 @@ const String DESCRIPTION = "SNIPE_for_Arduino";
 #define SL3_PIN        9
 #define SLA_PIN      A6
 //#define NUMPIXELS      8   // number of pixels per stacklight.  Nominal 24.
-
-
-#pragma mark Constants
-// CONSTANT CHARS
-const char char_CMD = '>';              // expected at start of command, we compare to character
-const char char_CR  = '\r';
-const char char_LF  = '\n';
-
-// CONSTANT STRINGS
-// 1 character commands & identifiers
-const char str_QUERY [] PROGMEM = "?";    // value query input argument
-const char str_ON    [] PROGMEM = "1";    // binary input argument
-const char str_OFF   [] PROGMEM = "0";    // binary input argument
-//const char str_CMD   [] PROGMEM = ">";    // expected at start of command
-const char str_RESP  [] PROGMEM = "@";    // normal response follows
-const char str_ERR   [] PROGMEM = "!";    // error response follows
-//const char str_CMT   [] PROGMEM = "#";    // comment line follows
-const char str_COLON [] PROGMEM = ":";    // sub-token splits on colon
-const char str_SPACE [] PROGMEM = " ";    // tokens split on space
-const char str_COMMA [] PROGMEM = ",";
-
-
-// 2 character commands & identifiers
-const char str_A    [] PROGMEM = "A";
-const char str_A0   [] PROGMEM = "A0";
-const char str_A1   [] PROGMEM = "A1";
-const char str_A2   [] PROGMEM = "A2";
-const char str_A3   [] PROGMEM = "A3";
-const char str_D    [] PROGMEM = "D";
-const char str_D2   [] PROGMEM = "D2";
-const char str_D3   [] PROGMEM = "D3";
-const char str_D4   [] PROGMEM = "D4";
-const char str_D5   [] PROGMEM = "D5";
-const char str_D6   [] PROGMEM = "D6";
-//const char str_D7   [] PROGMEM = "D7";
-//const char str_D8   [] PROGMEM = "D8";
-//const char str_D9   [] PROGMEM = "D9";
-const char str_HEX  [] PROGMEM = "0x";   // when hex...
-
-// 3 character commands & identifiers
-const char str_SID  [] PROGMEM = "SID";     // Station ID
-const char str_TID  [] PROGMEM = "TID";     // Transaction ID
-const char str_VER  [] PROGMEM = "VER";     // Version
-const char str_ARB  [] PROGMEM = "ARB";     // ARB units
-const char str_BIN  [] PROGMEM = "BIN";     // BIN units
-const char str_SLC  [] PROGMEM = "SLC";     // Stack Light Color
-const char str_SLC1  [] PROGMEM = "SLC1";     // Stack Light Color
-const char str_SLC2  [] PROGMEM = "SLC2";     // Stack Light Color
-const char str_SLC3  [] PROGMEM = "SLC3";     // Stack Light Color
-const char str_SLM  [] PROGMEM = "SLM";     // Stack Light Mode
-const char str_SLM1  [] PROGMEM = "SLM1";     // Stack Light Mode
-const char str_SLM2  [] PROGMEM = "SLM2";     // Stack Light Mode
-const char str_SLM3  [] PROGMEM = "SLM3";     // Stack Light Mode
-const char str_SLA  [] PROGMEM = "SLA";     // Stack Light Alarm
-const char str_I2A  [] PROGMEM = "I2A";     // I2C target chip address
-const char str_I2S  [] PROGMEM = "I2S";     // I2C target setting
-const char str_I2B  [] PROGMEM = "I2B";     // I2C target byte count
-const char str_I2W  [] PROGMEM = "I2W";     // I2C Write command
-const char str_I2R  [] PROGMEM = "I2R";     // I2C Read command
-const char str_I2F  [] PROGMEM = "I2F";     // I2C Find devices on the bus
-const char str_RAM  [] PROGMEM = "RAM";     // Checks free RAM
-// 4 character commands & identifiers
-const char str_DESC     [] PROGMEM =    "DESC";     // Description identifier/command
-// 5 character commands & identifiers
-const char str_BLINK    [] PROGMEM =    "BLINK";    //blink command
-
-// ERROR STRINGS
-const int  MAX_ERROR_STRING_LENGTH         =    20;
-const char str_VALUE_MISSING    [] PROGMEM =    "VALUE_MISSING";
-const char str_VALUE_ERROR      [] PROGMEM =    "VALUE_ERROR";
-const char str_Q_REQUIRED       [] PROGMEM =    "?_MISSING";
-const char str_ERR_SID_TOO_LONG [] PROGMEM =    "SID_>_30";
-const char str_OUT_OF_RANGE     [] PROGMEM =    "OUT_OF_RANGE";
-const char str_BYTE_SETTING_ERR [] PROGMEM =    "BYTE_SETTING_ERR";      //16 chars longest message
-const char str_NONE_FOUND       [] PROGMEM =    "NONE_FOUND";
-const char str_DATA_LENGTH_ERR  [] PROGMEM =    "DATA_LENGTH_ERR";
-//const char str_SIDFUN           [] PROGMEM =    "SID";
-//char * const str_SIDFUN PROGMEM = "SID";                // this format does NOT work!
-
-// color and mode constant strings
-//const char str_RED              [] PROGMEM =    "RED";
-//const char str_ORANGE           [] PROGMEM =    "ORANGE";
-//const char str_YELLOW           [] PROGMEM =    "YELLOW";
-//const char str_GREEN            [] PROGMEM =    "GREEN";
-//const char str_AQUA             [] PROGMEM =    "AQUA";
-//const char str_BLUE             [] PROGMEM =    "BLUE";
-//const char str_INDIGO           [] PROGMEM =    "INDIGO";
-//const char str_VIOLET           [] PROGMEM =    "VIOLET";
-//const char str_WHITE            [] PROGMEM =    "WHITE";
-//const char str_BLACK            [] PROGMEM =    "BLACK";
-//const char str_DEFAULT          [] PROGMEM =    "DEFAULT";
-//const char str_FLASH            [] PROGMEM =    "FLASH";
-//const char str_PULSE            [] PROGMEM =    "PULSE";
 
 // min and max full cycle time for our flash or pulse modes.
 #define kMIN_CYCLE_TIME 100
@@ -366,8 +272,8 @@ StackLight stack_lights[kNUM_STACKLIGHTS];   // our array of classes.
 //uint8_t SLA_Value = 0;
 // TODO:  Probably need to array these also
 unsigned long SL_loop_time = 0;
-unsigned long SL_next_heartbeat = 0;
-
+unsigned long SL_next_heartbeat = 0;        //  Timer for our next refresh
+#define kHEARTBEAT_INTVL_ms 50
 
 #pragma mark I2C Variables
 // Variables for I2C
@@ -455,7 +361,7 @@ void setup() {
     printSerialInputInstructions();
     printSerialDataStart();
     SL_loop_time = millis();
-    SL_next_heartbeat = millis();
+    SL_next_heartbeat = millis();    // Set to now
 
     for(StackLight light : stack_lights) {
         light.color = 0;
@@ -482,6 +388,12 @@ void loop() {
     A_values[1] = analogRead(A1);
     A_values[2] = analogRead(A2);
     A_values[3] = analogRead(A3);
+
+    // TODO:  PICKUP HERE.......................
+    if (millis() > SL_next_heartbeat) {
+        SL_next_heartbeat = millis() + kHEARTBEAT_INTVL_ms;
+        SL_update();
+    }
 
     // TODO:  Need to update the LED strip every 50ms perhaps.
     // TODO:  How to handle flash and strobe.
@@ -1098,6 +1010,16 @@ void SL_startup_sequence() {
         delay(100);
     }
 }
+
+void SL_update() {
+    uint8_t numactive;
+
+    for(StackLight light : stack_lights) {
+        numactive = int((float)light.numpixels * ((float)light.perc_lit / 100));
+        brightness = calc_step_brightness(&light);
+    }
+}
+
 
 
 void handle_SLC1() {
@@ -1800,37 +1722,6 @@ void printSerialDataStart() {
  *   EEPROM HELPERS
  ***************************************************
  ***************************************************/
-// Virgin AVR EEPROM start at 0xFF, which can
-// make a mess of string checking.
-// This method is intended to be called during setup
-// to see if an EEPROM blank is required.  This
-// method basically loops through the first 10
-// addresses in EEPROM and if they all equal 0xFF
-// it will return 1 (true).  If not virgin, returns 0 (false).
-uint8_t isVirginEEPROM() {
-    uint8_t result = 1;
-    uint8_t val = 0xFF;
-    Serial.print(F("# Setup: Checking EEPROM:"));
-    for( int i=0; i < 10; i++) {
-        val = EEPROM.read(i);
-        if (val != 0xFF) {
-            Serial.println(F(" NOT a virgin EEPROM"));
-            return 0;
-        }
-    }
-    Serial.println(F(" IS a virgin EEPROM"));
-    return 1;
-}
-
-// I prefer my EEPROMS init to 0
-// pass in numbytes (for atmega328p should be 1024)
-void initEEPROM(int numbytes, uint8_t initvalue) {
-    for (int i=0; i < numbytes; i++) {
-        EEPROM.write(i, initvalue);
-    }
-}
-
-
 void readSIDFromEEPROM( ) {
     for (int i=0; i < SID_MAX_LENGTH-1; i++) {
         SID[i] = EEPROM.read(i + SID_EEPROM_START_ADDRESS);
@@ -1937,7 +1828,6 @@ char getCharFromHexNibble(uint8_t b) {
     }
 }
 
-
 void printBytesAsDec(uint8_t *data, uint8_t len) {
     Serial.print(F("# ByteArrayAsDec: "));
     for(uint8_t i=0; i<len; i++) {
@@ -2007,27 +1897,9 @@ uint32_t color_uint_from_hex_string(char * s){
 #pragma mark I2C Helpers
 /***************************************************
  ***************************************************
- *   RAM Helpers
+ *   WIRE Helpers
  ***************************************************
  ***************************************************/
-// mini-helper, thank you, Adafruit for this trinket
-static inline void wiresend(uint8_t x) {
-#if ARDUINO >= 100
-    Wire.write((uint8_t)x);
-#else
-    Wire.send(x);
-#endif
-}
-
-static inline uint8_t wirereceive() {
-#if ARDUINO >= 100
-    return Wire.read();
-#else
-    return Wire.receive();
-#endif
-}
-
-
 /*
  * function: perform_I2C_write
  * Given all the I2C settings (I2A, I2B, I2S, data) perform
@@ -2084,23 +1956,6 @@ void perform_I2C_read() {
  ***************************************************
  ***************************************************/
 
-void checkRAMandExitIfLow( uint8_t checkpointnum ) {
-    int x = freeRam();
-    if (x < 128) {
-        Serial.print(F("!!! WARNING LOW SRAM !! FREE RAM at checkpoint "));
-        Serial.print(checkpointnum, DEC);
-        Serial.print(F(" is: "));
-        Serial.println(x, DEC);
-        Serial.println();
-        gotoEndLoop();
-    } else {
-        Serial.print(F("# FREE RAM, at checkpoint "));
-        Serial.print(checkpointnum, DEC);
-        Serial.print(F(" is: "));
-        Serial.println(x, DEC);
-    }
-}
-
 void checkRAM() {
     char buff[10];
     String resp("");
@@ -2129,24 +1984,7 @@ void checkRAM() {
     output_string.concat(resp);
 }
 
-//Endpoint for program (really for debugging)
-void gotoEndLoop( ) {
-    Serial.println(F("--->END<---"));
-    while (1) {
-        //delay(1);
-    }
-}
 
-/**
- * Extremely useful method for checking AVR RAM status.  I've used it extensively and trust it!
- * see: http://playground.arduino.cc/Code/AvailableMemory
- * and source:  http://www.controllerprojects.com/2011/05/23/determining-sram-usage-on-arduino/
- */
-int freeRam () {
-    extern int __heap_start, *__brkval;
-    int v;
-    return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
-}
 
 
 #pragma clang diagnostic pop
