@@ -193,6 +193,7 @@ String output_string = "";                 // might as well use the helper libra
 #define MODE_DEFAULT 0
 #define MODE_FLASH   1
 #define MODE_PULSE   2
+#define kMAX_MODE_NUM 3
 //#define MODE_CYLON_RING  3
 // text based colors ... would be cool tos support
 #define RED  0xFF0000
@@ -224,18 +225,75 @@ Adafruit_NeoPixel SL3_strip = Adafruit_NeoPixel(8, SL3_PIN, NEO_GRB + NEO_KHZ800
 class StackLight {
 public:                         // Access specifier
     uint32_t color {BLACK};         // default 0 value
+    uint32_t current_color {BLACK}; // currently working color
     uint8_t mode {MODE_DEFAULT};    // solid state
     uint16_t cycle_ms {500};        // 500 ms full cycle time
-    unsigned update_time {0};       // immediate
+    unsigned long update_time {0};       // immediate
     bool flash_is_on {true};
     bool pulse_going_up {true};
     uint8_t numpixels {8};         // how many pixes in this stack light
     uint8_t perc_lit {100};         // single digit, no floats please
     Adafruit_NeoPixel * strip;
+    bool mode_did_change {false};
     void change_mode(uint8_t new_mode) {
+        // At this point, new_mode is already vetted against the appropriate values.
         // handle mode switches.  Where we want to keep the color on even when flash/pulse has changed
+        if (new_mode != mode) {
+            mode_did_change = true;
+            mode = new_mode;
+            update_time = millis();
+        }
         return;
     }
+
+    void update_pulse_color() {
+        // calculate and put result in current color
+        if (mode_did_change){
+            mode_did_change = false;
+            pulse_going_up = false;
+            current_color = color;
+        }
+        else if (millis() < update_time) {    // not a flip, how much longer until we do?
+            // TODO: calculate a dim step
+            // TODO: set current color
+            return;
+        }
+        else if (millis() > update_time) {    // flip
+            pulse_going_up = !pulse_going_up;
+            if (pulse_going_up) {
+                current_color = BLACK;
+            } else {
+                current_color = color;
+            }
+            update_time = millis() + (unsigned long)(cycle_ms / 2);
+        }
+        return;
+    }
+
+    void update_flash_color() {
+        // calculate and put result in current color
+        if (mode_did_change){
+            mode_did_change = false;
+            flash_is_on = true;
+            current_color = color;
+        }
+        else if (millis() > update_time) {    // change state
+            if (flash_is_on) {
+                flash_is_on = false;
+                current_color = BLACK;
+            } else {
+                flash_is_on = true;
+                current_color = color;
+            }
+        }
+        else if (millis() < update_time) {    // nothing has changed.  current_color is still valid.
+            return;
+        }
+        update_time = millis() + (unsigned long)(cycle_ms / 2);  // changed mode or state
+        return;
+    }
+
+
 //    void init_strip() {
 //        strip = new(Adafruit_NeoPixel(numpixels, SL1_PIN, NEO_GRB + NEO_KHZ800));
 //    }
@@ -362,7 +420,6 @@ void loop() {
     A_values[2] = analogRead(A2);
     A_values[3] = analogRead(A3);
 
-    // TODO:  PICKUP HERE.......................
     if (millis() > SL_next_heartbeat) {
         SL_next_heartbeat = millis() + kHEARTBEAT_INTVL_ms;
         SL_update();
@@ -982,12 +1039,32 @@ void SL_startup_sequence() {
 }
 
 void SL_update() {
-    // TODO:  How to handle flash and strobe.
+    // Go through each stack light.
+    //
+    // 1) Calculate number active
+    // 2) Handle Next Strobe Step and/or mode change
+    // 3) Handle Next Flash Step  and/or mode change
+    // 4)
     uint8_t numactive;
 
     for(StackLight light : stack_lights) {
         numactive = int((float)light.numpixels * ((float)light.perc_lit / 100));
-        brightness = calc_step_brightness(&light);
+        numactive = min(numactive, light.numpixels);   // make sure our math doesn't overshoot.
+        if (light.mode == MODE_FLASH) {
+            light.update_flash_color();
+        }
+        if (light.mode == MODE_PULSE) {
+            light.update_pulse_color();
+        }
+        // At this point, current_color holds the calculated value.
+        // Do the actual work
+        for(uint16_t i=0; i < numactive; i++) {
+            light.strip->setPixelColor(i, light.current_color);
+        }
+        for(uint16_t i=numactive; i < light.numpixels; i++) {
+            light.strip->setPixelColor(i, BLACK);
+        }
+        light.strip->show();
     }
 }
 
@@ -1068,6 +1145,7 @@ void handle_SLC_worker(uint8_t sl_num) {
             switch (sl_num) {
                 case 1 ... kNUM_STACKLIGHTS:
                     stack_lights[sl_num - 1].color = clr;
+                    stack_lights[sl_num - 1].current_color = clr;
                     break;
                 default:
                     //we've already caught this issue earlier
@@ -1119,6 +1197,8 @@ void handle_SLM_worker(uint8_t sl_num) {
     char buff[10];
     char err[MAX_ERROR_STRING_LENGTH];
     String resp("");
+    uint8_t prior_mode;
+
     // Step 1:  Add "SLMx" to response
     switch (sl_num) {
         case 1 ... kNUM_STACKLIGHTS:
@@ -1169,10 +1249,7 @@ void handle_SLM_worker(uint8_t sl_num) {
                 //set # to mode, return string
                 switch (sl_num) {
                     case 1 ... kNUM_STACKLIGHTS:
-                        // TODO:  --> control state change.
-                        stack_lights[sl_num - 1].mode = mode;
-                        // TODO:  If we are switching from Pulse or Flash -> Normal we need to set enable.
-
+                        stack_lights[sl_num - 1].change_mode( mode );  // sets a flag...
                         break;
                     default:
                         //we caught this earlier

@@ -42,15 +42,5 @@ void get4CharTimeStringFromSeconds(char *buffstr, uint8_t time);
 void get5CharTimeStringFromSeconds(char *buffstr, uint16_t time);
 
 
-# pragma mark Color Math
-uint8_t addmod8( uint8_t a, uint8_t b, uint8_t m);
-
-// High speed saturating add and subtract routines (from FastLED library)
-uint8_t qadd8( uint8_t i, uint8_t j);
-uint8_t qsub8( uint8_t i, uint8_t j);
-uint8_t qavg8( uint8_t i, uint8_t j);
-
-int8_t qabs8( int8_t i);
-int8_t getAbs(int8_t n);
 
 #endif
