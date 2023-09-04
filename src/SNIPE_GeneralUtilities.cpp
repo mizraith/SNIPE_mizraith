@@ -7,10 +7,46 @@
 
 #include "SNIPE_GeneralUtilities.h"
 
-#include <Arduino.h>    // we make good use of String() class
+#if ARDUINO >= 100
+#include "Arduino.h"
+#else
+#include "WProgram.h"
+#endif
 #include <avr/pgmspace.h>
 #include <EEPROM.h>
 #include "SNIPE_Strings.h"
+#include <Wire.h>
+#include <avr/pgmspace.h>
+
+
+void printString_P( const char str[]) {
+    char ch;
+    if(!str) return;
+    while( (ch = pgm_read_byte(str++))) {
+        Serial.print(ch);
+    }
+}
+
+
+
+// minihelper
+static inline void wiresend(uint8_t x) {
+#if ARDUINO >= 100
+    Wire.write((uint8_t)x);
+#else
+    Wire.send(x);
+#endif
+}
+
+static inline uint8_t wirerecv(void) {
+#if ARDUINO >= 100
+    return Wire.read();
+#else
+    return Wire.receive();
+#endif
+}
+
+
 
 /***************************************************
  ***************************************************

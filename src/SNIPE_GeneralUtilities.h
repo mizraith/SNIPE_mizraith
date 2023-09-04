@@ -9,36 +9,22 @@
 
 #include <Arduino.h>
 
-// RAM HELPERS
+# pragma mark P String Utils
+void printString_P(const char *);
+
+# pragma mark RAM Utils
 int freeRam();
 void checkRAMandExitIfLow(uint8_t);
 void gotoEndLoop();
 void checkRAM();
 
-// EEPROM
+# pragma mark EEPROM Utils
 uint8_t isVirginEEPROM();
 void initEEPROM(int, uint8_t);
 
-// I2C / WIRE HELPERS
+# pragma mark I2C / Wire Helpers
 static inline void wiresend(uint8_t);
 static inline uint8_t wirereceive();
 
-// CONVERSIONS
-void get2CharStringFrom8BitNumber(char *buffstr, const char *padding, uint8_t value);
-void get3CharStringFrom8BitNumber(char *buffstr, const char *padding, uint8_t value);
-void get4CharStringFrom8BitNumber(char *buffstr, const char *padding, uint8_t value);
-void get5CharStringFromNumber(char *buffstr, const char *padding, uint16_t value);
-void get4CharTimeStringFromSeconds(char *buffstr, uint8_t time);
-void get5CharTimeStringFromSeconds(char *buffstr, uint16_t time);
-
-uint8_t addmod8( uint8_t a, uint8_t b, uint8_t m);
-
-// High speed saturating add and subtract routines (from FastLED library)
-uint8_t qadd8( uint8_t i, uint8_t j);
-uint8_t qsub8( uint8_t i, uint8_t j);
-uint8_t qavg8( uint8_t i, uint8_t j);
-
-int8_t qabs8( int8_t i);
-int8_t getAbs(int8_t n);
 
 #endif

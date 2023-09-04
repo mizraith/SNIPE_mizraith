@@ -17,6 +17,129 @@
  *   CONVERSION HELPERS
  ***************************************************
  ***************************************************/
+
+// Given a hex string "0A0F" convert to
+// byte array  [10, 15]. ASSUMES src is sanitized [0-9A-F], and '0x' has been removed!
+// and even number of characters, and target is large
+// enough to handle result.   Target will be 1/2 the length of src.
+void convertHexStringToByteArray( char* src, uint8_t* target ) {
+    while(*src && src[1]) {
+        *(target++) = getHexNibbleFromChar(*src)*16 + getHexNibbleFromChar(src[1]);
+        src += 2;
+    }
+}
+
+// Given an array of bytes, split each byte into 2 hex characters as a string.
+// We need to know num_bytes in our array, since we cannot count on
+// a null terminated string.
+//     src                 target        Note that target must be  1 + 2x(src-length) to account for NULL
+//     [15],[16],[26] ==>  "0F101A"      Note does not prepend "0x"
+void convertByteArrayToHexString( byte* src, uint8_t numbytes, char* target ) {
+    uint8_t upper, lower;
+    char cupper, clower;
+    uint8_t i = 0;
+    uint8_t t = 0;   // start after '0x', could base it off 'i' variable, but this is more readable.
+    for ( i=0; i < numbytes; i++) {
+        upper = src[i] >> 4;
+        lower = src[i] & 0x0F;
+        cupper = getCharFromHexNibble(upper);
+        clower = getCharFromHexNibble(lower);
+        target[t] = cupper;
+        t++;
+        target[t] = clower;
+        t++;
+    }
+    target[t] = '\0';
+}
+
+// get the 4 bit nibble 0x0000xxxx from a character
+// representing a hexadecimal number
+byte getHexNibbleFromChar(char ch) {
+    if ((ch >= '0') && (ch <= '9')) {
+        return (byte)(ch - '0');
+    }
+    if ((ch >= 'A') && (ch <= 'F')){
+        return (byte)(ch - 'A' + 10);
+    }
+    if ((ch >= 'a') && (ch <= 'f')) {
+        return (byte)(ch - 'a' + 10);
+    }
+    return (byte) 0;
+}
+
+// get the character from the 4-bit 0x0000xxxx
+// nibble representing a hexadecimal number
+char getCharFromHexNibble(uint8_t b) {
+    if ((b >= 0) && (b <= 9)) {
+        return (char)(b + '0');
+    } else {
+        return (char)(b - 10 + 'A');
+    }
+}
+
+
+/**
+ * unsigned_to_hex_string
+ * Convert values to hex strings.
+ *
+ * Example use:  See /sandbox/test_hex_conversion.cpp
+ *   U2HS(15);      -->  "0xF"
+ *   C2HS(0x00FF00); -->  "0x00FF00"
+ */
+/**
+ * Convenience DEFINES for our color-to-hex string functions.
+ *   For necessity these are moved to the top of the file.
+ */
+//// Use the NO_0x size if you create a macro and don't want the extra "0x" at the beginning.
+//// Difference is the +1 vs. +3 for the extra characters
+//#define UNS_HEX_STR_SIZE_NO_0x ((sizeof (unsigned)*CHAR_BIT + 3)/4 + 1)
+//#define UNS_HEX_STR_SIZE ((sizeof (unsigned)*CHAR_BIT + 3)/4 + 3)
+////                         compound literal v--------------------------v
+//#define U2HS(x) unsigned_to_hex_string((x), (char[UNS_HEX_STR_SIZE]) {0}, UNS_HEX_STR_SIZE)
+//#define C2HS(x) color_uint_to_hex_string((x), (char[UNS_HEX_STR_SIZE]) {0}, UNS_HEX_STR_SIZE)
+
+char *unsigned_to_hex_string(unsigned x, char *dest, size_t size) {
+    //("0x%X\n", a);
+    snprintf(dest, size, "%X", x);
+    return dest;
+}
+
+/**
+ * color_uint_to_hex_string
+ * Convert color values to hex strings with fixes 6 digit length prepended with "0x"
+ *
+ * Example use:  See /sandbox/test_hex_conversion.cpp
+ *   U2HS(15);      -->  "0x00000F"
+ *   C2HS(0x00FF00); -->  "0x00FF00"
+ */
+// In this cae we return at least 6 digits  0x00FF00.   Could be more if
+// the color value is greater than 0xFFFFFF.
+//  "0x" is prepended for us.
+char *color_uint_to_hex_string(unsigned x, char *dest, size_t size) {
+    snprintf(dest, size, "0x%06X", x);
+    return dest;
+}
+
+
+/**
+ * function:  color_uint_from_hex_string
+ * Given a hex string ("0x1F" or "1F" convert to int value.
+ * NOTE: If you give it something weird, it returns 0.
+ * @param s   your c-string.   "0x0f"  "0f"  "0F"  all accepted
+ * @return
+ */
+uint32_t color_uint_from_hex_string(char * s){
+    unsigned int temp;
+    uint32_t i;
+    sscanf(s, "%x", &temp);
+    i = 0xFFFFFF & temp;   // slam down ot 24bits
+    return i;
+}
+
+
+
+
+
 /**
  * Get a 2 character string from an 8 bit number.  Numbers >99 will simply return '>>'.
  * @param buffstr

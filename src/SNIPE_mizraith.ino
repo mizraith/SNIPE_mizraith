@@ -136,21 +136,13 @@ void handle_I2F();
 void handle_BLINK();
 // SETUP HELPERS
 void serialPrintHeaderString();
-void printString_P(const char *);
 void printSerialInputInstructions();
 void printSerialDataStart();
 // EEPROM HELPERS
 void readSIDFromEEPROM();
 void writeSIDToEEPROM();
 // LOW LEVEL HELPERS
-void convertHexStringToByteArray(char *, uint8_t *);
-void convertByteArrayToHexString(byte *, uint8_t, char *);
-byte getHexNibbleFromChar(char);
-char getCharFromHexNibble(uint8_t);
 void printBytesAsDec(uint8_t*, uint8_t);
-char *unsigned_to_hex_string(unsigned x, char *dest, size_t size);
-char *color_uint_to_hex_string(unsigned x, char *dest, size_t size);
-uint32_t color_uint_from_hex_string(char * s);
 // I2C HELPERS
 void perform_I2C_write();
 int perform_I2C_write_error();
@@ -162,19 +154,6 @@ void perform_I2C_read();
 const DateTime COMPILED_ON = DateTime(__DATE__, __TIME__);
 const String CURRENT_VERSION = "003";
 const String DESCRIPTION = "SNIPE_for_Arduino";
-
-# pragma mark Method Shortcuts
-/**
- * Convenience DEFINES for our color-to-hex string functions.
- */
-// Use the NO_0x size if you create a macro and don't want the extra "0x" at the beginning.
-// Difference is the +1 vs. +3 for the extra characters
-#define UNS_HEX_STR_SIZE_NO_0x ((sizeof (unsigned)*CHAR_BIT + 3)/4 + 1)
-#define UNS_HEX_STR_SIZE ((sizeof (unsigned)*CHAR_BIT + 3)/4 + 3)
-//                         compound literal v--------------------------v
-#define U2HS(x) unsigned_to_hex_string((x), (char[UNS_HEX_STR_SIZE]) {0}, UNS_HEX_STR_SIZE)
-#define C2HS(x) color_uint_to_hex_string((x), (char[UNS_HEX_STR_SIZE]) {0}, UNS_HEX_STR_SIZE)
-
 
 #pragma mark Pinouts
 // PIN OUTS
@@ -190,7 +169,6 @@ const String DESCRIPTION = "SNIPE_for_Arduino";
 // min and max full cycle time for our flash or pulse modes.
 #define kMIN_CYCLE_TIME 100
 #define kMAX_CYCLE_TIME 5000
-
 
 #pragma mark String Lengths
 // STRING LENGTH & EEPROM LOCATION CONSTANTS
@@ -266,11 +244,6 @@ public:                         // Access specifier
 #define kNUM_STACKLIGHTS 3
 StackLight stack_lights[kNUM_STACKLIGHTS];   // our array of classes.
 
-//uint32_t SL_Colors[kNUM_STACKLIGHTS]    = {0, 0, 0};
-//uint8_t SL_Modes[kNUM_STACKLIGHTS]      = {0, 0, 0};
-//uint16_t SL_Cycles_ms[kNUM_STACKLIGHTS] = {500, 500, 500};
-//uint8_t SLA_Value = 0;
-// TODO:  Probably need to array these also
 unsigned long SL_loop_time = 0;
 unsigned long SL_next_heartbeat = 0;        //  Timer for our next refresh
 #define kHEARTBEAT_INTVL_ms 50
@@ -394,9 +367,6 @@ void loop() {
         SL_next_heartbeat = millis() + kHEARTBEAT_INTVL_ms;
         SL_update();
     }
-
-    // TODO:  Need to update the LED strip every 50ms perhaps.
-    // TODO:  How to handle flash and strobe.
 
     if (input_string_ready) {
         handleInputString();
@@ -1012,6 +982,7 @@ void SL_startup_sequence() {
 }
 
 void SL_update() {
+    // TODO:  How to handle flash and strobe.
     uint8_t numactive;
 
     for(StackLight light : stack_lights) {
@@ -1039,7 +1010,7 @@ void handle_SLC3(){
  * appends:  hex color to output display
  * Handle Stack Light worker
  * Expects values to be in hexadecimal notation (e.g. "0x0AFF")
- * TODO:  Someday we'll handle basic TEXT string inputs as well.
+ * TODO:  Someday we'll handle basic TEXT string color inputs as well.
  */
 void handle_SLC_worker(uint8_t sl_num) {
     char buff[10];
@@ -1202,7 +1173,6 @@ void handle_SLM_worker(uint8_t sl_num) {
                         stack_lights[sl_num - 1].mode = mode;
                         // TODO:  If we are switching from Pulse or Flash -> Normal we need to set enable.
 
-
                         break;
                     default:
                         //we caught this earlier
@@ -1320,7 +1290,7 @@ void handle_I2A() {
     } else if (strcmp_P(subtokens[1], str_QUERY) == 0)  {
         resp += I2C_Address;
     } else  {
-        uint16_t addr = atoi(subtokens[1]);    //TODO:  atoi is concat'ing, and it's a uint8 so just rolling over.  Maybe this is ok?
+        uint16_t addr = atoi(subtokens[1]);    // atoi is concat'ing, and it's a uint8 so just rolling over.  Maybe this is ok?
         if ( (addr < 0) || (addr > 255) ) {   // I2C has limited address range
             processing_is_ok = false;
             char err[MAX_ERROR_STRING_LENGTH];
@@ -1424,7 +1394,6 @@ void handle_I2W() {
             perform_I2C_write();
             //-----------
 
-            // TODO:  Do the write over I2C now
             resp += subtokens[1];
         } else  {
             processing_is_ok = false;
@@ -1516,7 +1485,7 @@ void handle_I2S() {
     } else if (strcmp_P(subtokens[1], str_QUERY) == 0)  {
         resp += I2C_Register;
     } else  {
-        uint16_t reg = atoi(subtokens[1]);  //TODO: Truncates to uint8, so out of range is meaningless
+        uint16_t reg = atoi(subtokens[1]);  // Truncates to uint8, so out of range is meaningless
         if ( (reg < 0) || (reg > 255) ) {   // I2C has limited address range
             processing_is_ok = false;
             char err[MAX_ERROR_STRING_LENGTH];
@@ -1659,14 +1628,6 @@ void serialPrintHeaderString() {
     Serial.println(F("#"));
 }
 
-void printString_P( const char str[]) {
-    char ch;
-    if(!str) return;
-    while( (ch = pgm_read_byte(str++))) {
-        Serial.print(ch);
-    }
-}
-
 void printSerialInputInstructions( ) {
     char * buff[10];
     Serial.println(F("#"));
@@ -1766,68 +1727,6 @@ void writeSIDToEEPROM( ) {
  ***************************************************
  ***************************************************/
 
-// Given a hex string "0A0F" convert to
-// byte array  [10, 15]. ASSUMES src is sanitized [0-9A-F], and '0x' has been removed!
-// and even number of characters, and target is large
-// enough to handle result.   Target will be 1/2 the length of src.
-void convertHexStringToByteArray( char* src, uint8_t* target ) {
-    while(*src && src[1]) {
-        *(target++) = getHexNibbleFromChar(*src)*16 + getHexNibbleFromChar(src[1]);
-        src += 2;
-    }
-}
-
-// Given an array of bytes, split each byte into 2 hex characters as a string.
-// We need to know num_bytes in our array, since we cannot count on
-// a null terminated string.
-//     src                 target        Note that target must be  1 + 2x(src-length) to account for NULL
-//     [15],[16],[26] ==>  "0F101A"      Note does not prepend "0x"
-void convertByteArrayToHexString( byte* src, uint8_t numbytes, char* target ) {
-    uint8_t upper, lower;
-    char cupper, clower;
-    uint8_t i = 0;
-    uint8_t t = 0;   // start after '0x', could base it off 'i' variable, but this is more readable.
-    for ( i=0; i < numbytes; i++) {
-        upper = src[i] >> 4;
-        lower = src[i] & 0x0F;
-        cupper = getCharFromHexNibble(upper);
-        clower = getCharFromHexNibble(lower);
-        target[t] = cupper;
-        t++;
-        target[t] = clower;
-        t++;
-    }
-    target[t] = '\0';
-}
-
-
-
-
-// get the 4 bit nibble 0x0000xxxx from a character
-// representing a hexadecimal number
-byte getHexNibbleFromChar(char ch) {
-    if ((ch >= '0') && (ch <= '9')) {
-        return (byte)(ch - '0');
-    }
-    if ((ch >= 'A') && (ch <= 'F')){
-        return (byte)(ch - 'A' + 10);
-    }
-    if ((ch >= 'a') && (ch <= 'f')) {
-        return (byte)(ch - 'a' + 10);
-    }
-    return (byte) 0;
-}
-
-// get the character from the 4-bit 0x0000xxxx
-// nibble representing a hexadecimal number
-char getCharFromHexNibble(uint8_t b) {
-    if ((b >= 0) && (b <= 9)) {
-        return (char)(b + '0');
-    } else {
-        return (char)(b - 10 + 'A');
-    }
-}
-
 void printBytesAsDec(uint8_t *data, uint8_t len) {
     Serial.print(F("# ByteArrayAsDec: "));
     for(uint8_t i=0; i<len; i++) {
@@ -1835,63 +1734,6 @@ void printBytesAsDec(uint8_t *data, uint8_t len) {
         Serial.print(F("  "));
     }
     Serial.println();
-}
-
-/**
- * unsigned_to_hex_string
- * Convert values to hex strings.
- *
- * Example use:  See /sandbox/test_hex_conversion.cpp
- *   U2HS(15);      -->  "0xF"
- *   C2HS(0x00FF00); -->  "0x00FF00"
- */
-/**
- * Convenience DEFINES for our color-to-hex string functions.
- *   For necessity these are moved to the top of the file.
- */
-//// Use the NO_0x size if you create a macro and don't want the extra "0x" at the beginning.
-//// Difference is the +1 vs. +3 for the extra characters
-//#define UNS_HEX_STR_SIZE_NO_0x ((sizeof (unsigned)*CHAR_BIT + 3)/4 + 1)
-//#define UNS_HEX_STR_SIZE ((sizeof (unsigned)*CHAR_BIT + 3)/4 + 3)
-////                         compound literal v--------------------------v
-//#define U2HS(x) unsigned_to_hex_string((x), (char[UNS_HEX_STR_SIZE]) {0}, UNS_HEX_STR_SIZE)
-//#define C2HS(x) color_uint_to_hex_string((x), (char[UNS_HEX_STR_SIZE]) {0}, UNS_HEX_STR_SIZE)
-
-char *unsigned_to_hex_string(unsigned x, char *dest, size_t size) {
-    //("0x%X\n", a);
-    snprintf(dest, size, "%X", x);
-    return dest;
-}
-
-/**
- * color_uint_to_hex_string
- * Convert color values to hex strings with fixes 6 digit length prepended with "0x"
- *
- * Example use:  See /sandbox/test_hex_conversion.cpp
- *   U2HS(15);      -->  "0x00000F"
- *   C2HS(0x00FF00); -->  "0x00FF00"
- */
-// In this cae we return at least 6 digits  0x00FF00.   Could be more if
-// the color value is greater than 0xFFFFFF.
-//  "0x" is prepended for us.
-char *color_uint_to_hex_string(unsigned x, char *dest, size_t size) {
-    snprintf(dest, size, "0x%06X", x);
-    return dest;
-}
-
-/**
- * function:  uint32_from_hex_string
- * Given a hex string ("0x1F" or "1F" convert to int value.
- * NOTE: If you give it something weird, it returns 0.
- * @param s   your c-string.   "0x0f"  "0f"  "0F"  all accepted
- * @return
- */
-uint32_t color_uint_from_hex_string(char * s){
-    unsigned int temp;
-    uint32_t i;
-    sscanf(s, "%x", &temp);
-    i = 0xFFFFFF & temp;   // slam down ot 24bits
-    return i;
 }
 
 #pragma mark I2C Helpers
@@ -1939,14 +1781,6 @@ void perform_I2C_read() {
     }
     Wire.endTransmission();
 }
-
-
-
-
-
-
-
-
 
 
 #pragma mark RAM Helpers
