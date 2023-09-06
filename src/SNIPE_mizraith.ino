@@ -147,8 +147,6 @@ void printBytesAsDec(uint8_t*, uint8_t);
 void perform_I2C_write();
 int perform_I2C_write_error();
 void perform_I2C_read();
-// RAM HELPERS
-
 
 #pragma mark Application Globals
 const DateTime COMPILED_ON = DateTime(__DATE__, __TIME__);
@@ -449,32 +447,6 @@ void blinky_worker() {
         last_blink_change = millis();
     }
 }
-
-void stack_light_flash_worker() {
-    unsigned long current_time = millis();
-
-    // for each stack light, if flash is set, see if it is time to toggle.
-    for (int i=0; i < kNUM_STACKLIGHTS; i++) {
-        if (stack_lights[i].mode == MODE_FLASH) {
-            // if time then toggle?
-            // toggle state.
-        }
-    }
-
-    //for(uint8_t & SL_Mode : SL_Modes) {
-
-    if (current_time - blink_start > blink_time) {
-        digitalWrite(LED_PIN, LOW);
-        is_blinking = false;
-    } else if (current_time - last_blink_change > blink_toggle_time_ms) {
-        digitalWrite(LED_PIN, !digitalRead(LED_PIN));
-        last_blink_change = millis();
-    }
-}
-
-
-
-
 
 
 #pragma mark Serial Interrupt Function
@@ -1120,11 +1092,15 @@ void handle_SLC_worker(uint8_t sl_num) {
         if (strcmp_P(subtokens[1], str_QUERY) == 0) {
             switch (sl_num) {
                 case 1 ... kNUM_STACKLIGHTS:
-                    resp += C2HS(stack_lights[sl_num -1].color);  // "color 2 hex string"
+                    //resp += C2HS(stack_lights[sl_num -1].color);  // "color 2 hex string"
+                    char *tempstr =  new char[UNS_HEX_STR_SIZE];
+                    color_uint_to_hex_string(stack_lights[sl_num - 1].color, tempstr, UNS_HEX_STR_SIZE);
+                    resp += tempstr;
+                    delete [] tempstr;
                     break;
-                default:
-                    //we already caught this issue earlier
-                    break;
+//                default:
+//                    //we already caught this issue earlier
+//                    break;
             }
         }
         // STEP 2B  WE GOT SOME VALUE -- HOPEFULLY HEX
@@ -1140,8 +1116,12 @@ void handle_SLC_worker(uint8_t sl_num) {
             uint32_t clr;
             clr = color_uint_from_hex_string(hexstring);
             // convert the value we got BACK into a string and echo     "SLCx:0xFF00FF"
-            resp += C2HS(clr);
-            // But don't forget to set teh value
+            char *tempstr =  new char[UNS_HEX_STR_SIZE];
+            color_uint_to_hex_string(clr, tempstr, UNS_HEX_STR_SIZE);
+            resp += tempstr;
+            delete [] tempstr;
+
+            // But don't forget to set the value
             switch (sl_num) {
                 case 1 ... kNUM_STACKLIGHTS:
                     stack_lights[sl_num - 1].color = clr;
@@ -1197,7 +1177,6 @@ void handle_SLM_worker(uint8_t sl_num) {
     char buff[10];
     char err[MAX_ERROR_STRING_LENGTH];
     String resp("");
-    uint8_t prior_mode;
 
     // Step 1:  Add "SLMx" to response
     switch (sl_num) {
@@ -1460,7 +1439,7 @@ void handle_I2W() {
         char * hexstring = &subtokens[1][2];
         //Serial.print(F("# sub st1: ")); Serial.print(hexstring); Serial.print(F("   length: ")); Serial.println(strlen(subtokens[1])) - 2);
         if ( (strlen(hexstring) == I2C_Bytes * 2)) {                 // st1 contains '0x', so -2 is what we want
-            uint8_t bytearraylen = (I2C_Bytes * 2) + 1;                         // +1 NULL
+            //uint8_t bytearraylen = (I2C_Bytes * 2) + 1;                         // +1 NULL
             //char bytechars[bytearraylen];
             //Serial.print(F("# bytearraylen: ")); Serial.println(bytearraylen, DEC);
             //st1.toCharArray(bytechars, arraylen, 2);  // get a standard C-string array
@@ -1508,10 +1487,10 @@ void handle_I2R() {
     strcpy_P(buff, str_COLON);
     resp += buff;
 
-    char hexprefix[3];             // should be: '0x'
-    hexprefix[0] = subtokens[1][0];
-    hexprefix[1] = subtokens[1][1];
-    hexprefix[2] = '\0';
+//    char hexprefix[3];             // should be: '0x'
+//    hexprefix[0] = subtokens[1][0];
+//    hexprefix[1] = subtokens[1][1];
+//    hexprefix[2] = '\0';
 
     if ( (subtokens[1] == NULL ) || (strlen(subtokens[1]) == 0)) {  // didn't give us a long enough token
         processing_is_ok = false;

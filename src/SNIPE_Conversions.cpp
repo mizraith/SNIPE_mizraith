@@ -12,11 +12,7 @@
 #include <EEPROM.h>
 #include "SNIPE_Strings.h"
 
-/***************************************************
- ***************************************************
- *   CONVERSION HELPERS
- ***************************************************
- ***************************************************/
+#pragma  mark Conversion Helpers
 
 // Given a hex string "0A0F" convert to
 // byte array  [10, 15]. ASSUMES src is sanitized [0-9A-F], and '0x' has been removed!
@@ -137,6 +133,11 @@ uint32_t color_uint_from_hex_string(char * s){
 }
 
 
+char *C2HS(unsigned x) {
+    char* dest = new char[UNS_HEX_STR_SIZE];
+
+    return color_uint_to_hex_string(x, dest, UNS_HEX_STR_SIZE);
+}
 
 
 
