@@ -38,7 +38,6 @@ pio upgrade --dev
 pio project init --ide clion
 Restart CLion.
 
-
 ================================================
 Eventually I gave up and built up a new project using:
 pio project initi --ide clion
@@ -54,9 +53,48 @@ sure Tools-> Cmake was reinited.  Restarted CLion.
 
 Eventually...after all this thrashing....it worked and I was able to build.
 
+===================================================
+Trouble getting to upload on a nano with old bootloader
 
+In terminal:  pio settings set force_verbose Yes
 
+Then re-run build.  Still getting "timeout communicating with programmer"
 
+-------------- ths is the working report from Arduino.app
+Using Port                    : /dev/cu.usbserial-A92517JR
+         Using Programmer              : arduino
+         Overriding Baud Rate          : 57600
+         AVR Part                      : ATmega328P
+         Chip Erase delay              : 9000 us
+         PAGEL                         : PD7
+         BS2                           : PC2
+         RESET disposition             : dedicated
+         RETRY pulse                   : SCK
+         serial program mode           : yes
+         parallel program mode         : yes
+         Timeout                       : 200
+         StabDelay                     : 100
+         CmdexeDelay                   : 25
+         SyncLoops                     : 32
+         ByteDelay                     : 0
+         PollIndex                     : 3
+         PollValue                     : 0x53
+         Memory Detail                 :
+
+Using ARDUINO the settings in this file worked for upload:
+"/Applications/Arduino.app/Contents/Java/hardware/tools/avr/etc/avrdude.conf"
+BUT the settings in the PlatformIO avrdude did not work:
+"/Users/<myusername>/.platformio/packages/tool-avrdude/avrdude.conf"
+
+--=> Time for a diff <=--    Didn't turn up anything obvious.
+--> So I replaced avrdude.conf  in the Users/red...location with the new one and tried again to upload.
+That didn't work.
+
+--->  in terminal: pio upgrade --dev
+--->  Then in CLION  Tools->PlatformIO->Re-Init
+
+### THE SOLUTION
+;upload_protocol = stk500v2       ; <<  leave commented out for nano328
 
 
 

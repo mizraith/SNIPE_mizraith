@@ -213,7 +213,7 @@ String output_string = "";                 // might as well use the helper libra
 //   NEO_KHZ400  400 KHz bitstream (e.g. FLORA pixels)
 //   NEO_KHZ800  800 KHz bitstream (e.g. High Density LED strip1)
 //#ifdef USE_NEOPIXEL_LEDS
-Adafruit_NeoPixel SL1_strip = Adafruit_NeoPixel(8, SL1_PIN, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel SL1_strip = Adafruit_NeoPixel(10, SL1_PIN, NEO_GRB + NEO_KHZ800);
 Adafruit_NeoPixel SL2_strip = Adafruit_NeoPixel(8, SL2_PIN, NEO_GRB + NEO_KHZ800);
 Adafruit_NeoPixel SL3_strip = Adafruit_NeoPixel(8, SL3_PIN, NEO_GRB + NEO_KHZ800);
 //# endif //USE_NEOPIXEL_LEDS
@@ -344,7 +344,7 @@ const int blink_toggle_time_ms = 250;
  ***************************************************/
 
 void setup() {
-    Serial.begin(57600);
+    Serial.begin(57600);  // was 57600
     Wire.begin();
 
     if (isVirginEEPROM()) {
@@ -392,7 +392,7 @@ void setup() {
     SL_loop_time = millis();
     SL_next_heartbeat = millis();    // Set to now
 
-    for(StackLight light : stack_lights) {
+    for (StackLight light : stack_lights) {
         light.color = 0;
         light.mode = 0;
         light.cycle_ms = 500;
