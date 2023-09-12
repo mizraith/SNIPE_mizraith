@@ -43,11 +43,13 @@ _Changes in 4.0:  Added Stack light commands_.
 #include"mizraith_DateTime.h"   
 
 // PROJECT LIBRARIES
+#include "SNIPE_StackLight.h"
 #include "SNIPE_ExponentialDecay.h"
 #include "SNIPE_Strings.h"
 #include "SNIPE_ColorUtilities.h"
 #include "SNIPE_GeneralUtilities.h"
 #include "SNIPE_Conversions.h"
+
 
 #pragma mark DEBUG MODE
 // CLion devs edit in CMakeLists.txt and leave below commented out
@@ -147,6 +149,8 @@ void printBytesAsDec(uint8_t*, uint8_t);
 void perform_I2C_write();
 int perform_I2C_write_error();
 void perform_I2C_read();
+// Local RAM HELPER
+void checkRAM();
 
 #pragma mark Application Globals
 const DateTime COMPILED_ON = DateTime(__DATE__, __TIME__);
@@ -213,92 +217,23 @@ String output_string = "";                 // might as well use the helper libra
 //   NEO_KHZ400  400 KHz bitstream (e.g. FLORA pixels)
 //   NEO_KHZ800  800 KHz bitstream (e.g. High Density LED strip1)
 //#ifdef USE_NEOPIXEL_LEDS
-Adafruit_NeoPixel SL1_strip = Adafruit_NeoPixel(10, SL1_PIN, NEO_GRB + NEO_KHZ800);
-Adafruit_NeoPixel SL2_strip = Adafruit_NeoPixel(8, SL2_PIN, NEO_GRB + NEO_KHZ800);
-Adafruit_NeoPixel SL3_strip = Adafruit_NeoPixel(8, SL3_PIN, NEO_GRB + NEO_KHZ800);
+//Adafruit_NeoPixel SL1_strip = Adafruit_NeoPixel(10, SL1_PIN, NEO_GRB + NEO_KHZ800);
+//Adafruit_NeoPixel SL2_strip = Adafruit_NeoPixel(8, SL2_PIN, NEO_GRB + NEO_KHZ800);
+//Adafruit_NeoPixel SL3_strip = Adafruit_NeoPixel(8, SL3_PIN, NEO_GRB + NEO_KHZ800);
 //# endif //USE_NEOPIXEL_LEDS
 
 
 // STACK LIGHT CONTROLLER supporting variables
-class StackLight {
-public:                         // Access specifier
-    uint32_t color {BLACK};         // default 0 value
-    uint32_t current_color {BLACK}; // currently working color
-    uint8_t mode {MODE_DEFAULT};    // solid state
-    uint16_t cycle_ms {500};        // 500 ms full cycle time
-    unsigned long update_time {0};       // immediate
-    bool flash_is_on {true};
-    bool pulse_going_up {true};
-    uint8_t numpixels {8};         // how many pixes in this stack light
-    uint8_t perc_lit {100};         // single digit, no floats please
-    Adafruit_NeoPixel * strip;
-    bool mode_did_change {false};
-    void change_mode(uint8_t new_mode) {
-        // At this point, new_mode is already vetted against the appropriate values.
-        // handle mode switches.  Where we want to keep the color on even when flash/pulse has changed
-        if (new_mode != mode) {
-            mode_did_change = true;
-            mode = new_mode;
-            update_time = millis();
-        }
-        return;
-    }
-
-    void update_pulse_color() {
-        // calculate and put result in current color
-        if (mode_did_change){
-            mode_did_change = false;
-            pulse_going_up = false;
-            current_color = color;
-        }
-        else if (millis() < update_time) {    // not a flip, how much longer until we do?
-            // TODO: calculate a dim step
-            // TODO: set current color
-            return;
-        }
-        else if (millis() > update_time) {    // flip
-            pulse_going_up = !pulse_going_up;
-            if (pulse_going_up) {
-                current_color = BLACK;
-            } else {
-                current_color = color;
-            }
-            update_time = millis() + (unsigned long)(cycle_ms / 2);
-        }
-        return;
-    }
-
-    void update_flash_color() {
-        // calculate and put result in current color
-        if (mode_did_change){
-            mode_did_change = false;
-            flash_is_on = true;
-            current_color = color;
-        }
-        else if (millis() > update_time) {    // change state
-            if (flash_is_on) {
-                flash_is_on = false;
-                current_color = BLACK;
-            } else {
-                flash_is_on = true;
-                current_color = color;
-            }
-        }
-        else if (millis() < update_time) {    // nothing has changed.  current_color is still valid.
-            return;
-        }
-        update_time = millis() + (unsigned long)(cycle_ms / 2);  // changed mode or state
-        return;
-    }
-
-
-//    void init_strip() {
-//        strip = new(Adafruit_NeoPixel(numpixels, SL1_PIN, NEO_GRB + NEO_KHZ800));
-//    }
+#define kNUM_STACKLIGHTS 3
+SNIPE_StackLight stack_lights[kNUM_STACKLIGHTS] =  {
+        SNIPE_StackLight(SL1_PIN, 10, NEO_GRB + NEO_KHZ800),
+        SNIPE_StackLight(SL2_PIN, 8, NEO_GRB + NEO_KHZ800),
+        SNIPE_StackLight(SL3_PIN, 6, NEO_GRB + NEO_KHZ800),
 };
 
-#define kNUM_STACKLIGHTS 3
-StackLight stack_lights[kNUM_STACKLIGHTS];   // our array of classes.
+//= new SNIPE_StackLight [kNUM_STACKLIGHTS];  // our array of classes...we'll init in setup.
+
+//PPC_ButtonLEDManager *ButtonLEDMgr = new PPC_ButtonLEDManager(kNUMBER_OF_LED_BUTTONS);  // init for 3 buttons
 
 unsigned long SL_loop_time = 0;
 unsigned long SL_next_heartbeat = 0;        //  Timer for our next refresh
@@ -356,6 +291,25 @@ void setup() {
     }
     readSIDFromEEPROM();
 
+    // Allocate memory and big objects
+//    Adafruit_NeoPixel SL1_strip = Adafruit_NeoPixel(10, SL1_PIN, NEO_GRB + NEO_KHZ800);
+//    Adafruit_NeoPixel SL2_strip = Adafruit_NeoPixel(8, SL2_PIN, NEO_GRB + NEO_KHZ800);
+//    Adafruit_NeoPixel SL3_strip = Adafruit_NeoPixel(6, SL3_PIN, NEO_GRB + NEO_KHZ800);
+//    stack_lights = {
+//            SNIPE_StackLight(BLACK, MODE_DEFAULT, 500, false),
+//            SNIPE_StackLight(BLACK, MODE_DEFAULT, 500, false),
+//            SNIPE_StackLight(BLACK, MODE_DEFAULT, 500, false)
+//    }
+//
+//            new SNIPE_StackLight[kNUM_STACKLIGHTS];
+//    };
+
+    for (uint8_t lightnum=0; lightnum < kNUM_STACKLIGHTS; lightnum++) {
+        stack_lights[lightnum].setup_strip();
+    }
+
+
+
     // Developer note: This next line is key to prevent our output_string (String class)
     // from growing in size over time and fragmenting the heap.  By calling this now
     // we end up saving about 50-60bytes of heap fragmentation.
@@ -391,16 +345,6 @@ void setup() {
     printSerialDataStart();
     SL_loop_time = millis();
     SL_next_heartbeat = millis();    // Set to now
-
-    for (StackLight light : stack_lights) {
-        light.color = 0;
-        light.mode = 0;
-        light.cycle_ms = 500;
-        light.flash_is_on = true;
-    }
-    stack_lights[0].strip = &SL1_strip;
-    stack_lights[1].strip = &SL2_strip;
-    stack_lights[2].strip = &SL3_strip;
 
     SL_startup_sequence();
 }
@@ -1000,10 +944,10 @@ void SL_startup_sequence() {
     uint32_t wash_colors[5] = {RED, YELLOW, GREEN, BLUE, BLACK};
     for(unsigned long wash_color : wash_colors) {
         for (uint8_t i = 0; i < 255; i++) {
-            for (StackLight light: stack_lights) {
-                i = min(i, light.numpixels - 1);
-                light.strip->setPixelColor(i, wash_color);
-                light.strip->show();
+            for (uint8_t lightnum=0; lightnum < kNUM_STACKLIGHTS; lightnum++) {
+                i = min(i, stack_lights[lightnum].numpixels - 1);
+                stack_lights[lightnum].strip->setPixelColor(i, wash_color);
+                stack_lights[lightnum].strip->show();
             }
         }
         delay(100);
@@ -1019,24 +963,24 @@ void SL_update() {
     // 4)
     uint8_t numactive;
 
-    for(StackLight light : stack_lights) {
-        numactive = int((float)light.numpixels * ((float)light.perc_lit / 100));
-        numactive = min(numactive, light.numpixels);   // make sure our math doesn't overshoot.
-        if (light.mode == MODE_FLASH) {
-            light.update_flash_color();
+    for (uint8_t lightnum=0; lightnum < kNUM_STACKLIGHTS; lightnum++) {
+        numactive = int((float)stack_lights[lightnum].numpixels * ((float)stack_lights[lightnum].perc_lit / 100));
+        numactive = min(numactive, stack_lights[lightnum].numpixels);   // make sure our math doesn't overshoot.
+        if (stack_lights[lightnum].mode == MODE_FLASH) {
+            stack_lights[lightnum].update_flash_color();
         }
-        if (light.mode == MODE_PULSE) {
-            light.update_pulse_color();
+        if (stack_lights[lightnum].mode == MODE_PULSE) {
+            stack_lights[lightnum].update_pulse_color();
         }
         // At this point, current_color holds the calculated value.
         // Do the actual work
         for(uint16_t i=0; i < numactive; i++) {
-            light.strip->setPixelColor(i, light.current_color);
+            stack_lights[lightnum].strip->setPixelColor(i, stack_lights[lightnum].current_color);
         }
-        for(uint16_t i=numactive; i < light.numpixels; i++) {
-            light.strip->setPixelColor(i, BLACK);
+        for(uint16_t i=numactive; i < stack_lights[lightnum].numpixels; i++) {
+            stack_lights[lightnum].strip->setPixelColor(i, BLACK);
         }
-        light.strip->show();
+        stack_lights[lightnum].strip->show();
     }
 }
 

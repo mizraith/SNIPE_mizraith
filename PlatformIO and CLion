@@ -97,6 +97,10 @@ That didn't work.
 ;upload_protocol = stk500v2       ; <<  leave commented out for nano328
 
 
+Then I upgraded CLion and it broke my RUN configuration in platform IO
+
+So I use Upload and MOnitor...but monitor is broken too.
+
 
 
 

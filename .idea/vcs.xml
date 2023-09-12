@@ -2,5 +2,16 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../libraries/Adafruit_GFX" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../libraries/Adafruit_SSD1306" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../libraries/ModernDevice_SI1143_Pulse_Prox_Sensors" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../libraries/RTClib" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../libraries/TLC59116" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../libraries/mizraith_DateTime" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../libraries/mizraith_HDSP2111" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../libraries/mizraith_MCP23017" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../libraries/mizraith_Si7021" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../libraries/mizraith_TimerHelper" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../libraries/mizraith_i2CHelper" vcs="Git" />
   </component>
 </project>
