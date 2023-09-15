@@ -41,6 +41,7 @@ public:                         // Access specifier
     void update_pulse_color();
     void update_flash_color();
     void setup_strip();
+    void print_info();
 };
 
 

@@ -162,7 +162,7 @@ const String DESCRIPTION = "SNIPE_for_Arduino";
 #define ANALOG_INPUT   A0
 #define LED_PIN        13
 #define RELAY_PIN      6
-#define SL1_PIN        5    // 7 <<< SHOULD BE 7.  Using 5 for debug only.
+#define SL1_PIN        7    // 7 <<< SHOULD BE 7.  Using 5 for debug only based on other design.
 #define SL2_PIN        8
 #define SL3_PIN        9
 #define SLA_PIN      A6
@@ -291,33 +291,6 @@ void setup() {
     }
     readSIDFromEEPROM();
 
-    // Allocate memory and big objects
-//    Adafruit_NeoPixel SL1_strip = Adafruit_NeoPixel(10, SL1_PIN, NEO_GRB + NEO_KHZ800);
-//    Adafruit_NeoPixel SL2_strip = Adafruit_NeoPixel(8, SL2_PIN, NEO_GRB + NEO_KHZ800);
-//    Adafruit_NeoPixel SL3_strip = Adafruit_NeoPixel(6, SL3_PIN, NEO_GRB + NEO_KHZ800);
-//    stack_lights = {
-//            SNIPE_StackLight(BLACK, MODE_DEFAULT, 500, false),
-//            SNIPE_StackLight(BLACK, MODE_DEFAULT, 500, false),
-//            SNIPE_StackLight(BLACK, MODE_DEFAULT, 500, false)
-//    }
-//
-//            new SNIPE_StackLight[kNUM_STACKLIGHTS];
-//    };
-
-    for (uint8_t lightnum=0; lightnum < kNUM_STACKLIGHTS; lightnum++) {
-        stack_lights[lightnum].setup_strip();
-    }
-
-
-
-    // Developer note: This next line is key to prevent our output_string (String class)
-    // from growing in size over time and fragmenting the heap.  By calling this now
-    // we end up saving about 50-60bytes of heap fragmentation.
-    output_string.reserve(MAX_OUTPUT_LENGTH);
-
-    serialPrintHeaderString();
-    checkRAMandExitIfLow(0);
-
     pinMode(ANALOG_INPUT, INPUT);
     pinMode(A1, INPUT);
     pinMode(A2, INPUT);
@@ -340,6 +313,54 @@ void setup() {
     digitalWrite(5, LOW);
     digitalWrite(6, LOW);
     digitalWrite(LED_PIN, LOW);
+
+
+    // Allocate memory and big objects
+    Adafruit_NeoPixel SL1_strip = Adafruit_NeoPixel(10, SL1_PIN, NEO_GRB + NEO_KHZ800);
+    Serial.print("--> SIZE OF SL1 10 pixel strip: ");Serial.println(sizeof(SL1_strip));
+    SL1_strip.begin();
+    SL1_strip.show();
+    //SL1_strip.setBrightness((uint8_t)255);
+//    delay(1000);
+//    SL1_strip.setPixelColor(2, BLUE);
+//    SL1_strip.show();
+//    Adafruit_NeoPixel SL2_strip = Adafruit_NeoPixel(8, SL2_PIN, NEO_GRB + NEO_KHZ800);
+//    Adafruit_NeoPixel SL3_strip = Adafruit_NeoPixel(6, SL3_PIN, NEO_GRB + NEO_KHZ800);
+//    stack_lights = {
+//            SNIPE_StackLight(BLACK, MODE_DEFAULT, 500, false),
+//            SNIPE_StackLight(BLACK, MODE_DEFAULT, 500, false),
+//            SNIPE_StackLight(BLACK, MODE_DEFAULT, 500, false)
+//    }
+//
+//            new SNIPE_StackLight[kNUM_STACKLIGHTS];
+//    };
+    Serial.println(F("xxx  307  xxx  --> Size of stack light follows."));
+    Serial.println(sizeof(stack_lights));
+    for (uint8_t lightnum=0; lightnum < kNUM_STACKLIGHTS; lightnum++) {
+        Serial.println();
+        Serial.println(lightnum, DEC);
+        stack_lights[lightnum].print_info();
+    }
+
+    for (uint8_t lightnum=0; lightnum < kNUM_STACKLIGHTS; lightnum++) {
+        stack_lights[lightnum].setup_strip();
+    }
+
+    for (uint8_t lightnum=0; lightnum < kNUM_STACKLIGHTS; lightnum++) {
+        Serial.println();
+        Serial.println(lightnum, DEC);
+        stack_lights[lightnum].print_info();
+    }
+
+    // Developer note: This next line is key to prevent our output_string (String class)
+    // from growing in size over time and fragmenting the heap.  By calling this now
+    // we end up saving about 50-60bytes of heap fragmentation.
+    output_string.reserve(MAX_OUTPUT_LENGTH);
+
+    serialPrintHeaderString();
+    checkRAMandExitIfLow(0);
+
+
 
     printSerialInputInstructions();
     printSerialDataStart();
@@ -941,13 +962,21 @@ void handle_DESC() {
 }
 
 void SL_startup_sequence() {
+    Serial.println(F("...Stack Light Startup Sequence"));
     uint32_t wash_colors[5] = {RED, YELLOW, GREEN, BLUE, BLACK};
-    for(unsigned long wash_color : wash_colors) {
+    uint32_t wash_color;
+    uint8_t n = 0;
+    //for(unsigned long wash_color : wash_colors) {
+    for(uint8_t x; x < 5; x++) {
+        wash_color = wash_colors[x];
         for (uint8_t i = 0; i < 255; i++) {
             for (uint8_t lightnum=0; lightnum < kNUM_STACKLIGHTS; lightnum++) {
-                i = min(i, stack_lights[lightnum].numpixels - 1);
-                stack_lights[lightnum].strip->setPixelColor(i, wash_color);
+                Serial.print("i: ");Serial.print(i);
+                n = min(i, stack_lights[lightnum].numpixels - 1);
+                Serial.print("  numpix: ");Serial.println(stack_lights[lightnum].numpixels);
+                stack_lights[lightnum].strip->setPixelColor(n, wash_color);
                 stack_lights[lightnum].strip->show();
+                delay(333);
             }
         }
         delay(100);

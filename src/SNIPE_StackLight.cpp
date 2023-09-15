@@ -78,3 +78,32 @@ void SNIPE_StackLight::update_flash_color() {
 void SNIPE_StackLight::setup_strip() {
     this->strip = new Adafruit_NeoPixel(this->numpixels, this->lightpin, this->neopixelmask);
 }
+
+void SNIPE_StackLight::print_info() {
+    Serial.println(F("----------- StackLight Info ----------"));
+    Serial.print(F("\t&this:     "));Serial.println((unsigned int)this, DEC);
+    Serial.print(F("\tsize_of:   "));Serial.println(sizeof(SNIPE_StackLight));
+    Serial.print(F("\tcolor:     "));Serial.println(this->color);
+    Serial.print(F("\tmode:      "));Serial.println(this->mode);
+    Serial.print(F("\tcycle_ms:  "));Serial.println(this->cycle_ms);
+    Serial.print(F("\tflash on:  "));Serial.println(this->flash_is_on);
+    Serial.print(F("\tpulse->up: "));Serial.println(this->pulse_going_up);
+    Serial.print(F("\tnumpixels: "));Serial.println(this->numpixels);
+    Serial.print(F("\tperc_lit:  "));Serial.println(this->perc_lit);
+    Serial.print(F("\t&(*strip): "));Serial.println((unsigned int)&(this->strip), DEC);
+    Serial.print(F("\t&strip: "));Serial.println((unsigned int)this->strip, DEC);
+    //Serial.print(F("\tstripbytes: "));Serial.println((uint16_t )this->strip->numBytes);
+
+
+    //    uint32_t color{BLACK};         // default 0 value
+//    uint32_t current_color{BLACK}; // currently working color
+//    uint8_t mode{MODE_DEFAULT};    // solid state
+//    uint16_t cycle_ms{500};        // 500 ms full cycle time
+//    unsigned long update_time{0};       // immediate
+//    bool flash_is_on{false};
+//    bool pulse_going_up{true};
+//    uint8_t numpixels{8};         // how many pixes in this stack light
+//    uint8_t perc_lit{100};         // single digit, no floats please
+//    Adafruit_NeoPixel strip;
+//    bool mode_did_change{false};
+}
