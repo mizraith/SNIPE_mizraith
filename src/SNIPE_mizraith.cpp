@@ -14,6 +14,8 @@ _Grammar Version:_   2.0
 _Changes since 1.0:  Added TID:?, BLINK:? and ECHO:[0:1] commands._
 
 _Changes in 4.0:  Added Stack light commands_.
+                    ECHO removed -- 2 line responses suck to parse sometimes.
+                    TID removed -- never really used.  Makes parsing more complex.
 
 ## README
  **See the README.md file for extensive set of grammar definition, explanation and examples.**
@@ -115,7 +117,6 @@ void handle_D5();
 void handle_D6();
 void handle_D_worker(uint8_t );
 void handle_SID();
-void handle_TID();
 void handle_VER();
 void handle_DESC();
 void SL_startup_sequence();
@@ -255,7 +256,6 @@ uint16_t A_values[kNUM_ANALOG_PINS] = {0, 0, 0, 0};
 #pragma mark Message Processing Variables
 // Message Processing Variables
 boolean processing_is_ok = true;
-//boolean TID_is_present = false;
 
 #pragma mark State Variables
 // Serial Interrupt Variable
@@ -334,13 +334,13 @@ void setup() {
 //
 //            new SNIPE_StackLight[kNUM_STACKLIGHTS];
 //    };
-    Serial.println(F("xxx  307  xxx  --> Size of stack light follows."));
-    Serial.println(sizeof(stack_lights));
-    for (uint8_t lightnum=0; lightnum < kNUM_STACKLIGHTS; lightnum++) {
-        Serial.println();
-        Serial.println(lightnum, DEC);
-        stack_lights[lightnum].print_info();
-    }
+//    Serial.println(F("xxx  307  xxx  --> Size of stack light follows."));
+//    Serial.println(sizeof(stack_lights));
+//    for (uint8_t lightnum=0; lightnum < kNUM_STACKLIGHTS; lightnum++) {
+//        Serial.println();
+//        Serial.println(lightnum, DEC);
+//        stack_lights[lightnum].print_info();
+//    }
 
     for (uint8_t lightnum=0; lightnum < kNUM_STACKLIGHTS; lightnum++) {
         stack_lights[lightnum].setup_strip();
@@ -360,14 +360,13 @@ void setup() {
     serialPrintHeaderString();
     checkRAMandExitIfLow(0);
 
-
-
     printSerialInputInstructions();
+    SL_startup_sequence();
     printSerialDataStart();
     SL_loop_time = millis();
     SL_next_heartbeat = millis();    // Set to now
 
-    SL_startup_sequence();
+
 }
 
 
@@ -525,6 +524,7 @@ void handleInputString() {
         printString_P(str_RESP);
     }
     Serial.println(output_string);
+
     // clean up
     output_string = "";
     free(tempstring);
@@ -608,8 +608,6 @@ void handleToken(char* ctoken) {
         handle_SLA();
     } else if (strcmp_P(subtokens[0], str_SID) == 0) {     // could use (0 == strcmp(subtokens[0], "SID")) (strcmp_P(subtokens[0], PSTR("SID")) == 0 ) (cmd.equalsIgnoreCase(str_SID))
         handle_SID();
-    } else if (strcmp_P(subtokens[0], str_TID) == 0) {
-        handle_TID();
     } else if (strcmp_P(subtokens[0], str_VER) == 0) {
         handle_VER();
     } else if (strcmp_P(subtokens[0], str_I2A) == 0) {
@@ -675,7 +673,7 @@ void printSubTokenArray() {
 /**
  * Command handlers must all share the same philosophy.
  * READS FROM:  the subtokens array  (pointers to char* strings)
- *               e.g.  subtokens[0] = "TID"   subtokens[1] = "1234" subtokens[2]=NULL
+ *               e.g.  subtokens[0] = "SID"   subtokens[1] = "1234" subtokens[2]=NULL
  * IMPACTS:  processing_is_ok   sets to false if something goes wrong
  * APPENDS:  its results to output_string
  */
@@ -879,31 +877,6 @@ void handle_SID() {
 
 
 /**
- * function: handle_TID
- * appends:  the Transaction ID (TID) to output display
- * Used for allow host to track message/response pairs.
- */
-void handle_TID() {
-    char buff[10];
-    String resp("");
-    strcpy_P(buff, str_TID);
-    resp = buff;
-    strcpy_P(buff, str_COLON);
-    resp += buff;
-    if ( (subtokens[1] == NULL ) || (strlen(subtokens[1]) == 0)) {  // didn't give us a long enough token
-        processing_is_ok = false;
-        char err[MAX_ERROR_STRING_LENGTH];
-        strcpy_P(err, str_VALUE_MISSING);
-        resp += err;
-    } else {
-        resp += subtokens[1];
-    }
-    strcpy_P(buff, str_SPACE);
-    resp += buff;
-    output_string.concat(resp);
-}
-
-/**
  * function: handle_VER
  * appends:  the SNIPE version to output display
  */
@@ -962,21 +935,25 @@ void handle_DESC() {
 }
 
 void SL_startup_sequence() {
-    Serial.println(F("...Stack Light Startup Sequence"));
-    uint32_t wash_colors[5] = {RED, YELLOW, GREEN, BLUE, BLACK};
+    Serial.println(F("# Doing Stack Light Startup Sequence"));
+    const uint8_t numwashclrs = 5;
+    uint32_t wash_colors[numwashclrs] = {RED, YELLOW, GREEN, BLUE, BLACK};
     uint32_t wash_color;
     uint8_t n = 0;
-    //for(unsigned long wash_color : wash_colors) {
-    for(uint8_t x; x < 5; x++) {
+    uint8_t max_numpixels = 0;
+    for (uint8_t lightnum=0; lightnum < kNUM_STACKLIGHTS; lightnum++) {
+        max_numpixels = max(max_numpixels, stack_lights[lightnum].numpixels );
+    }
+    for(uint8_t x; x < numwashclrs; x++) {
         wash_color = wash_colors[x];
-        for (uint8_t i = 0; i < 255; i++) {
+        for (uint8_t i = 0; i < max_numpixels; i++) {
             for (uint8_t lightnum=0; lightnum < kNUM_STACKLIGHTS; lightnum++) {
-                Serial.print("i: ");Serial.print(i);
+                //Serial.print("i: ");Serial.print(i);
                 n = min(i, stack_lights[lightnum].numpixels - 1);
-                Serial.print("  numpix: ");Serial.println(stack_lights[lightnum].numpixels);
+                //Serial.print("  numpix: ");Serial.println(stack_lights[lightnum].numpixels);
                 stack_lights[lightnum].strip->setPixelColor(n, wash_color);
                 stack_lights[lightnum].strip->show();
-                delay(333);
+                delay(25);
             }
         }
         delay(100);
@@ -1038,8 +1015,9 @@ void handle_SLC_worker(uint8_t sl_num) {
     char buff[10];
     char err[MAX_ERROR_STRING_LENGTH];
     String resp("");
+    processing_is_ok = true;
     // Step 1:  Add "SLCx" to response
-    switch(sl_num) {
+    switch (sl_num) {
         case 1 ... kNUM_STACKLIGHTS:
             strcpy_P(buff, str_SLC);
             resp = buff;
@@ -1054,68 +1032,78 @@ void handle_SLC_worker(uint8_t sl_num) {
     strcpy_P(buff, str_COLON);   // "SLCx"  --> "SLCx:"
     resp += buff;
 
+    //  valid string lengths:   1: ?     8 hex:  "0x123456"     8 deci for 0xFFFFFF <=:  "16777215"
     // STEP 2:  DO WE HAVE SUBTOKENS
-    if ( (subtokens[1] == NULL ) || (strlen(subtokens[1]) == 0)) {  // didn't give us a long enough token, e.g. "SLC:" or "SLC"
+    if ((subtokens[1] == NULL) ||
+        (strlen(subtokens[1]) == 0)) {  // didn't give us a long enough token, e.g. "SLC:" or "SLC"
         processing_is_ok = false;
         strcpy_P(err, str_VALUE_MISSING);
         resp += err;   // then we will skip the other processing.
-    // STEP 2A:   WE GOT SUBTOKENS
+        // STEP 2A:   WE GOT SUBTOKENS
     } else {
         //  STEP 2A   DID WE GET A QUERY?    append our color to the response:   SLCx:0xFF00FF
+        // TODO:  THIS IS HOW WE CAN LEVERAGE THE ARDUINO STRING CLASS TO SUBSTRING AND THEN COMPARE
+        //
+        Serial.println("HERE WE ARE.");
+        Serial.println(subtokens[1]);
+        String st = String(subtokens[1]);
+        Serial.println("Slice 0 - 3");
+        String stcut = st.substring(0, 3);
+        Serial.println(stcut);
+        const char *stcutcstr = stcut.c_str();
+        Serial.println( (strcmp_P(stcutcstr, str_RED) == 0) );
+
         if (strcmp_P(subtokens[1], str_QUERY) == 0) {
             switch (sl_num) {
                 case 1 ... kNUM_STACKLIGHTS:
                     //resp += C2HS(stack_lights[sl_num -1].color);  // "color 2 hex string"
-                    char *tempstr =  new char[UNS_HEX_STR_SIZE];
+                    char *tempstr = new char[UNS_HEX_STR_SIZE];
                     color_uint_to_hex_string(stack_lights[sl_num - 1].color, tempstr, UNS_HEX_STR_SIZE);
                     resp += tempstr;
-                    delete [] tempstr;
+                    delete[] tempstr;
                     break;
-//                default:
-//                    //we already caught this issue earlier
-//                    break;
             }
-        }
-        // STEP 2B  WE GOT SOME VALUE -- HOPEFULLY HEX
-        // AT THIS POINT we should have a value to set, e.g. "SLC1:0x33ff00" gotta convert that to a number
-        char hexprefix[3];             // hexprefix should be: '0x'
-        hexprefix[0] = subtokens[1][0];
-        hexprefix[1] = subtokens[1][1];
-        hexprefix[2] = '\0';      // c-string terminator
-        // VERIFY WE GOT A HEX STRING....HANDLE THAT TOKEN subtoken[1] == "0xYYYYYY"
-        if (strcmp_P(hexprefix, str_HEX) == 0) {     // verify we start with 0x
-            char *hexstring = &subtokens[1][2];      // from "0x00FF00" --> "00FF00"
-            //Serial.print(F("# sub st1: ")); Serial.print(hexstring); Serial.print(F("   length: ")); Serial.println(strlen(subtokens[1])) - 2);
-            uint32_t clr;
-            clr = color_uint_from_hex_string(hexstring);
-            // convert the value we got BACK into a string and echo     "SLCx:0xFF00FF"
-            char *tempstr =  new char[UNS_HEX_STR_SIZE];
-            color_uint_to_hex_string(clr, tempstr, UNS_HEX_STR_SIZE);
-            resp += tempstr;
-            delete [] tempstr;
+        } else if (strlen(subtokens[1]) > 2) {  // at least a '0x'
+            // STEP 2B  WE GOT SOME VALUE -- HOPEFULLY HEX
+            // AT THIS POINT we should have a value to set, e.g. "SLC1:0x33ff00" gotta convert that to a number
+            char hexprefix[3];             // hexprefix should be: '0x'
+            hexprefix[0] = subtokens[1][0];
+            hexprefix[1] = subtokens[1][1];
+            hexprefix[2] = '\0';      // c-string terminator
+            // VERIFY WE GOT A HEX STRING....HANDLE THAT TOKEN subtoken[1] == "0xYYYYYY"
+            if (strcmp_P(hexprefix, str_HEX) == 0) {     // verify we start with 0x
+                char *hexstring = &subtokens[1][2];      // from "0x00FF00" --> "00FF00"
+                //Serial.print(F("# sub st1: ")); Serial.print(hexstring); Serial.print(F("   length: ")); Serial.println(strlen(subtokens[1])) - 2);
+                uint32_t clr;
+                clr = color_uint_from_hex_string(hexstring);
+                // convert the value we got BACK into a string and echo     "SLCx:0xFF00FF"
+                char *tempstr = new char[UNS_HEX_STR_SIZE];
+                color_uint_to_hex_string(clr, tempstr, UNS_HEX_STR_SIZE);
+                resp += tempstr;
+                delete[] tempstr;
 
-            // But don't forget to set the value
-            switch (sl_num) {
-                case 1 ... kNUM_STACKLIGHTS:
-                    stack_lights[sl_num - 1].color = clr;
-                    stack_lights[sl_num - 1].current_color = clr;
-                    break;
-                default:
-                    //we've already caught this issue earlier
-                    break;
+                // But don't forget to set the value
+                switch (sl_num) {
+                    case 1 ... kNUM_STACKLIGHTS:
+                        stack_lights[sl_num - 1].color = clr;
+                        stack_lights[sl_num - 1].current_color = clr;
+                        break;
+                    default:
+                        //we've already caught this issue earlier
+                        break;
+                }
             }
-        // STEP 2C:  NOT A HEX STRING...NOT SURE HOW TO PROCESS
+            // STEP 2C:  NOT A HEX STRING...NOT SURE HOW TO PROCESS
         } else {                // got some weird token lacking a "0x" up front...SLC1:888  we just won't handle it
             processing_is_ok = false;
             char valerr[MAX_ERROR_STRING_LENGTH];
             strcpy_P(valerr, str_VALUE_ERROR);
             resp += valerr;
         }
+        strcpy_P(buff, str_SPACE);
+        resp += buff;
+        output_string.concat(resp);
     }
-
-    strcpy_P(buff, str_SPACE);
-    resp += buff;
-    output_string.concat(resp);
 }
 
 /**
@@ -1674,7 +1662,7 @@ void printSerialInputInstructions( ) {
     printString_P(str_D6);
     Serial.println();
     Serial.print  (F("#   "));
-    printString_P(str_SID); printString_P(str_SPACE); printString_P(str_TID); printString_P(str_SPACE);
+    printString_P(str_SID); printString_P(str_SPACE);
     printString_P(str_VER); printString_P(str_SPACE);
     printString_P(str_DESC); printString_P(str_SPACE); printString_P(str_BLINK);
     Serial.println();

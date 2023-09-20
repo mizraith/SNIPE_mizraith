@@ -111,19 +111,19 @@ const char str_DATA_LENGTH_ERR  [] PROGMEM =    "DATA_LENGTH_ERR";
 //  unused
 // -----------------------------------------------------------------------------
 // color and mode constant strings
-//const char str_RED              [] PROGMEM =    "RED";
-//const char str_ORANGE           [] PROGMEM =    "ORANGE";
-//const char str_YELLOW           [] PROGMEM =    "YELLOW";
-//const char str_GREEN            [] PROGMEM =    "GREEN";
-//const char str_AQUA             [] PROGMEM =    "AQUA";
-//const char str_BLUE             [] PROGMEM =    "BLUE";
-//const char str_INDIGO           [] PROGMEM =    "INDIGO";
-//const char str_VIOLET           [] PROGMEM =    "VIOLET";
-//const char str_WHITE            [] PROGMEM =    "WHITE";
-//const char str_BLACK            [] PROGMEM =    "BLACK";
-//const char str_DEFAULT          [] PROGMEM =    "DEFAULT";
-//const char str_FLASH            [] PROGMEM =    "FLASH";
-//const char str_PULSE            [] PROGMEM =    "PULSE";
+const char str_RED              [] PROGMEM =    "RED";
+const char str_ORANGE           [] PROGMEM =    "ORANGE";
+const char str_YELLOW           [] PROGMEM =    "YELLOW";
+const char str_GREEN            [] PROGMEM =    "GREEN";
+const char str_AQUA             [] PROGMEM =    "AQUA";
+const char str_BLUE             [] PROGMEM =    "BLUE";
+const char str_INDIGO           [] PROGMEM =    "INDIGO";
+const char str_VIOLET           [] PROGMEM =    "VIOLET";
+const char str_WHITE            [] PROGMEM =    "WHITE";
+const char str_BLACK            [] PROGMEM =    "BLACK";
+const char str_DEFAULT          [] PROGMEM =    "DEFAULT";
+const char str_FLASH            [] PROGMEM =    "FLASH";
+const char str_PULSE            [] PROGMEM =    "PULSE";
 
 
 const char  str_EMPTY[]              PROGMEM =  {""};

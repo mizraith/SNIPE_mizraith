@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 #
 # TEST SUITE FOR SNIPE 
-#   You will need python 2.7 and pyserial installed at a minimum.
+#   UPDATED to use Python3 syntax adn Python3 pyserial.
 #
 # To use the test suite, first load up your Arduino with SNIPE and
 # make a note of the comm port (e.g. /dev/tty.usbmodem1411).
@@ -32,7 +32,6 @@ VALUE_MISSING    =    "VALUE_MISSING"
 VALUE_ERROR      =    "VALUE_ERROR"
 Q_REQUIRED       =    "?_MISSING"
 ERR_SID_TOO_LONG =    "SID_>_30"
-ERR_TID_TOO_LONG =    "TID_>_8"
 OUT_OF_RANGE     =    "OUT_OF_RANGE"
 BYTE_SETTING_ERR =    "BYTE_SETTING_ERR"
 NONE_FOUND       =    "NONE_FOUND"
@@ -65,14 +64,14 @@ class SnipeTests(unittest.TestCase):
 
 
             while in_header_mode:
-                resp = SnipeTests.ser.readline()
-                print "resp:\t" + resp.strip()
+                resp = SnipeTests.ser.readline().decode()
+                print("resp:\t" + resp.strip())
                 if DATA_STRING in resp:
                     in_header_mode = False
 
-        except Exception, e:
-            print "ERROR SETTING UP SERIAL PORT: "
-            print e.args
+        except Exception as e:
+            print("ERROR SETTING UP SERIAL PORT: ")
+            print(e.args)
         finally:
             pass
 
@@ -85,9 +84,9 @@ class SnipeTests(unittest.TestCase):
         """
         try:
             SnipeTests.ser.close()
-        except Exception, e:
-            print "ERROR CLOSING SERIAL PORT: "
-            print e.args
+        except Exception as e:
+            print("ERROR CLOSING SERIAL PORT: ")
+            print(e.args)
 
 
 
@@ -98,23 +97,27 @@ class SnipeTests(unittest.TestCase):
         :param exp: response we expect, or expect to be part of the response.
         :return:
         """
-        print "cmd:\t%s" % cmd
-        SnipeTests.ser.write(cmd + "\r\n")
-        time.sleep(0.05)
-        resp = SnipeTests.ser.readline()
+        print("cmd:\t%s" % cmd)
+        tx = cmd + "\r\n"
+        start_ns = time.time_ns()
+        SnipeTests.ser.write(tx.encode())
+        time.sleep(0.001)
+        resp = SnipeTests.ser.readline().decode()
+        end_ns = time.time_ns()
+        delta_ms = round((end_ns - start_ns) / 10e6, 0)
         while resp:
             if resp.startswith("#"):
-                print "#:\t%s" % resp.strip()
-                resp = SnipeTests.ser.readline()
+                print("#:\t%s" % resp.strip())
+                resp = SnipeTests.ser.readline().decode()
             else:
                 break
-        print "exp:\t%s"  % exp
-        print "resp:\t%s" % resp.strip()
+        print(f"exp:\t{exp}")
+        print(f"resp:\t{resp.strip()}")
+        print(f"(ms):\t{delta_ms}")
         try:
-            self.assertTrue(exp in resp)
-            print "\t\t\t\t===PASS==="
-        except AssertionError, a:
-            print "\t\t\t\t!!!FAIL!!!"
+            self.assertTrue(exp in resp, f"\nexpected: {exp}   but got: {resp}\n\n\t\t\t\t!!!FAIL!!!")
+            print("\t\t\t\t===PASS===")
+        except AssertionError as a:
             raise a
 
     def _test_value_missing_conditions(self, cmd):
@@ -153,9 +156,9 @@ class SnipeTests(unittest.TestCase):
 
 
     def test_A0_thru_A3(self):
-        print "\n--------------> ", sys._getframe().f_code.co_name, " <-------------- "   # cool trick prints current function name
+        print("\n--------------> ", sys._getframe().f_code.co_name, " <-------------- ")   # cool trick prints current function name
 
-        for i in xrange(0, 4):
+        for i in range(0, 4):
             cmd = ">A%d:?" % i
             exp = "@A%d:" % i
             self._handle_cmd_exp(cmd, exp)
@@ -166,17 +169,17 @@ class SnipeTests(unittest.TestCase):
 
 
     def test_D2_thru_D6(self):
-        print "\n--------------> ", sys._getframe().f_code.co_name, " <-------------- "   # cool trick prints current function name
+        print("\n--------------> ", sys._getframe().f_code.co_name, " <-------------- ")   # cool trick prints current function name
 
         # Set all to 0, then 1
-        for v in xrange(0,2):
-            for i in xrange(2, 7):
+        for v in range(0,2):
+            for i in range(2, 7):
                 cmd = ">D%d:%d" % (i, v)
                 exp = "@D%d:%d:BIN" % (i, v)
                 self._handle_cmd_exp(cmd, exp)
 
         # check the ? -- all should still be at 1
-        for i in xrange(2, 7):
+        for i in range(2, 7):
             cmd = ">D%d:?" % i
             exp = "@D%d:1:BIN" % i
             self._handle_cmd_exp(cmd, exp)
@@ -187,49 +190,50 @@ class SnipeTests(unittest.TestCase):
         exp = "!D4:" + VALUE_ERROR
         self._handle_cmd_exp(cmd, exp)
 
-    def test_ECHO(self):
-        print "\n--------------> ", sys._getframe().f_code.co_name, " <-------------- "   # cool trick prints current function name
-
-        cmd = ">ECHO:1"
-        exp = "@ECHO:1:BIN"
-        self._handle_cmd_exp(cmd, exp)
-
-        cmd = ">ECHO:0"
-        exp = "@ECHO:0:BIN"    # We should have gotten a verbose response but not going ot worry about the verbose specifics at this point
-        self._handle_cmd_exp(cmd, exp)
-
-        # check the ? -- all should still be at 0
-        cmd = ">ECHO:?"
-        exp = "@ECHO:0:BIN"
-        self._handle_cmd_exp(cmd, exp)
-
-        # poorly formatted command testing
-        self._test_value_missing_conditions("ECHO")
-        cmd = ">ECHO:3"
-        exp = "!ECHO:" + VALUE_ERROR
-        self._handle_cmd_exp(cmd, exp)
+    # ECHO has been removed as redundant.
+    # def test_ECHO(self):
+    #     print("\n--------------> ", sys._getframe().f_code.co_name, " <-------------- ")   # cool trick prints current function name
+    #
+    #     cmd = ">ECHO:1"
+    #     exp = "@ECHO:1:BIN"
+    #     self._handle_cmd_exp(cmd, exp)
+    #
+    #     cmd = ">ECHO:0"
+    #     exp = "@ECHO:0:BIN"    # We should have gotten a verbose response but not going ot worry about the verbose specifics at this point
+    #     self._handle_cmd_exp(cmd, exp)
+    #
+    #     # check the ? -- all should still be at 0
+    #     cmd = ">ECHO:?"
+    #     exp = "@ECHO:0:BIN"
+    #     self._handle_cmd_exp(cmd, exp)
+    #
+    #     # poorly formatted command testing
+    #     self._test_value_missing_conditions("ECHO")
+    #     cmd = ">ECHO:3"
+    #     exp = "!ECHO:" + VALUE_ERROR
+    #     self._handle_cmd_exp(cmd, exp)
 
     def test_SID(self):
-        print "\n--------------> ", sys._getframe().f_code.co_name, " <-------------- "   # cool trick prints current function name
+        print("\n--------------> ", sys._getframe().f_code.co_name, " <-------------- ")   # cool trick prints current function name
 
         cmd = ">SID:?"
         exp = "@SID:"      #won't test the full thing
-        print "cmd:\t%s" % cmd
-        SnipeTests.ser.write(cmd + '\r\n')
+        print("cmd:\t%s" % cmd)
+        tx = cmd + '\r\n'
+        SnipeTests.ser.write(tx.encode())
         time.sleep(0.05)
-        resp = SnipeTests.ser.readline()
+        resp = SnipeTests.ser.readline().decode()
         while resp:
             if resp.startswith("#"):
-                print "#:\t%s" % resp.strip()
-                resp = SnipeTests.ser.readline()
+                print("#:\t%s" % resp.strip())
+                resp = SnipeTests.ser.readline().decode()
             else:
                 break
-        print "resp:\t%s" % resp.strip()
+        print("resp:\t%s" % resp.strip())
         try:
-            self.assertTrue(exp in resp)
-            print "\t\t\t\t===PASS==="
-        except AssertionError, a:
-            print "\t\t\t\t!!!FAIL!!!"
+            self.assertTrue(exp in resp, f"\nexpected: {exp}   but got: {resp}\n\n\t\t\t\t!!!FAIL!!!")
+            print("\t\t\t\t===PASS===")
+        except AssertionError as a:
             raise a
         oldsid = resp.split(":")[1]
 
@@ -250,31 +254,8 @@ class SnipeTests(unittest.TestCase):
         self._handle_cmd_exp(cmd, exp)
 
 
-    def test_TID(self):
-        print "\n--------------> ", sys._getframe().f_code.co_name, " <-------------- "   # cool trick prints current function name
-
-        cmd = ">TID:1234"
-        cmd2 = ">TID:?"   # query string to check last TID
-        exp = "@TID:1234"
-        self._handle_cmd_exp(cmd, exp)
-        # verify the query works
-        self._handle_cmd_exp(cmd2, exp)
-        # verify it is echoed back in a multi-token command
-        cmd = ">SID:? TID:1234"
-        exp = "TID:1234"
-        self._handle_cmd_exp(cmd,exp)
-        # verify the query works
-        self._handle_cmd_exp(cmd2, exp)
-
-        # poorly formatted command testing
-        self._test_value_missing_conditions("TID")
-        cmd = ">TID:1234567890"
-        exp = "!TID:" + ERR_TID_TOO_LONG
-        self._handle_cmd_exp(cmd, exp)
-
-
     def test_VER(self):
-        print "\n--------------> ", sys._getframe().f_code.co_name, " <-------------- "   # cool trick prints current function name
+        print("\n--------------> ", sys._getframe().f_code.co_name, " <-------------- ")   # cool trick prints current function name
 
         cmd = ">VER:?"
         exp = "@VER:"
@@ -286,7 +267,7 @@ class SnipeTests(unittest.TestCase):
 
 
     def test_DESC(self):
-        print "\n--------------> ", sys._getframe().f_code.co_name, " <-------------- "   # cool trick prints current function name
+        print("\n--------------> ", sys._getframe().f_code.co_name, " <-------------- ")   # cool trick prints current function name
 
         cmd = ">DESC:?"
         exp = "@DESC:"
@@ -298,7 +279,7 @@ class SnipeTests(unittest.TestCase):
 
 
     def test_I2A(self):
-        print "\n--------------> ", sys._getframe().f_code.co_name, " <-------------- "   # cool trick prints current function name
+        print("\n--------------> ", sys._getframe().f_code.co_name, " <-------------- ")   # cool trick prints current function name
 
         cmd = ">I2A:123"
         exp = "@I2A:123"
@@ -316,7 +297,7 @@ class SnipeTests(unittest.TestCase):
 
 
     def test_I2B(self):
-        print "\n--------------> ", sys._getframe().f_code.co_name, " <-------------- "   # cool trick prints current function name
+        print("\n--------------> ", sys._getframe().f_code.co_name, " <-------------- ")   # cool trick prints current function name
 
         cmd = ">I2B:3"
         exp = "@I2B:3"
@@ -334,7 +315,7 @@ class SnipeTests(unittest.TestCase):
 
 
     def test_I2S(self):
-        print "\n--------------> ", sys._getframe().f_code.co_name, " <-------------- "   # cool trick prints current function name
+        print("\n--------------> ", sys._getframe().f_code.co_name, " <-------------- ")   # cool trick prints current function name
 
         cmd = ">I2S:5"
         exp = "@I2S:5"
@@ -353,7 +334,7 @@ class SnipeTests(unittest.TestCase):
 
 
     def test_I2W(self):
-        print "\n--------------> ", sys._getframe().f_code.co_name, " <-------------- "   # cool trick prints current function name
+        print("\n--------------> ", sys._getframe().f_code.co_name, " <-------------- ")   # cool trick prints current function name
 
 
         cmd = ">I2B:1 I2W:0xFF"
@@ -378,7 +359,7 @@ class SnipeTests(unittest.TestCase):
 
 
     def test_I2R(self):
-        print "\n--------------> ", sys._getframe().f_code.co_name, " <-------------- "   # cool trick prints current function name
+        print("\n--------------> ", sys._getframe().f_code.co_name, " <-------------- ")   # cool trick prints current function name
 
 
         cmd = ">I2A:104 I2S:3 I2B:1 I2R:?"
@@ -393,9 +374,8 @@ class SnipeTests(unittest.TestCase):
         self._test_q_required("I2R")
 
 
-
     def test_I2F(self):
-        print "\n--------------> ", sys._getframe().f_code.co_name, " <-------------- "   # cool trick prints current function name
+        print("\n--------------> ", sys._getframe().f_code.co_name, " <-------------- ")   # cool trick prints current function name
 
         # we don't know what's hooked up to your arduino, so just check for a response
         cmd = ">I2F:?"
@@ -408,7 +388,7 @@ class SnipeTests(unittest.TestCase):
 
 
     def test_BLINK(self):
-        print "\n--------------> ", sys._getframe().f_code.co_name, " <-------------- "   # cool trick prints current function name
+        print("\n--------------> ", sys._getframe().f_code.co_name, " <-------------- ")   # cool trick prints current function name
 
         # we don't know what's hooked up to your arduino, so just check for a response
         cmd = ">BLINK:10000"
@@ -424,7 +404,7 @@ class SnipeTests(unittest.TestCase):
 
 
     def test_lowercase(self):
-        print "\n--------------> ", sys._getframe().f_code.co_name, " <-------------- "   # cool trick prints current function name
+        print("\n--------------> ", sys._getframe().f_code.co_name, " <-------------- ")   # cool trick prints current function name
 
         # test a few lowercase commands to make sure it doesn't matter
         cmd = ">sid:?"
@@ -445,6 +425,35 @@ class SnipeTests(unittest.TestCase):
         # poorly formatted
         self._test_value_missing_conditions("BLINK")
 
+
+    # NEW 4.0 Stack Light Commands
+
+
+    def test_SLC1_thru_SLC3_basic(self):
+        print("\n--------------> ", sys._getframe().f_code.co_name, " <-------------- ")   # cool trick prints current function name
+
+        clr = 0x555555
+        # Basic set colors
+        for i in range(1,4):
+            cmd = ">SLC%d:%d" % (i, clr)
+            exp = "@SLC%d:%d:HEX" % (i, clr)
+            self._handle_cmd_exp(cmd, exp)
+
+        # check the ? -- all should still be at same color
+        for i in range(1, 4):
+            cmd = ">SLC%d:?" % i
+            exp = "@SLC%d:%d:BIN" % (i, clr)
+            self._handle_cmd_exp(cmd, exp)
+
+        # poorly formatted command testing
+        self._test_value_missing_conditions("SLC1")
+        cmd = ">SLC1:0x1234567"
+        exp = "!SLC1:" + VALUE_ERROR
+        self._handle_cmd_exp(cmd, exp)
+
+    # SLC1, SLC2, SLC3
+    # SLM1, SLM2, SLM3
+    # SLA
 
 
 
@@ -469,9 +478,9 @@ if __name__ == '__main__':
         SnipeTests.port = sys.argv.pop()
 
 
-    print "----- RUNNING SNIPE TEST SUITE  v20160211 -------"
-    print "port: " + SnipeTests.port + "\tbaudrate: " + str(SnipeTests.baudrate)
-    print "-------------------------------------------------"
+    print("----- RUNNING SNIPE TEST SUITE  v20160211 -------")
+    print("port: " + SnipeTests.port + "\tbaudrate: " + str(SnipeTests.baudrate))
+    print("-------------------------------------------------")
     try:
         unittest.main()
     except:

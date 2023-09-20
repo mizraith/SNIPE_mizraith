@@ -8,6 +8,8 @@ _Grammar Version:_   2.0
 _Changes since 1.0:  Added TID:?, BLINK:? and ECHO:[0:1] commands._
 
 _Changes in 4.0:  Added Stack light commands_.
+    ECHO removed -- 2 line responses suck to parse sometimes.
+    TID removed -- never really used.  Makes parsing more complex.
 
 <!-- TOC -->
 * [SNIPE_mizraith](#snipemizraith)
@@ -27,7 +29,6 @@ _Changes in 4.0:  Added Stack light commands_.
         * [D1, D2, D3, D4, D5, [D6]](#d1-d2-d3-d4-d5-d6-)
         * [ECHO](#echo)
         * [SID](#sid-)
-        * [TID](#tid-)
         * [DESC](#desc-)
         * [VER](#ver-)
   * [Commands:](#commands)
@@ -37,7 +38,6 @@ _Changes in 4.0:  Added Stack light commands_.
     * [Macro Commands](#macro-commands)
         * [ECHO](#echo-1)
         * [SID](#sid--1)
-        * [TID](#tid--1)
         * [DESC](#desc--1)
         * [VER](#ver--1)
         * [BLINK](#blink-)
@@ -233,14 +233,7 @@ case -insensitive-.
 - **description:**  Station ID  
 - **value range:**  string value set by user, can NOT contain spaces
 - **example:**      `SID:My_Uno_3`
-              
-##### TID   
-- **description:** Transaction ID.  If the command contains a TID, then SNIPE will return a response with the same TID.
-- **value range:**  String, less than 8 characters please
-- **example:**      
-  - command:  `>A0:? TID:1a35`
-  - response: `@A0:245 TID:1a35`
-                        
+
 ##### DESC  
 - **description:**  Description of our device
 - **value range:**  string, < 32 ASCII chars without spaces
@@ -303,17 +296,6 @@ case -insensitive- but this could change.
   - response: `@SID:None_Set`
   - command:  `>SID:MyUno_03`
   - response: `@SID:MyUno_03`
-              
-##### TID   
-- **description:**     Transaction IDs can be included in messages. They will be echoed back in the associated resopnse. 
-                       The intent is to support synchronizing commands and responses.
-                       Querying the TID will return the last TID value.
-- **input argument:**  ? or string, less than 8 characters, no spaces please
-- **example:**         
-  - command:  `>A0:? TID:1a35`
-  - response: `@A0:245 TID:1a35`
-  - command:  `>TID:?`
-  - response: `@TID:1a35`
               
 ##### DESC  
 - **description:**     Description of our device
@@ -423,12 +405,12 @@ _I2C commands use SCL and SDA pins.  This is [A4] and [A5] on a nano._
                        too may bytes are provided, the write will fail.
 - _NOTE:         THIS will be processed after all other items in the message, but before an I2R._
 - **example:**         
-  - command:  `>I2A:110 I2S:23 I2B:2 I2W:0xA0F3 TID:14397`
-  - response: `@I2A:110 I2S:23 I2B:2 I2W:0xA0F3 TID:14397`
+  - command:  `>I2A:110 I2S:23 I2B:2 I2W:0xA0F3`
+  - response: `@I2A:110 I2S:23 I2B:2 I2W:0xA0F3`
   - command:  `>I2W:0xA1F4`    (resend to same chip/addr)
   - response: `@I2W:0xA1F4`
-  - command:  `>I2W:0xA2F3FF TID:14399`  (resend..too many bytes`
-  - response: `!I2W:BYTE_SETTING_ERR TID:14399`
+  - command:  `>I2W:0xA2F3FF`  (resend..too many bytes`
+  - response: `!I2W:BYTE_SETTING_ERR`
   - command:  `>I2B:?`
   - response: `@I2B:2`
   - command:  `>I2B:3`
@@ -441,11 +423,11 @@ _I2C commands use SCL and SDA pins.  This is [A4] and [A5] on a nano._
 - **input argument:**  ?    <grammatically required>
 - _NOTE:  THIS will be processed after all other items in the message, and after I2W._
 - **example:**         
-  - command:  `>I2A:110 I2S:23 I2B:2 I2R:? TID:14397`
-  - response: `@I2A:110 I2S:23 I2B:2 I2R:0xA0F3 TID:14397`
+  - command:  `>I2A:110 I2S:23 I2B:2 I2R:?`
+  - response: `@I2A:110 I2S:23 I2B:2 I2R:0xA0F3`
   - command:  `>I2R:?`      (re-read from same chip/addr)
   - response: `@I2R:0xA0F3`        
-  - command:  `>I2A:1 I2R:? TID:14399`
+  - command:  `>I2A:1 I2R:?`
   - response  `!I2A:1 I2R:0x00`      (inccorrect address?)
          
 ##### I2F     
@@ -469,8 +451,8 @@ The grammar allows for you to break up I2C commands into multiple messages
 
 Or you can put it all together as one logically flowing message
             
-            command:  >I2A:110 I2S:32 I2B:1 I2W:0xA2 TID:123
-            response: @I2A:110 I2S:32 I2B:1 I2W:0xA2 TID:123
+            command:  >I2A:110 I2S:32 I2B:1 I2W:0xA2
+            response: @I2A:110 I2S:32 I2B:1 I2W:0xA2
         
 And you can alter the order as well because I2C Writes
 are processed near last and I2C Reads are processed dead last.  
@@ -479,8 +461,8 @@ The following would first set the address, setting, bytes, the write
 the data, then read the data back.  Note the return string is
 formatted in order of operation.
 
-            command:  >I2W:0xA3 I2R:? I2A:110 I2S:32 I2B:1 TID:155
-            response: @I2A:110 I2S:32 I2B:1 I2W:0xA3 I2R:0xA3 TID:155
+            command:  >I2W:0xA3 I2R:? I2A:110 I2S:32 I2B:1
+            response: @I2A:110 I2S:32 I2B:1 I2W:0xA3 I2R:0xA3
 
 
 ## Error Messages:

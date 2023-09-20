@@ -76,7 +76,10 @@ void SNIPE_StackLight::update_flash_color() {
 
 
 void SNIPE_StackLight::setup_strip() {
-    this->strip = new Adafruit_NeoPixel(this->numpixels, this->lightpin, this->neopixelmask);
+    this->strip = new Adafruit_NeoPixel(this->numpixels, this->lightpin, this->neopixel_type);
+    this->strip->begin();
+    this->strip->setBrightness(255);
+    this->strip->show();
 }
 
 void SNIPE_StackLight::print_info() {
