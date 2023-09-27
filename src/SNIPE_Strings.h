@@ -110,7 +110,7 @@ const char str_DATA_LENGTH_ERR  [] PROGMEM =    "DATA_LENGTH_ERR";
 // -----------------------------------------------------------------------------
 //  unused
 // -----------------------------------------------------------------------------
-// color and mode constant strings
+// color and mode constant strings.
 const char str_RED              [] PROGMEM =    "RED";
 const char str_ORANGE           [] PROGMEM =    "ORANGE";
 const char str_YELLOW           [] PROGMEM =    "YELLOW";
