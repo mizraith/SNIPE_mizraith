@@ -4,50 +4,43 @@
 // have a library for your micro that supports them.
 //
 
-#ifndef SNIPE_MIZRATIH_SNIPE_COLOR_H
-#define SNIPE_MIZRATIH_SNIPE_COLOR_H
+#ifndef SNIPE_COLOR_H
+#define SNIPE_COLOR_H
 
-#include <Arduino.h>
 #include <stdint.h>
+#include <Arduino.h>
+#include "SNIPE_Strings.h"
 
 class SNIPE_Color {
 public:
-    const String name {"BLACK"};
-    const uint32_t value {0};         // default 0 value
+    const char * name_p;          // PROGMEM STRING
+    const uint32_t value;         // default 0 value
 
-
-
-    // dummy constructor for new, just take the defaults
-    SNIPE_Color() {
-    }
     // paramaterized constructor for direct creation
-    SNIPE_Color(const String name,  const uint32_t value ):
-    value(value),  // constant member var init syntax
-    name(name),
+    SNIPE_Color(const char * name_ptr,  const uint32_t value ):
+    name_p(name_ptr), // constant member var init syntax.
+    value(value)
     {
-    }
+    };
 
-    bool is_equal_value(uint32_t value);
-    bool is_equal_name(String name);
+    bool is_equal_value(uint32_t value) const;
+    bool is_equal_name(const char * name) const;
 
 };
 
-// These are the strings we will accept commands for
-// ALWAYS in upper case
-const class SNIPE_Color cRED = SNIPE_Color("RED", 0xFF0000);
-const class SNIPE_Color cORANGE = SNIPE_Color("ORANGE", 0xFF5500);
-const class SNIPE_Color cYELLOW = SNIPE_Color( "YELLOW", 0xFFFF00);
-const class SNIPE_Color cGREEN = SNIPE_Color( "GREEN", 0x00FF00);
-const class SNIPE_Color cAQUA = SNIPE_Color( "AQUA", 0x00FFFF);
-const class SNIPE_Color cBLUE = SNIPE_Color("BLUE", 0x0000FF);
-const class SNIPE_Color cINDIGO = SNIPE_Color("INDIGO" , 0x3300FF);
-const class SNIPE_Color cVIOLET = SNIPE_Color("VIOLET", 0xFF00FF);
-const class SNIPE_Color cWHITE = SNIPE_Color("WHITE" ,  0xFFFFFF);
-const class SNIPE_Color cBLACK = SNIPE_Color("BLACK" ,  0x000000);
+extern const class SNIPE_Color cRED;
+extern const class SNIPE_Color cORANGE;
+extern const class SNIPE_Color cYELLOW;
+extern const class SNIPE_Color cGREEN;
+extern const class SNIPE_Color cAQUA;
+extern const class SNIPE_Color cBLUE;
+extern const class SNIPE_Color cINDIGO;
+extern const class SNIPE_Color cVIOLET;
+extern const class SNIPE_Color cWHITE;
+extern const class SNIPE_Color cBLACK;
 
-const class SNIPE_Color  kCOLORS []   = {
-        cRED, cORANGE, cYELLOW, cGREEN, cAQUA, cBLUE, cINDIGO, cVIOLET, cWHITE, cBLACK
-};
+extern const class SNIPE_Color *kCOLORS [];
 
+extern const size_t kCOLORS_len;
 
-#endif //SNIPE_MIZRATIH_SNIPE_COLOR_H
+#endif //SNIPE_MIZRAITH_SNIPE_COLOR_H

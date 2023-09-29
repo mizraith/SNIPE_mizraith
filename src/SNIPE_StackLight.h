@@ -21,7 +21,7 @@ public:                         // Access specifier
     unsigned long update_time {0};       // immediate
     bool flash_is_on {false};
     bool pulse_going_up {true};
-    const uint8_t numpixels {24};         // how many pixes in this stack light
+    const uint8_t numpixels {24};         // how many pixels in this stack light
     uint8_t perc_lit {100};         // single digit, no floats please
     Adafruit_NeoPixel *strip;
     bool mode_did_change {false};
@@ -31,9 +31,9 @@ public:                         // Access specifier
     }
     // paramaterized constructor for direct creation
     SNIPE_StackLight( uint8_t lightpin, const uint8_t numpixels, uint8_t neopixel_mask):
-    numpixels(numpixels),  // constant member var init syntax
     lightpin(lightpin),
-    neopixel_type(neopixel_mask)
+    neopixel_type(neopixel_mask),
+    numpixels(numpixels)  // constant member var init syntax
     {
     }
 

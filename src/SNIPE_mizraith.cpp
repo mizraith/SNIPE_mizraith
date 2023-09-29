@@ -51,6 +51,7 @@ _Changes in 4.0:  Added Stack light commands_.
 #include "SNIPE_ColorUtilities.h"
 #include "SNIPE_GeneralUtilities.h"
 #include "SNIPE_Conversions.h"
+#include "SNIPE_Color.h"
 
 
 #pragma mark DEBUG MODE
@@ -1042,7 +1043,7 @@ void handle_SLC_worker(uint8_t sl_num) {
         // STEP 2A:   WE GOT SUBTOKENS
     } else {
         //  STEP 2A   DID WE GET A QUERY?    append our color to the response:   SLCx:0xFF00FF
-        // TODO:  THIS IS HOW WE CAN LEVERAGE THE ARDUINO STRING CLASS TO SUBSTRING AND THEN COMPARE
+        // THIS IS WHERE WE LEVERAGE THE ARDUINO STRING CLASS TO SUBSTRING AND THEN COMPARE
         //
         Serial.println("HERE WE ARE.");
         Serial.println(subtokens[1]);
@@ -1050,8 +1051,32 @@ void handle_SLC_worker(uint8_t sl_num) {
         Serial.println("Slice 0 - 3");
         String stcut = st.substring(0, 3);
         Serial.println(stcut);
-        const char *stcutcstr = stcut.c_str();
+        const char *stcutcstr = stcut.c_str();   // convert to a c_str for comparison
         Serial.println( (strcmp_P(stcutcstr, str_RED) == 0) );
+
+        const char * color_cstr;
+        char buffstr[12];
+        for (uint8_t i=0; i < kCOLORS_len; i++) {
+            if (kCOLORS[i]->is_equal_name(st.c_str())) {
+                Serial.println("BEHOLD -- WE HAVE A MATCHING COLOR:");
+                Serial.print("kcolor[i] addr: ");Serial.println((uint16_t)(kCOLORS[i]), DEC);
+                Serial.print("namep addr: ");Serial.println((uint16_t)&(kCOLORS[i]->name_p), DEC);
+                Serial.print("val addr: ");Serial.println((uint16_t)&(kCOLORS[i]->value), DEC);
+                Serial.print("value at ->name_p: ");Serial.println((uint16_t)kCOLORS[i]->name_p, DEC);
+                Serial.print("value at ->value: ");Serial.println((uint32_t)kCOLORS[i]->value, HEX);  // << this works
+
+                // So we know that kCOLORS[i]->name_p  is the addr location of a char array in progmem
+                byte b = (byte) pgm_read_byte_near(kCOLORS[i]->name_p);
+                Serial.print("byte at ->name_p: ");Serial.print(b, DEC);Serial.print("....");Serial.println((char)b);
+                // The above gets us our first letter "R" as decimal 82
+                char buffstr[12];
+                const char * string_in_progmem = (const char *) kCOLORS[i]->name_p;
+                strcpy_P(buffstr, string_in_progmem);
+                Serial.print("buffstr:   ");Serial.println(buffstr);      // THIS WORKS!!!!
+
+            }
+        }
+
 
         if (strcmp_P(subtokens[1], str_QUERY) == 0) {
             switch (sl_num) {
