@@ -21,7 +21,8 @@ uint32_t color_uint_from_hex_string(char * s);
 // 4 byte unsigned needs    (((4 * 8) + 3 ) / 4)  + 3 = 11           0xABCDEFGH/0
 //
 //#define UNS_HEX_STR_SIZE_NO_0x ((sizeof(unsigned) * CHAR_BIT + 3)/4 + 1)
-#define UNS_HEX_STR_SIZE ((sizeof(unsigned) * CHAR_BIT + 3)/4 + 3)
+#define UNS_HEX_STR_SIZE ((sizeof(uint32_t) * CHAR_BIT + 3)/4 + 3)
+//#define UNS_HEX_STR_SIZE 9
 
 // ---------- The following do not work on C++ as you cannot index into a temporary array like this. -----------
 //#pragma mark Method Shortcuts

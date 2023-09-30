@@ -124,6 +124,7 @@ const char str_BLACK            [] PROGMEM =    "BLACK";
 const char str_DEFAULT          [] PROGMEM =    "DEFAULT";
 const char str_FLASH            [] PROGMEM =    "FLASH";
 const char str_PULSE            [] PROGMEM =    "PULSE";
+const uint8_t kCOLORLENGTH = 12;   // color names above NEVER get longer than this
 
 
 const char  str_EMPTY[]              PROGMEM =  {""};

@@ -95,6 +95,13 @@ void SNIPE_StackLight::print_info() {
     Serial.print(F("\tperc_lit:  "));Serial.println(this->perc_lit);
     Serial.print(F("\t&(*strip): "));Serial.println((unsigned int)&(this->strip), DEC);
     Serial.print(F("\t&strip: "));Serial.println((unsigned int)this->strip, DEC);
+
+    char buffstr[kCOLORLENGTH];
+    const char * string_in_progmem = (const char *) this->colorname_p;
+    strcpy_P(buffstr, string_in_progmem);
+    Serial.print(F("\tcolorname: "));Serial.println(buffstr);
+    Serial.println(F("------------------------------------\n"));
+
     //Serial.print(F("\tstripbytes: "));Serial.println((uint16_t )this->strip->numBytes);
 
 

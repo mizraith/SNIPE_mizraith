@@ -6,6 +6,7 @@
 #define SNIPE_MIZRATIH_SNIPE_STACKLIGHT_H
 
 #include "Adafruit_NeoPixel.h"
+#include "SNIPE_Strings.h"
 
 #define BLACK 0x000000
 #define MODE_DEFAULT 0
@@ -25,6 +26,7 @@ public:                         // Access specifier
     uint8_t perc_lit {100};         // single digit, no floats please
     Adafruit_NeoPixel *strip;
     bool mode_did_change {false};
+    char * colorname_p;   // pointer to string in progmem
 
     // dummy constructor for new, just take the defaults
     SNIPE_StackLight() {
@@ -35,6 +37,7 @@ public:                         // Access specifier
     neopixel_type(neopixel_mask),
     numpixels(numpixels)  // constant member var init syntax
     {
+        this->colorname_p = (char *) str_EMPTY;
     }
 
     void change_mode(uint8_t new_mode);
