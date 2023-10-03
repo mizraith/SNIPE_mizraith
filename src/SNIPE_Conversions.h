@@ -12,8 +12,8 @@
 #include <limits.h>
 
 # pragma mark Color <-> String Conversions
-char *unsigned_to_hex_string(unsigned x, char *dest, size_t size);
-char *color_uint_to_hex_string(unsigned x, char *dest, size_t size);
+char *unsigned_to_hex_string(uint32_t x, char *dest, size_t size);
+char *color_uint_to_hex_string(uint32_t x, char *dest, size_t size);
 uint32_t color_uint_from_hex_string(char * s);
 
 // Use the NO_0x size if you create a macro and don't want the extra "0x" at the beginning.

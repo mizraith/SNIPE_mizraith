@@ -107,12 +107,15 @@ char *unsigned_to_hex_string(unsigned x, char *dest, size_t size) {
  * Example use:  See /sandbox/test_hex_conversion.cpp
  *   U2HS(15);      -->  "0x00000F"
  *   C2HS(0x00FF00); -->  "0x00FF00"
+ *
+ *   char *tempstr = new char[UNS_HEX_STR_SIZE];
+ *   color_uint_to_hex_string(clr, tempstr, UNS_HEX_STR_SIZE);
  */
 // In this cae we return at least 6 digits  0x00FF00.   Could be more if
 // the color value is greater than 0xFFFFFF.
 //  "0x" is prepended for us.
-char *color_uint_to_hex_string(unsigned x, char *dest, size_t size) {
-    snprintf(dest, size, "0x%06X", x);
+char *color_uint_to_hex_string(uint32_t x, char *dest, size_t size) {
+    snprintf(dest, size, "0x%06lX", x);   // << need the long "l" for "lX" or it gets truncated to 16 bits!!!
     return dest;
 }
 
@@ -133,7 +136,7 @@ uint32_t color_uint_from_hex_string(char * s){
 }
 
 
-char *C2HS(unsigned x) {
+char *C2HS(uint32_t x) {
     char* dest = new char[UNS_HEX_STR_SIZE];
 
     return color_uint_to_hex_string(x, dest, UNS_HEX_STR_SIZE);

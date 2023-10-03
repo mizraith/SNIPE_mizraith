@@ -451,6 +451,40 @@ class SnipeTests(unittest.TestCase):
         exp = "!SLC1:" + VALUE_ERROR
         self._handle_cmd_exp(cmd, exp)
 
+    def test_SLC1_colornames(self):
+        print("\n--------------> ", sys._getframe().f_code.co_name, " <-------------- ")   # cool trick prints current function name
+
+        colors =  {"RED":    "0xFF0000",
+                   "ORANGE": "0xFF5500",
+                   "YELLOW": "0xFFFF00",
+                   "GREEN":  "0x00FF00",
+                   "AQUA":   "0x00FFFF",
+                   "BLUE":   "0x0000FF",
+                   "INDIGO": "0x3300FF",
+                   "VIOLET": "0xFF00FF",
+                   "WHITE":  "0xFFFFFF",
+                   "BLACK":  "0x000000"}
+
+        # SET by uppercase name
+        for key, value in colors.items():
+            cmd = f">SLC1:{key}"
+            exp = f"@SLC1:{value}:{key}"
+            self._handle_cmd_exp(cmd, exp)
+
+        # SET with lowercase name
+        for key, value in colors.items():
+            cmd = f">SLC1:{key.lower()}"
+            exp = f"@SLC1:{value}:{key}"
+            self._handle_cmd_exp(cmd, exp)
+
+        # Fail intentionally
+        for key, value in colors.items():
+            cmd = f">SLC1:rojo"
+            exp = f"!SLC1:" + VALUE_ERROR
+            self._handle_cmd_exp(cmd, exp)
+
+
+
     # SLC1, SLC2, SLC3
     # SLM1, SLM2, SLM3
     # SLA

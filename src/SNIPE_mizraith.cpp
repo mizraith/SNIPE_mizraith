@@ -1018,6 +1018,7 @@ void handle_SLC3(){
 void handle_SLC_worker(uint8_t sl_num) {
     char buff[kCOLORLENGTH];
     char err[MAX_ERROR_STRING_LENGTH];
+    bool handled = false;
     String resp("");
     processing_is_ok = true;
     // Step 1:  Add "SLCx" to response
@@ -1046,9 +1047,7 @@ void handle_SLC_worker(uint8_t sl_num) {
         // STEP 2A:   WE GOT SUBTOKENS
 
     } else if ((sl_num >= 1) && (sl_num <= kNUM_STACKLIGHTS + 1)) {  // this is a double check actually
-        bool handled = false;
 
-        Serial.print("Pre-handle value response: ");Serial.println(resp);
         handled = try_handle_stacklight_query(sl_num, resp);
 
         if (!handled) {
@@ -1058,12 +1057,11 @@ void handle_SLC_worker(uint8_t sl_num) {
 
         if (!handled) {
             try_handle_stacklight_numeric(sl_num, resp);
-            Serial.print("Post handle numeric response: ");Serial.println(resp);
         }
     }
 
     // ...NOT SURE HOW TO PROCESS
-    else {
+    if (!handled) {
         processing_is_ok = false;
         char valerr[MAX_ERROR_STRING_LENGTH];
         strcpy_P(valerr, str_VALUE_ERROR);
@@ -1121,6 +1119,16 @@ bool try_handle_stacklight_numeric(uint8_t sl_num, String &resp) {
 //    if (__endptr[0] == '\0') {  // strtoul sets endptr to last part of #, so /0 means we did the entire string
 //        handled = true;        // full string handled, no extra text.
 //        Serial.println("HANDLED THE ENTIRE NUMBER WE DID!");
+    if (__endptr[0] != '\0') {
+        // We did NOT handle the entire string.
+        //Serial.println("Did not handle entire.");
+        if (longcolor == 0) {
+            // And we got an error back in our conversion...did not start with a number
+            //Serial.println("returning FALSE");
+            return false;   // < could not handle...get out of here
+        }
+    }
+
 //    }
     if (longcolor <= 0xFFFFFF) {
         clr = longcolor;
@@ -1200,8 +1208,9 @@ bool try_handle_stacklight_numeric(uint8_t sl_num, String &resp) {
 bool try_handle_stacklight_colorname(uint8_t sl_num, String &resp){
     char buff[kCOLORLENGTH];
     bool handled = false;
-    Serial.print("TRYING TO HANDLE A COLOR NAME GIVEN: ");Serial.println(subtokens[1]);
+    //Serial.print("TRYING TO HANDLE A COLOR NAME GIVEN: ");Serial.println(subtokens[1]);
     String str_val_token = String(subtokens[1]);
+    str_val_token.toUpperCase();
 //    String stcut = str_val_token.substring(0, 3);
 //    Serial.print("Slice 0 - 3:");Serial.println(stcut);
 //    const char *stcutcstr = stcut.c_str();   // convert to a c_str for comparison
@@ -1221,14 +1230,25 @@ bool try_handle_stacklight_colorname(uint8_t sl_num, String &resp){
 //            // The above gets us our first letter "R" as decimal 82
             const char * string_in_progmem = (const char *) kCOLORS[i]->name_p;  // << The magic dereference
             strcpy_P(buff, string_in_progmem);
-            Serial.print("colorname:   ");Serial.println(buff);      // THIS WORKS!!!!
+            //Serial.print("colorname:   ");Serial.println(buff);      // THIS WORKS!!!!
 
-            // Set the value, the base color and the current color value.
+            // Set the value, the base color and the current color value. Add value to response.
             stack_lights[sl_num - 1].color = kCOLORS[i]->value;
             stack_lights[sl_num - 1].current_color = kCOLORS[i]->value;
 
-            // Set the text
+            //Serial.print("Value from ->value:");Serial.println(kCOLORS[i]->value, HEX);
+            char *hexstr = new char[UNS_HEX_STR_SIZE];
+            color_uint_to_hex_string(kCOLORS[i]->value, hexstr, UNS_HEX_STR_SIZE);
+            resp += hexstr;
+            strcpy_P(buff, str_COLON);
+            resp += buff;
+
+            // Set the text, add to response
             stack_lights[sl_num - 1].colorname_p = (char *) kCOLORS[i]->name_p;
+            strcpy_P(buff, string_in_progmem);
+            resp += buff;
+
+
             handled = true;
         }  // end colorname match
     }
