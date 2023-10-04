@@ -1056,7 +1056,7 @@ void handle_SLC_worker(uint8_t sl_num) {
         }
 
         if (!handled) {
-            try_handle_stacklight_numeric(sl_num, resp);
+            handled = try_handle_stacklight_numeric(sl_num, resp);
         }
     }
 
@@ -1144,33 +1144,6 @@ bool try_handle_stacklight_numeric(uint8_t sl_num, String &resp) {
         handled = true;
     }
 
-//    // ----------- old code BEFORE we found strtoul ------------------
-//    // Check for hex "0x"
-//    if (strlen(subtokens[1]) > 2) {  // isn't at least a '0x'
-//        char hexprefix[3];             // hexprefix should be: '0x'
-//        hexprefix[0] = subtokens[1][0];
-//        hexprefix[1] = subtokens[1][1];
-//        hexprefix[2] = '\0';      // c-string terminator
-//        // VERIFY WE GOT A HEX STRING....HANDLE THAT TOKEN subtoken[1] == "0xYYYYYY"
-//        if (strcmp_P(hexprefix, str_HEX) == 0) {     // verify we start with 0x
-//            // AT THIS POINT we should have a value to set, e.g. "SLC1:0x33ff00" gotta convert that to a number
-//            char *hexstring = &subtokens[1][2];      // from "0x00FF00" --> "00FF00"
-//            //Serial.print(F("# sub st1: ")); Serial.print(hexstring); Serial.print(F("   length: ")); Serial.println(strlen(subtokens[1])) - 2);
-//            uint32_t clr;
-//            clr = color_uint_from_hex_string(hexstring);
-//            // convert the value we got BACK into a string and echo     "SLCx:0xFF00FF"
-//            char *tempstr = new char[UNS_HEX_STR_SIZE];
-//            color_uint_to_hex_string(clr, tempstr, UNS_HEX_STR_SIZE);
-//            resp += tempstr;
-//            delete[] tempstr;
-//
-//            // Set the value, the base color and the current color value.
-//            stack_lights[sl_num - 1].color = clr;
-//            stack_lights[sl_num - 1].current_color = clr;
-//            handled = true;
-//        }
-//    }
-
     if (handled) {
         bool matched = false;
         // try to match color names
@@ -1181,9 +1154,9 @@ bool try_handle_stacklight_numeric(uint8_t sl_num, String &resp) {
                 stack_lights[sl_num - 1].colorname_p = (char *)kCOLORS[i]->name_p;
                 const char *string_in_progmem = (const char *) stack_lights[sl_num - 1].colorname_p;
 
-                Serial.print(F("WE FOUND A MATCHING COLOR: "));
                 strcpy_P(buff, string_in_progmem);
-                Serial.println(buff);
+                //Serial.print(F("WE FOUND A MATCHING COLOR: "));
+                //Serial.println(buff);
 
                 strcpy_P(buff, str_COLON);   // "SLCx"  --> "SLCx:"
                 resp += buff;
@@ -1196,7 +1169,7 @@ bool try_handle_stacklight_numeric(uint8_t sl_num, String &resp) {
         }
 
     }// end color matching
-    Serial.print("Inside handle numeric response now at: ");Serial.println(resp);
+//    Serial.print("Inside handle numeric response now at: ");Serial.println(resp);
     return handled;
 }
 

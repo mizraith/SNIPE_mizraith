@@ -26,7 +26,6 @@ from datetime import datetime, timedelta
 import serial
 from optparse import OptionParser
 
-
 DATA_STRING      =    "#####DATA#####"
 VALUE_MISSING    =    "VALUE_MISSING"
 VALUE_ERROR      =    "VALUE_ERROR"
@@ -36,6 +35,19 @@ OUT_OF_RANGE     =    "OUT_OF_RANGE"
 BYTE_SETTING_ERR =    "BYTE_SETTING_ERR"
 NONE_FOUND       =    "NONE_FOUND"
 DATA_LENGTH_ERR  =    "DATA_LENGTH_ERR"
+
+colors =  {"RED":    "0xFF0000",
+           "ORANGE": "0xFF5500",
+           "YELLOW": "0xFFFF00",
+           "GREEN":  "0x00FF00",
+           "AQUA":   "0x00FFFF",
+           "BLUE":   "0x0000FF",
+           "INDIGO": "0x3300FF",
+           "VIOLET": "0xFF00FF",
+           "WHITE":  "0xFFFFFF",
+           "BLACK":  "0x000000"}
+
+
 
 class SnipeTests(unittest.TestCase):
 
@@ -433,16 +445,17 @@ class SnipeTests(unittest.TestCase):
         print("\n--------------> ", sys._getframe().f_code.co_name, " <-------------- ")   # cool trick prints current function name
 
         clr = 0x555555
+        clrtxt = "0x555555"
         # Basic set colors
         for i in range(1,4):
             cmd = ">SLC%d:%d" % (i, clr)
-            exp = "@SLC%d:%d:HEX" % (i, clr)
+            exp = "@SLC%d:%s" % (i,clrtxt)
             self._handle_cmd_exp(cmd, exp)
 
         # check the ? -- all should still be at same color
         for i in range(1, 4):
             cmd = ">SLC%d:?" % i
-            exp = "@SLC%d:%d:BIN" % (i, clr)
+            exp = "@SLC%d:%s" % (i, clrtxt)
             self._handle_cmd_exp(cmd, exp)
 
         # poorly formatted command testing
@@ -453,17 +466,6 @@ class SnipeTests(unittest.TestCase):
 
     def test_SLC1_colornames(self):
         print("\n--------------> ", sys._getframe().f_code.co_name, " <-------------- ")   # cool trick prints current function name
-
-        colors =  {"RED":    "0xFF0000",
-                   "ORANGE": "0xFF5500",
-                   "YELLOW": "0xFFFF00",
-                   "GREEN":  "0x00FF00",
-                   "AQUA":   "0x00FFFF",
-                   "BLUE":   "0x0000FF",
-                   "INDIGO": "0x3300FF",
-                   "VIOLET": "0xFF00FF",
-                   "WHITE":  "0xFFFFFF",
-                   "BLACK":  "0x000000"}
 
         # SET by uppercase name
         for key, value in colors.items():
@@ -478,14 +480,34 @@ class SnipeTests(unittest.TestCase):
             self._handle_cmd_exp(cmd, exp)
 
         # Fail intentionally
+        cmd = f">SLC1:rojo"
+        exp = f"!SLC1:" + VALUE_ERROR
+        self._handle_cmd_exp(cmd, exp)
+
+    def test_SLC1_colorvalues(self):
+        print("\n--------------> ", sys._getframe().f_code.co_name, " <-------------- ")   # cool trick prints current function name
+
+        # SET known values first
         for key, value in colors.items():
-            cmd = f">SLC1:rojo"
-            exp = f"!SLC1:" + VALUE_ERROR
+            cmd = f">SLC1:{value}"
+            exp = f"@SLC1:{value}:{key}"
             self._handle_cmd_exp(cmd, exp)
 
+        # Set a color value, then go off by digit and validate it's "cleared"
+        cmd = f">SLC1:0xFF0000"
+        exp = f"@SLC1:0xFF0000:RED"
+        self._handle_cmd_exp(cmd, exp)
+        # off by one....should clear the 'red' that is appended since we don't have a color match
+        cmd = f">SLC1:0xFF0001"
+        exp = f"@SLC1:0xFF0001"
+        self._handle_cmd_exp(cmd,exp)
+        # set to another color to make sure
+        cmd = f">SLC1:0x00FF00"
+        exp = f"@SLC1:0x00FF00:GREEN"
+        self._handle_cmd_exp(cmd, exp)
 
 
-    # SLC1, SLC2, SLC3
+# SLC1, SLC2, SLC3
     # SLM1, SLM2, SLM3
     # SLA
 
