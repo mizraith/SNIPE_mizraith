@@ -328,12 +328,23 @@ case -insensitive- but this could change.
 _SLC commands use [D7] and [D8] and [D9] by default on a nano._
 #### SLC1, SLC2, SLC3
 - **description:** Stack Light Color.  Sets the stack light color.
-- **input argument:** ? or color value as a hexadecimal string. 0xRRGGBB. The leading '0x' is required! If not properly formatted, will return a value error.  Setting to 0x0 will turn the color "black", or off. Case insensitive.
+- **input argument:** ? or color value  0xRRGGBB. 
+- **input values:** 
+  - As hex string: '0x123456'  Leading 0x required.
+  - As decimal:  '255'    No leading zero.  Max value <= 0xFFFFFF
+  - As text: "RED" "red"  case insensitive.  Matching one of the defined colors.
+  - If not properly formatted, will return a value error.  Setting to 0x0 will turn the color "black", or off. Case insensitive.
+  - If a color is defined, will append that name to the response string
   **example:** 
   - command: `>SLC1:0xFF0000`
   - response:`@SLC1:0xFF0000`   The LED on STack Light 1 is now RED.
   - command: `>SLC1:0x0`
   - response: `@SLC1:0x0`    The LED is now off.
+  - command: `>SLC1:RED`    (or `>SLC1:red`)
+  - response: `@SLC1:0xFF0000:RED`   Note it returns the hex value
+  - command: `>SLC1:255`        Decimal input
+  - response: `@SLC1:0x0000FF:BLUE`   Converts to HEX and appends known color value
+  - 
 - _NOTE:  **SLC1** --> **[D7]**, **SLC2** -->**[D8]**, **SLC3** --> **[D9]**_
 
 #### SLM1, SLM2, SLM3
@@ -357,6 +368,16 @@ _SLC commands use [D7] and [D8] and [D9] by default on a nano._
   - repsonse: `@SLM1:3:100`  Returns the value it rounded up to.
   - command: `>SLM1:0`
   - response: `@SLM1:0`  The light for stack light #1 is off
+
+#### SLP1, SLP2, SLP3
+- **description** Stack Light Percentage   Set how many of the lights are on
+- **input argument** ? or int percentage of pixels on.
+- **input values** 0:100  0=all off  100=all on.  50=first half closest to controller are illuminated.
+- **example:**
+  - command: `>SLP1:100`
+  - response: `@SLP1:100`   All lights are on
+  - command: `>SPL1:25`
+  - response: `@SLP1:25`    25% of the lights are on, closest to controller
 
 #### SLA
 - **description:**  Stack Light alarm.  Convenience method for setting digital pin high to activate annoying beeper.

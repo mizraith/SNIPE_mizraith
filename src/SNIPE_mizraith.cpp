@@ -106,32 +106,18 @@ void handleInputString();
 void handleToken(char *);
 void printSubTokenArray();
 // COMMAND HANDLING
-void handle_A0();
-void handle_A1();
-void handle_A2();
-void handle_A3();
 void handle_A_worker(uint8_t);
-void handle_D2();
-void handle_D3();
-void handle_D4();
-void handle_D5();
-void handle_D6();
 void handle_D_worker(uint8_t);
 void handle_SID();
 void handle_VER();
 void handle_DESC();
 void SL_startup_sequence();
 void SL_update();
-void handle_SLC1();
-void handle_SLC2();
-void handle_SLC3();
+void handle_SLP_worker(uint8_t);
 void handle_SLC_worker(uint8_t);
 bool try_handle_stacklight_query(uint8_t, String &);
 bool try_handle_stacklight_numeric(uint8_t, String &);
 bool try_handle_stacklight_colorname(uint8_t, String &);
-void handle_SLM1();
-void handle_SLM2();
-void handle_SLM3();
 void handle_SLM_worker(uint8_t);
 void handle_SLA();
 void handle_I2A();
@@ -579,35 +565,41 @@ void handleToken(char* ctoken) {
     }
 
     if        (strcmp_P(subtokens[0], str_A0) == 0) {
-        handle_A0();
+        handle_A_worker(0);
     } else if (strcmp_P(subtokens[0], str_A1) == 0)  {
-        handle_A1();
+        handle_A_worker(1);
     } else if (strcmp_P(subtokens[0], str_A2) == 0)  {
-        handle_A2();
+        handle_A_worker(2);
     } else if (strcmp_P(subtokens[0], str_A3) == 0)  {
-        handle_A3();
+        handle_A_worker(3);
     } else if (strcmp_P(subtokens[0], str_D2) == 0)  {
-        handle_D2();
+        handle_D_worker(2);
     } else if (strcmp_P(subtokens[0], str_D3) == 0)  {
-        handle_D3();
+        handle_D_worker(3);
     } else if (strcmp_P(subtokens[0], str_D4) == 0)  {
-        handle_D4();
+        handle_D_worker(4);
     } else if (strcmp_P(subtokens[0], str_D5) == 0) {
-        handle_D5();
+        handle_D_worker(5 );
     } else if (strcmp_P(subtokens[0], str_D6) == 0) {
-        handle_D6();
+        handle_D_worker(6);
+    } else if (strcmp_P(subtokens[0], str_SLP1) == 0) {
+        handle_SLP_worker(1);
+    } else if (strcmp_P(subtokens[0], str_SLP2) == 0) {
+        handle_SLP_worker(2);
+    } else if (strcmp_P(subtokens[0], str_SLP3) == 0) {
+        handle_SLP_worker(3);
     } else if (strcmp_P(subtokens[0], str_SLC1) == 0) {
-        handle_SLC1();
+        handle_SLC_worker(1);
     } else if (strcmp_P(subtokens[0], str_SLC2) == 0) {
-        handle_SLC2();
+        handle_SLC_worker(2);
     } else if (strcmp_P(subtokens[0], str_SLC3) == 0) {
-        handle_SLC3();
+        handle_SLC_worker(3);
     } else if (strcmp_P(subtokens[0], str_SLM1) == 0) {
-        handle_SLM1();
+        handle_SLM_worker(1);
     } else if (strcmp_P(subtokens[0], str_SLM2) == 0) {
-        handle_SLM2();
+        handle_SLM_worker(2);
     } else if (strcmp_P(subtokens[0], str_SLM3) == 0) {
-        handle_SLM3();
+        handle_SLM_worker(3);
     } else if (strcmp_P(subtokens[0], str_SLA) == 0) {
         handle_SLA();
     } else if (strcmp_P(subtokens[0], str_SID) == 0) {     // could use (0 == strcmp(subtokens[0], "SID")) (strcmp_P(subtokens[0], PSTR("SID")) == 0 ) (cmd.equalsIgnoreCase(str_SID))
@@ -687,21 +679,6 @@ void printSubTokenArray() {
  ***************************************************
  ***************************************************/
 #pragma mark Command Handling
-void handle_A0() {
-    handle_A_worker(0);
-}
-
-void handle_A1() {
-    handle_A_worker(1);
-}
-
-void handle_A2() {
-    handle_A_worker(2);
-}
-
-void handle_A3() {
-    handle_A_worker(3);
-}
 
 /**
  * function: handle_A_worker
@@ -750,28 +727,6 @@ void handle_A_worker(uint8_t numA) {
     strcpy_P(buff, str_SPACE);
     resp += buff;
     output_string.concat(resp);
-}
-
-
-
-void handle_D2() {
-    handle_D_worker(2);
-}
-
-void handle_D3() {
-    handle_D_worker(3);
-}
-
-void handle_D4() {
-    handle_D_worker(4);
-}
-
-void handle_D5() {
-    handle_D_worker(5);
-}
-
-void handle_D6() {
-    handle_D_worker(6);
 }
 
 
@@ -994,19 +949,6 @@ void SL_update() {
     }
 }
 
-
-
-void handle_SLC1() {
-    handle_SLC_worker(1);
-}
-
-void handle_SLC2(){
-    handle_SLC_worker(2);
-}
-
-void handle_SLC3(){
-    handle_SLC_worker(3);
-}
 
 /**
  * function: handle_SL_worker
