@@ -111,9 +111,11 @@ void handle_D_worker(uint8_t);
 void handle_SID();
 void handle_VER();
 void handle_DESC();
-void SL_startup_sequence();
-void SL_update();
+void stacklight_startup_sequence();
+void stacklight_update();
 void handle_SLP_worker(uint8_t);
+bool try_handle_stackpercent_query(uint8_t, String &);
+bool try_handle_stackpercent_numeric(uint8_t, String &);
 void handle_SLC_worker(uint8_t);
 bool try_handle_stacklight_query(uint8_t, String &);
 bool try_handle_stacklight_numeric(uint8_t, String &);
@@ -217,7 +219,7 @@ String output_string = "";                 // might as well use the helper libra
 // STACK LIGHT CONTROLLER supporting variables
 #define kNUM_STACKLIGHTS 3
 SNIPE_StackLight stack_lights[kNUM_STACKLIGHTS] =  {
-        SNIPE_StackLight(SL1_PIN, 4, NEO_GRB + NEO_KHZ800),
+        SNIPE_StackLight(SL1_PIN, 8, NEO_GRB + NEO_KHZ800),
         SNIPE_StackLight(SL2_PIN, 3, NEO_GRB + NEO_KHZ800),
         SNIPE_StackLight(SL3_PIN, 2, NEO_GRB + NEO_KHZ800),
 };
@@ -351,7 +353,7 @@ void setup() {
     checkRAMandExitIfLow(0);
 
     printSerialInputInstructions();
-    SL_startup_sequence();
+    stacklight_startup_sequence();
     printSerialDataStart();
     SL_loop_time = millis();
     SL_next_heartbeat = millis();    // Set to now
@@ -374,7 +376,7 @@ void loop() {
 
     if (millis() > SL_next_heartbeat) {
         SL_next_heartbeat = millis() + kHEARTBEAT_INTVL_ms;
-        SL_update();
+        stacklight_update();
     }
 
     if (input_string_ready) {
@@ -893,7 +895,7 @@ void handle_DESC() {
     output_string.concat(resp);
 }
 
-void SL_startup_sequence() {
+void stacklight_startup_sequence() {
     Serial.println(F("# Doing Stack Light Startup Sequence"));
     const uint8_t numwashclrs = 5;
     uint32_t wash_colors[numwashclrs] = {RED, YELLOW, GREEN, BLUE, BLACK};
@@ -919,7 +921,7 @@ void SL_startup_sequence() {
     }
 }
 
-void SL_update() {
+void stacklight_update() {
     // Go through each stack light.
     //
     // 1) Calculate number active
@@ -949,6 +951,85 @@ void SL_update() {
     }
 }
 
+/**
+ * function: handle_SLP_worker
+ * sl_num:  which stack light are you controlling?  1, 2, or 3
+ * Handle Stack Light Percentage worker
+ * Expects values to be an int between 0 and 100 notation (e.g. "0x0AFF") or a color in all caps ("RED")
+ */
+void handle_SLP_worker(uint8_t sl_num) {
+    bool handled = false;
+    char buff[8];
+    char err[MAX_ERROR_STRING_LENGTH];
+    String resp("");
+    // Step 1:  Add "SLCx" to response
+    switch (sl_num) {
+        case 1 ... kNUM_STACKLIGHTS:   // Double check, but at this point, sl_num has already been limited.
+            strcpy_P(buff, str_SLP);
+            resp = buff;
+            resp += sl_num;      // leveraging that String class.
+            break;
+        default:
+            strcpy_P(err, str_VALUE_ERROR);
+            resp += err;
+            break;
+    }
+    strcpy_P(buff, str_COLON);   // "SLCx"  --> "SLCx:"
+    resp += buff;
+
+    // STEP 2:  DO WE HAVE SUBTOKENS
+    if ((subtokens[1] == NULL) ||
+        (strlen(subtokens[1]) == 0)) {  // didn't give us a long enough token, e.g. "SLC:" or "SLC"
+        processing_is_ok = false;
+        strcpy_P(err, str_VALUE_MISSING);
+        resp += err;   // then we will skip the other processing.
+        handled = true;
+        // STEP 2A:   WE GOT SUBTOKENS
+    } else if ((sl_num >= 1) && (sl_num <= kNUM_STACKLIGHTS + 1)) {  // this is a triple check actually
+
+        handled = try_handle_stackpercent_query(sl_num, resp);
+
+        if (!handled) {
+            handled = try_handle_stackpercent_numeric(sl_num, resp);
+        }
+    }    // ...NOT SURE HOW TO PROCESS
+    if (!handled) {
+        processing_is_ok = false;
+        strcpy_P(err, str_VALUE_ERROR);
+        resp += err;
+    }
+    strcpy_P(buff, str_SPACE);
+    resp += buff;
+    output_string.concat(resp);
+
+}
+
+bool try_handle_stackpercent_query(uint8_t sl_num, String & resp) {
+    if (strcmp_P(subtokens[1], str_QUERY) != 0) {
+        return false;
+    }
+    //  Got  SLP1:?    return   SLP1:99
+    char *tempstr = new char[UNS_HEX_STR_SIZE];
+    resp += stack_lights[sl_num - 1].perc_lit;
+    return true;
+}
+
+bool try_handle_stackpercent_numeric(uint8_t sl_num, String & resp) {
+    char buff[6];
+    String str_val_token = String(subtokens[1]);
+    bool handled = false;
+    char *__endptr;
+    // strtoul handles  '0x' or decimilar if we give it base==0
+    long percentage = strtoul(str_val_token.c_str(), &__endptr, 0);
+    if (__endptr[0] == '\0') {  // strtoul sets endptr to last part of #, so /0 means we did the entire string
+        if (percentage <= 100) {
+            resp += percentage;
+            stack_lights[sl_num - 1].perc_lit = percentage;
+            handled = true;
+        }
+    }
+    return handled;
+}
 
 /**
  * function: handle_SL_worker
@@ -965,7 +1046,7 @@ void handle_SLC_worker(uint8_t sl_num) {
     processing_is_ok = true;
     // Step 1:  Add "SLCx" to response
     switch (sl_num) {
-        case 1 ... kNUM_STACKLIGHTS:
+        case 1 ... kNUM_STACKLIGHTS:   // Double check, but at this point, sl_num has already been limited.
             strcpy_P(buff, str_SLC);
             resp = buff;
             resp += sl_num;      // leveraging that String class.
@@ -973,6 +1054,7 @@ void handle_SLC_worker(uint8_t sl_num) {
         default:
             strcpy_P(err, str_VALUE_ERROR);
             resp += err;
+            handled = true;
             break;
     }
 
@@ -986,9 +1068,10 @@ void handle_SLC_worker(uint8_t sl_num) {
         processing_is_ok = false;
         strcpy_P(err, str_VALUE_MISSING);
         resp += err;   // then we will skip the other processing.
+        handled = true;
         // STEP 2A:   WE GOT SUBTOKENS
 
-    } else if ((sl_num >= 1) && (sl_num <= kNUM_STACKLIGHTS + 1)) {  // this is a double check actually
+    } else if ((sl_num >= 1) && (sl_num <= kNUM_STACKLIGHTS + 1)) {  // this is a triple check actually
 
         handled = try_handle_stacklight_query(sl_num, resp);
 
@@ -1005,9 +1088,8 @@ void handle_SLC_worker(uint8_t sl_num) {
     // ...NOT SURE HOW TO PROCESS
     if (!handled) {
         processing_is_ok = false;
-        char valerr[MAX_ERROR_STRING_LENGTH];
-        strcpy_P(valerr, str_VALUE_ERROR);
-        resp += valerr;
+        strcpy_P(err, str_VALUE_ERROR);
+        resp += err;
     }
     strcpy_P(buff, str_SPACE);
     resp += buff;

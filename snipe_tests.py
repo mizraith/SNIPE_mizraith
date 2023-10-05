@@ -506,6 +506,52 @@ class SnipeTests(unittest.TestCase):
         exp = f"@SLC1:0x00FF00:GREEN"
         self._handle_cmd_exp(cmd, exp)
 
+    def test_SLP_query(self):
+        print("\n--------------> ", sys._getframe().f_code.co_name, " <-------------- ")   # cool trick prints current function name
+
+        for i in range(1, 4):
+            cmd = f">SLP{i}:99"
+            exp = f"@SLP{i}:99"
+            self._handle_cmd_exp(cmd, exp)
+
+        for i in range(1, 4):
+            cmd = f">SLP{i}:?"
+            exp = f"@SLP{i}:99"
+            self._handle_cmd_exp(cmd, exp)
+
+    def test_SLP_missing_value(self):
+        # poorly formatted command testing
+        self._test_value_missing_conditions("SLP1")
+
+    def test_SLP_values(self):
+        print("\n--------------> ", sys._getframe().f_code.co_name, " <-------------- ")   # cool trick prints current function name
+
+        values = ['0', '20', '40', '60', '80', '100']
+        hexvals = ['0x0', '0x14', '0x28', '0x3C', '0x50', '0x64']
+        # test good values
+        for value in values:
+            cmd = f">SLP1:{value}"
+            exp = f"@SLP1:{value}"
+            self._handle_cmd_exp(cmd, exp)
+            time.sleep(.125)
+
+        # test hex values
+        for i in range(len(values)):
+            cmd = f">SLP1:{hexvals[i]}"
+            exp = f"@SLP1:{values[i]}"         # it converts to decimal for us
+            self._handle_cmd_exp(cmd, exp)
+            time.sleep(.125)
+
+        # test out of range
+        cmd = f">SLP1:101"
+        exp = f"!SLP1:" + VALUE_ERROR
+        self._handle_cmd_exp(cmd, exp)
+
+        # test misformatted as float
+        cmd = f">SLP1:50.3"
+        exp = f"!SLP1:" + VALUE_ERROR
+        self._handle_cmd_exp(cmd, exp)
+
 
 # SLC1, SLC2, SLC3
     # SLM1, SLM2, SLM3
