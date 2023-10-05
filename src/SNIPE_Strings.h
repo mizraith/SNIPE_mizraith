@@ -84,6 +84,7 @@ const char str_SLM  [] PROGMEM = "SLM";     // Stack Light Mode
 const char str_SLM1  [] PROGMEM = "SLM1";     // Stack Light Mode
 const char str_SLM2  [] PROGMEM = "SLM2";     // Stack Light Mode
 const char str_SLM3  [] PROGMEM = "SLM3";     // Stack Light Mode
+const char str_SLINFO[] PROGMEM = "SLINFO";   // Stack Light Info...debugging use only
 const char str_SLA  [] PROGMEM = "SLA";     // Stack Light Alarm
 const char str_I2A  [] PROGMEM = "I2A";     // I2C target chip address
 const char str_I2S  [] PROGMEM = "I2S";     // I2C target setting

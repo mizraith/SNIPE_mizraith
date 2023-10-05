@@ -82,7 +82,6 @@ int freeRam () {
 // addresses in EEPROM and if they all equal 0xFF
 // it will return 1 (true).  If not virgin, returns 0 (false).
 uint8_t isVirginEEPROM() {
-    uint8_t result = 1;
     uint8_t val = 0xFF;
     Serial.print(F("# Setup: Checking EEPROM:"));
     for( int i=0; i < 10; i++) {

@@ -121,6 +121,7 @@ bool try_handle_stacklight_query(uint8_t, String &);
 bool try_handle_stacklight_numeric(uint8_t, String &);
 bool try_handle_stacklight_colorname(uint8_t, String &);
 void handle_SLM_worker(uint8_t);
+void handle_SLINFO_worker();
 void handle_SLA();
 void handle_I2A();
 void handle_I2B();
@@ -338,11 +339,8 @@ void setup() {
         stack_lights[lightnum].setup_strip();
     }
 
-    for (uint8_t lightnum=0; lightnum < kNUM_STACKLIGHTS; lightnum++) {
-        Serial.println();
-        Serial.println(lightnum, DEC);
-        stack_lights[lightnum].print_info();
-    }
+    // FOR DEBUGGING -- should comment out
+    handle_SLINFO_worker();
 
     // Developer note: This next line is key to prevent our output_string (String class)
     // from growing in size over time and fragmenting the heap.  By calling this now
@@ -602,6 +600,8 @@ void handleToken(char* ctoken) {
         handle_SLM_worker(2);
     } else if (strcmp_P(subtokens[0], str_SLM3) == 0) {
         handle_SLM_worker(3);
+    } else if (strcmp_P(subtokens[0], str_SLINFO) == 0) {
+        handle_SLINFO_worker();
     } else if (strcmp_P(subtokens[0], str_SLA) == 0) {
         handle_SLA();
     } else if (strcmp_P(subtokens[0], str_SID) == 0) {     // could use (0 == strcmp(subtokens[0], "SID")) (strcmp_P(subtokens[0], PSTR("SID")) == 0 ) (cmd.equalsIgnoreCase(str_SID))
@@ -1009,13 +1009,11 @@ bool try_handle_stackpercent_query(uint8_t sl_num, String & resp) {
         return false;
     }
     //  Got  SLP1:?    return   SLP1:99
-    char *tempstr = new char[UNS_HEX_STR_SIZE];
     resp += stack_lights[sl_num - 1].perc_lit;
     return true;
 }
 
 bool try_handle_stackpercent_numeric(uint8_t sl_num, String & resp) {
-    char buff[6];
     String str_val_token = String(subtokens[1]);
     bool handled = false;
     char *__endptr;
@@ -1380,6 +1378,25 @@ void handle_SLM_worker(uint8_t sl_num) {
     }
     // STEP 4....we are done!
     strcpy_P(buff, str_SPACE);
+    resp += buff;
+    output_string.concat(resp);
+}
+
+/**
+ * This is a debugging method that dumps all the stack light info over the serial port.
+ * DO NOT USE in production as response length may change and formatting may change.
+ */
+void handle_SLINFO_worker() {
+    char buff[10];
+    String resp("");
+
+    for (uint8_t lightnum = 0; lightnum < kNUM_STACKLIGHTS; lightnum++) {
+        Serial.println();
+        Serial.print(F("----------------- #"));Serial.print(lightnum + 1, DEC);Serial.println(F(" -----------------"));
+        stack_lights[lightnum].print_info();
+    }
+    processing_is_ok = true;
+    strcpy_P(buff, str_SLINFO);
     resp += buff;
     output_string.concat(resp);
 }
