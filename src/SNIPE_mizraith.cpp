@@ -121,6 +121,8 @@ bool try_handle_stacklight_query(uint8_t, String &);
 bool try_handle_stacklight_numeric(uint8_t, String &);
 bool try_handle_stacklight_colorname(uint8_t, String &);
 void handle_SLM_worker(uint8_t);
+bool try_handle_stackmode_query(uint8_t, String &);
+bool try_handle_stackmode_numeric(uint8_t, String &);
 void handle_SLINFO_worker();
 void handle_SLA();
 void handle_I2A();
@@ -1281,13 +1283,14 @@ void handle_SLM3(){
   SLM1:3:500  would set stack light #1 to flashing mode with a 500ms full cycle blink rate.
  */
 void handle_SLM_worker(uint8_t sl_num) {
+    bool handled = false;
     char buff[10];
     char err[MAX_ERROR_STRING_LENGTH];
     String resp("");
 
     // Step 1:  Add "SLMx" to response
     switch (sl_num) {
-        case 1 ... kNUM_STACKLIGHTS:
+        case 1 ... kNUM_STACKLIGHTS:   // double check
             strcpy_P(buff, str_SLM);
             resp = buff;
             resp += sl_num;   // leverage the Arduino String class
@@ -1295,6 +1298,7 @@ void handle_SLM_worker(uint8_t sl_num) {
         default:
             strcpy_P(err, str_VALUE_ERROR);
             resp += err;
+            handled = true;
             break;
     }
 
@@ -1307,54 +1311,77 @@ void handle_SLM_worker(uint8_t sl_num) {
         processing_is_ok = false;
         strcpy_P(err, str_VALUE_MISSING);
         resp += err;   // then we will skip the other processing.
-        // STEP 2A:   WE GOT SUBTOKENS
-    } else {
-        //  STEP 2A   DID WE GET A QUERY?    append our mode to the response:   SLMx:1
-        if (strcmp_P(subtokens[1], str_QUERY) == 0) {
-            switch (sl_num) {
-                case 1 ... kNUM_STACKLIGHTS:
-                    resp += stack_lights[sl_num - 1].mode;
-                    strcpy_P(buff, str_COLON);
-                    resp += buff;
-                    resp += stack_lights[sl_num - 1].cycle_ms;
-                    break;
-                default:
-                    //we already caught this issue earlier
-                    break;
-            }
-        }
-        // STEP 2B  WE GOT SOME VALUE, HOPEFULLY IN OUR RANGE
-        // AT THIS POINT we should have a value to set, e.g. "SLM1:2" gotta convert 2nd token to a number
-        // NOTE that atoi returns 0 for just about any non-number
-        int mode = atoi(subtokens[1]);
-        switch (mode) {
-            case MODE_DEFAULT:
-            case MODE_FLASH:
-            case MODE_PULSE:
-                resp += mode;    // append our result: "SLM1:3" -> "SLM1:3" but "SLM1:FUN" -> "SLM1:0" due to atoi
-                //set # to mode, return string
-                switch (sl_num) {
-                    case 1 ... kNUM_STACKLIGHTS:
-                        stack_lights[sl_num - 1].change_mode( mode );  // sets a flag...
-                        break;
-                    default:
-                        //we caught this earlier
-                        break;
-                }
-                break;
-            default:   // NOTE ONE OF OUR DEFINED MODES
-                strcpy_P(err, str_VALUE_ERROR);
-                resp += err;
-                break;
+        handled = true;
+
+        // WE GOT SUBTOKENS
+    } else if ((sl_num >= 1) && (sl_num <= kNUM_STACKLIGHTS + 1)) {  // this is a triple check actually
+
+        handled = try_handle_stackmode_query(sl_num, resp);
+
+        if (!handled) {
+            handled = try_handle_stackmode_numeric(sl_num, resp);
         }
     }
-    // STEP 3:  Check if we were given an OPTIONAL pulse rate and round up or down to our acceptable range.
-    if ((subtokens[2] != NULL) && (strlen(subtokens[2]) != 0)) {
-        // update
+
+    // ...NOT SURE HOW TO PROCESS
+    if (!handled) {
+        processing_is_ok = false;
+        strcpy_P(err, str_VALUE_ERROR);
+        resp += err;
+    }
+    strcpy_P(buff, str_SPACE);
+    resp += buff;
+    output_string.concat(resp);
+}
+
+
+bool try_handle_stackmode_query(uint8_t sl_num, String & resp) {
+    if (strcmp_P(subtokens[1], str_QUERY) != 0) {
+        return false;
+    }
+    char buff[8];
+    //  Got  SLP1:?    return   SLP1:99
+    resp += stack_lights[sl_num - 1].mode;
+
+    if ((stack_lights[sl_num - 1].mode == 2) or (stack_lights[sl_num - 1].mode == 3)) {
+        strcpy_P(buff, str_COLON);
+        resp += buff;
+        resp += stack_lights[sl_num - 1].cycle_ms;
+    }
+    return true;
+}
+
+
+bool try_handle_stackmode_numeric(uint8_t sl_num, String &resp) {
+    char buff[8];
+    bool handled = false;
+    // CHECK MODE FIRST:
+    char err[MAX_ERROR_STRING_LENGTH];
+    int mode = atoi(subtokens[1]);
+    // AT THIS POINT we should have a value to set, e.g. "SLM1:2" gotta convert 2nd token to a number
+    // NOTE that atoi returns 0 for just about any non-number
+    switch (mode) {
+        case MODE_DEFAULT:
+        case MODE_FLASH:
+        case MODE_PULSE:
+            resp += mode;    // append our result: "SLM1:3" -> "SLM1:3" but "SLM1:FUN" -> "SLM1:0" due to atoi
+            //set # to mode, return string
+            // We are assuming sl_num has been doublechecked at this point...or bad bad array access
+            stack_lights[sl_num - 1].change_mode( mode );  // sets a flag...
+            handled = true;
+            break;
+        default:   // NOTE ONE OF OUR DEFINED MODES
+            handled = false;
+            break;
+    }
+    // IF we handled the mode, check for cycle time
+    if ((handled) and (subtokens[2] != NULL) and (strlen(subtokens[2]) != 0)) {
+        strcpy_P(buff, str_COLON);
+        resp += buff;
         int cycle = atoi(subtokens[2]);
         // The following must fully verify cycle
         if (cycle == 0) {
-            // do nothing
+            // do nothing, atoi returns 0 if it fails or has characters
             strcpy_P(err, str_VALUE_ERROR);
             resp += err;
         } else if (cycle < kMIN_CYCLE_TIME) {
@@ -1366,19 +1393,9 @@ void handle_SLM_worker(uint8_t sl_num) {
         }
         // NOW SET IT
         if (cycle != 0) {
-            switch (sl_num) {
-                case 1 ... kNUM_STACKLIGHTS:
-                    stack_lights[sl_num - 1].cycle_ms = cycle;
-                    break;
-                default:
-                    //we caught this earlier
-                    break;
-            }
+            stack_lights[sl_num - 1].cycle_ms = cycle;
         }
     }
-    // STEP 4....we are done!
-    strcpy_P(buff, str_SPACE);
-    resp += buff;
     output_string.concat(resp);
 }
 
