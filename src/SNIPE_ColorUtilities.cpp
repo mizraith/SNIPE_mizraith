@@ -8,6 +8,7 @@
 #include "SNIPE_ColorUtilities.h"
 #include <Arduino.h>    // we make good use of String() class
 #include <avr/pgmspace.h>
+#include "SNIPE_ExponentialDecay.h"
 
 //*******************************************************************************************
 //*******************************************************************************************
@@ -198,6 +199,20 @@ uint32_t colorWithBrightness(uint32_t c, uint8_t brightness) {
     c = getColorFromRGB(r, g, b);
     return c;
 }
+
+/**
+ * For a smooth decay experience we've calculated a 255 step exponential decay.
+ * @param c    color you wish to decay
+ * @param brightness    Brightness, where 255 is FULL BRIGHT.
+ * @return the dimmed color value
+ */
+uint32_t colorWithBrightnessExpo(uint32_t c, uint8_t brightness) {
+    uint8_t expo_brightness;
+    expo_brightness = (uint8_t) pgm_read_byte_near(  &(kExpoDecay[brightness]) );
+
+    return colorWithBrightness(c, expo_brightness);
+}
+
 
 
 //Thanks again to RRRus and Tom Corboline for this method

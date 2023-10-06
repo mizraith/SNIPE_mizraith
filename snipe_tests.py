@@ -432,8 +432,6 @@ class SnipeTests(unittest.TestCase):
         exp = "@DESC:"
         self._handle_cmd_exp(cmd, exp)
 
-
-
         # poorly formatted
         self._test_value_missing_conditions("BLINK")
 
@@ -519,9 +517,27 @@ class SnipeTests(unittest.TestCase):
             exp = f"@SLP{i}:99"
             self._handle_cmd_exp(cmd, exp)
 
+    def test_SLM_query(self):
+        print("\n--------------> ", sys._getframe().f_code.co_name, " <-------------- ")   # cool trick prints current function name
+
+        for i in range(1, 4):
+            cmd = f">SLM{i}:0"
+            exp = f"@SLM{i}:0"
+            self._handle_cmd_exp(cmd, exp)
+
+        for i in range(1, 4):
+            cmd = f">SLM{i}:?"
+            exp = f"@SLM{i}:0"
+            self._handle_cmd_exp(cmd, exp)
+
     def test_SLP_missing_value(self):
         # poorly formatted command testing
         self._test_value_missing_conditions("SLP1")
+
+    def test_SLM_missing_value(self):
+        # poorly formatted command testing
+        self._test_value_missing_conditions("SLM1")
+
 
     def test_SLP_values(self):
         print("\n--------------> ", sys._getframe().f_code.co_name, " <-------------- ")   # cool trick prints current function name
@@ -551,6 +567,41 @@ class SnipeTests(unittest.TestCase):
         cmd = f">SLP1:50.3"
         exp = f"!SLP1:" + VALUE_ERROR
         self._handle_cmd_exp(cmd, exp)
+
+
+    def test_SLM_values(self):
+        print("\n--------------> ", sys._getframe().f_code.co_name, " <-------------- ")   # cool trick prints current function name
+        default = "500"
+        minval = 100
+        maxval = 5000
+        # test with no value given...default is 500ms on startup
+        for i in range(1, 4):
+            for mode in range(0, 3):
+                cmd = f">SLM{i}:{mode}"
+                exp = f"@SLM{i}:{mode}"
+                self._handle_cmd_exp(cmd, exp)
+        # test in range cycle values, regardless of mode
+        for mode in range(0, 3):
+            for cycle in range(minval, maxval, 2000):
+                cmd = f">SLM1:{mode}:{cycle}"
+                exp = f"@SLM1:{mode}:{cycle}"
+                self._handle_cmd_exp(cmd, exp)
+
+        # test below range
+        cmd = f">SLM1:1:{minval-5}"
+        exp = f"@SLM1:1:{minval}"
+        self._handle_cmd_exp(cmd, exp)
+
+        # test above range
+        cmd = f">SLM1:1:{maxval + 5 }"
+        exp = f"@SLM1:1:{maxval}"
+        self._handle_cmd_exp(cmd, exp)
+
+        # test messed up value
+        cmd = f">SLM1:1:abcd"
+        exp = f"@SLM1:1:" + VALUE_ERROR
+        self._handle_cmd_exp(cmd, exp)
+
 
 
 # SLC1, SLC2, SLC3

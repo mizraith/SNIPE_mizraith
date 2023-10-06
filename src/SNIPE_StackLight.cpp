@@ -3,7 +3,7 @@
 //
 
 #include "SNIPE_StackLight.h"
-
+#include "SNIPE_ColorUtilities.h"
 
 //
 //public:                         // Access specifier
@@ -38,16 +38,19 @@ void SNIPE_StackLight::update_pulse_color() {
         pulse_going_up = false;
         current_color = color;
     } else if (millis() < update_time) {    // not a flip, how much longer until we do?
-        // TODO: calculate a dim step
-        // TODO: set current color
+        // how far along are we in our cycle_ms
+        unsigned long remaining_ms = cycle_ms - (update_time - millis());
+        //when going down, or when remaining == cycle_ms, we start at 255
+        uint8_t brightness = (uint8_t)((255 * remaining_ms) / (cycle_ms / 2));  // our cycleposition within our half step is our brightness
+        if (pulse_going_up) {
+            brightness = 255 - brightness;  // going up, start from black
+        }
+        //Serial.print("rem: ");Serial.print(remaining_ms);Serial.print("\tbrt: ");Serial.println(brightness);
+        current_color = colorWithBrightnessExpo(color, brightness);
         return;
+
     } else if (millis() > update_time) {    // flip
         pulse_going_up = !pulse_going_up;
-        if (pulse_going_up) {
-            current_color = BLACK;
-        } else {
-            current_color = color;
-        }
         update_time = millis() + (unsigned long) (cycle_ms / 2);
     }
     return;

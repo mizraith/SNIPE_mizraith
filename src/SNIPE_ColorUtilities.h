@@ -64,6 +64,7 @@ uint32_t dimColorWithShift(uint32_t c, uint8_t shift);
 uint32_t dimColorWithValue(uint32_t c, uint8_t dim);
 
 uint32_t colorWithBrightness(uint32_t c, uint8_t brightness);
+uint32_t colorWithBrightnessExpo(uint32_t c, uint8_t brightness);
 
 uint32_t hsv(uint8_t h, uint8_t s, uint8_t v);
 

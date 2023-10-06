@@ -492,7 +492,7 @@ void handleInputString() {
 
     output_string = "";                 // clear it
 
-    tempstring = strdup(input_string);  // does arduino support strdup() ?
+    tempstring = strdup(input_string);
     if (tempstring != NULL) {
         stringtofree = tempstring;    //store copy for later release
 
@@ -630,6 +630,16 @@ void handleToken(char* ctoken) {
         checkRAM();
     } else {
         processing_is_ok = false;
+        String resp("");
+        char err[MAX_ERROR_STRING_LENGTH];
+        resp += subtokens[0];
+        strcpy_P(err, str_COLON);
+        resp += err;
+        strcpy_P(err, str_UNKNOWN_CMD_ERR);
+        resp += err;
+        strcpy_P(err, str_SPACE);
+        resp += err;
+        output_string.concat(resp);
         // add bad response to output_string
     }
     // Delayed commands, processed with stated precedence.
@@ -1385,18 +1395,17 @@ bool try_handle_stackmode_numeric(uint8_t sl_num, String &resp) {
             strcpy_P(err, str_VALUE_ERROR);
             resp += err;
         } else if (cycle < kMIN_CYCLE_TIME) {
-            cycle = 100;
-            resp += cycle;
+            cycle = kMIN_CYCLE_TIME;
         } else if (cycle > kMAX_CYCLE_TIME) {
-            cycle = 5000;
-            resp += cycle;
+            cycle = kMAX_CYCLE_TIME;
         }
         // NOW SET IT
         if (cycle != 0) {
+            resp += cycle;
             stack_lights[sl_num - 1].cycle_ms = cycle;
         }
     }
-    output_string.concat(resp);
+    return true;
 }
 
 /**
