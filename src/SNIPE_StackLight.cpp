@@ -89,7 +89,11 @@ void SNIPE_StackLight::update_rainbow_color() {
         // Going from red->blue so we want to start at 0
         uint8_t hue = 255 - (uint8_t)((255 * remaining_ms) / (cycle_ms));  // our cycleposition within our half step is our brightness
         current_color = hsv(hue, 255, 255);  // no saturation, full bright.
-        Serial.print("rem: ");Serial.print(remaining_ms);Serial.print("\thue: ");Serial.print(hue);Serial.print("\tcolor: ");Serial.println(current_color, HEX);
+        uint8_t r = getRedFromColor(current_color);
+        uint8_t g = getGreenFromColor(current_color);
+        uint8_t b = getBlueFromColor(current_color);
+//        Serial.print("rem:\t");Serial.print(remaining_ms);Serial.print("\thue:\t");Serial.print(hue);
+//        Serial.print("\tr:\t");Serial.print(r);Serial.print("\tg:\t");Serial.print(g);Serial.print("\tb:\t");Serial.println(b);
 
 
         return;

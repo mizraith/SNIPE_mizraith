@@ -310,35 +310,6 @@ void setup() {
     digitalWrite(6, LOW);
     digitalWrite(LED_PIN, LOW);
 
-
-    // Allocate memory and big objects
-    // TODO:  CLEAN THIS UP
-//    Adafruit_NeoPixel SL1_strip = Adafruit_NeoPixel(10, SL1_PIN, NEO_GRB + NEO_KHZ800);
-//    Serial.print("--> SIZE OF SL1 10 pixel strip: ");Serial.println(sizeof(SL1_strip));
-//    SL1_strip.begin();
-//    SL1_strip.show();
-    //SL1_strip.setBrightness((uint8_t)255);
-//    delay(1000);
-//    SL1_strip.setPixelColor(2, BLUE);
-//    SL1_strip.show();
-//    Adafruit_NeoPixel SL2_strip = Adafruit_NeoPixel(8, SL2_PIN, NEO_GRB + NEO_KHZ800);
-//    Adafruit_NeoPixel SL3_strip = Adafruit_NeoPixel(6, SL3_PIN, NEO_GRB + NEO_KHZ800);
-//    stack_lights = {
-//            SNIPE_StackLight(BLACK, MODE_DEFAULT, 500, false),
-//            SNIPE_StackLight(BLACK, MODE_DEFAULT, 500, false),
-//            SNIPE_StackLight(BLACK, MODE_DEFAULT, 500, false)
-//    }
-//
-//            new SNIPE_StackLight[kNUM_STACKLIGHTS];
-//    };
-//    Serial.println(F("xxx  307  xxx  --> Size of stack light follows."));
-//    Serial.println(sizeof(stack_lights));
-//    for (uint8_t lightnum=0; lightnum < kNUM_STACKLIGHTS; lightnum++) {
-//        Serial.println();
-//        Serial.println(lightnum, DEC);
-//        stack_lights[lightnum].print_info();
-//    }
-
     for (uint8_t lightnum=0; lightnum < kNUM_STACKLIGHTS; lightnum++) {
         stack_lights[lightnum].setup_strip();
     }

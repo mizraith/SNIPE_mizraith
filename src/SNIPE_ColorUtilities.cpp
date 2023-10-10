@@ -217,9 +217,11 @@ uint32_t colorWithBrightnessExpo(uint32_t c, uint8_t brightness) {
 /**
  *
  * @param h   hue:  unsignted 8 bit. 0=red  85=green.  170=blue.  255=almost red
- * @param s   saturation:  0 = full bright - white!.   255 is dark, fully saturated, black.
+ * @param s   saturation:  0 = full bright - white!.   255 is dark, fully saturated color.
  * @param v   brightness:  0 = black, no light.  255 is full bright.
  * @return   uint32 color value in 0xRRGGBB the way it should be (I'm looking at you openCV)
+ *
+ * A rainbow can be achieved by spinnning h from 0:255 and have s=255 and v=255
  */
 //Thanks again to RRRus and Tom Corboline for this method
 //  Returns a 32-bit RGB value based on HSV inputs.
@@ -230,9 +232,8 @@ uint32_t hsv(uint8_t h, uint8_t s, uint8_t v) {
     // h = 85 : green
     // h = 170 : blue
     // h = 255 : almost red
-    uint8_t r, g, b;
+    uint8_t r, g, b, region, remain, p, q, t;;
     uint32_t color;
-    unsigned char region, remainder, p, q, t;
 
     if (s == 0)  {
         r = v;    //no saturation, everything equals brightness value
@@ -242,33 +243,39 @@ uint32_t hsv(uint8_t h, uint8_t s, uint8_t v) {
     
     else {
         region = h / 43;
-        remainder = (h - (region * 43)) * 6; 
+        remain = (h - (region * 43)) * 6;
 
-	p = (v * (255 - s)) >> 8;
-	q = (v * (255 - ((s * remainder) >> 8))) >> 8;
-	t = (v * (255 - ((s * (255 - remainder)) >> 8))) >> 8;
+        p = (uint32_t)(v * (255 - s)) >> 8;   // casting important or we get a weird off-by  -1   on the arduino
+        q = (uint32_t)(v * (255 - (((uint32_t)s * remain) >> 8))) >> 8;  // casting important or we get a weird off-by  -1   on the arduino
+        t = (uint32_t)(v * (255 - (((uint32_t)s * (255 - remain)) >> 8))) >> 8;  // casting important or we get a weird off-by  -1   on the arduino
 
-	switch (region)  {
-	    case 0:
-		r = v; g = t; b = p;
-		break;
-	    case 1:
-		r = q; g = v; b = p;
-		break;
-	    case 2:
-		r = p; g = v; b = t;
-		break;
-	    case 3:
-		r = p; g = q; b = v;
-		break;
-	    case 4:
-		r = t; g = p; b = v;
-		break;
-	    default:
-		r = v; g = p; b = q;
-		break;
+        switch (region)  {
+            case 0:
+            r = v; g = t; b = p;
+            break;
+            case 1:
+            r = q; g = v; b = p;
+            break;
+            case 2:
+            r = p; g = v; b = t;
+            break;
+            case 3:
+            r = p; g = q; b = v;
+            break;
+            case 4:
+            r = t; g = p; b = v;
+            break;
+            default:
+            r = v; g = p; b = q;
+            break;
         }
     }
+//    Serial.print("\nhue: ");Serial.print(h);
+//    Serial.print("\tregion: ");Serial.print(region);
+//    Serial.print("\trem: ");Serial.print(remain);
+//    Serial.print("\tred: ");Serial.print( r);
+//    Serial.print("\tgreen: ");Serial.print( g);
+//    Serial.print("\tblue: ");Serial.print( b);Serial.println();
     color = getColorFromRGB(r, g, b);
     return color;
 }

@@ -44,8 +44,6 @@ bool SNIPE_Color::is_equal_value(uint32_t colorvalue) const {
 
 
 bool SNIPE_Color::is_equal_name(const char * name) const{
-    // TODO:  convert to uppercase.   For now, user MUST PROVIDE THE ALL CAPS string
-
     if (strcmp_P(name, this->name_p) == 0) {
         return true;
     }
