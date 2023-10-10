@@ -1,6 +1,6 @@
 //
 // Created by Red Byer on 9/26/23.
-// Flexes the Arduino library for it's String class. Alternatively you can use C++ strings if you
+// Flexes the Arduino library for its String class. Alternatively you can use C++ strings if you
 // have a library for your micro that supports them.
 //
 
@@ -16,7 +16,7 @@ public:
     const char * name_p;          // PROGMEM STRING
     const uint32_t value;         // default 0 value
 
-    // paramaterized constructor for direct creation
+    //  constructor for direct creation
     SNIPE_Color(const char * name_ptr,  const uint32_t value ):
     name_p(name_ptr), // constant member var init syntax.
     value(value)
@@ -43,4 +43,4 @@ extern const class SNIPE_Color *kCOLORS [];
 
 extern const size_t kCOLORS_len;
 
-#endif //SNIPE_MIZRAITH_SNIPE_COLOR_H
+#endif //SNIPE_COLOR_H

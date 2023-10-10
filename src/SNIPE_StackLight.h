@@ -8,8 +8,20 @@
 #include "Adafruit_NeoPixel.h"
 #include "SNIPE_Strings.h"
 
+// used in several places as a default
 #define BLACK 0x000000
+
+#pragma mark Stack Light Variables
+//default mode is solid
 #define MODE_DEFAULT 0
+#define MODE_OFF     0
+#define MODE_STEADY  1
+#define MODE_FLASH   2
+#define MODE_PULSE   3
+#define MODE_RAINBOW 4
+//#define MODE_CYLON_RING  3
+
+
 
 class SNIPE_StackLight {
 public:                         // Access specifier
@@ -43,6 +55,7 @@ public:                         // Access specifier
     }
 
     void change_mode(uint8_t new_mode);
+    void update();
     void update_pulse_color();
     void update_flash_color();
     void update_rainbow_color();

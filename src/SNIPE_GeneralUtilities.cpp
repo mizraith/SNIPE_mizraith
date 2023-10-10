@@ -14,9 +14,7 @@
 #endif
 #include <avr/pgmspace.h>
 #include <EEPROM.h>
-#include "SNIPE_Strings.h"
 #include <Wire.h>
-#include <avr/pgmspace.h>
 
 # pragma mark P String Utils
 void printString_P( const char str[]) {
@@ -215,7 +213,7 @@ void initEEPROM(int numbytes, uint8_t initvalue) {
 ///**
 // * Given an 8-bit number, return the minutes/seconds in the format  "m:ss"
 // * @param buffstr char array of 5 bytes for holding 4 characters.
-// * @param time   integer value representing seconds from 0 - 255 (60 minutes)
+// * @param time   integer value representing seconds from 0 : 255 (60 minutes)
 // */
 //void get4CharTimeStringFromSeconds(char *buffstr, uint8_t time) {
 //    uint8_t min = 0;
@@ -238,7 +236,7 @@ void initEEPROM(int numbytes, uint8_t initvalue) {
 //        itoa(min, tempstr, 10);
 //        strcat(buffstr, tempstr);
 //        strcat_P(buffstr, str_COLON);
-//        strcpy_P(tempstr, str_EMPTY);  // clear it so we can use it again
+//        strcpy_P(tempstr, str_EMPTY);  // clear it, so we can use it again
 //        itoa(sec, tempstr, 10);
 //        if (sec < 10) {
 //            strcat_P(buffstr, str_ZERO);
@@ -363,7 +361,7 @@ void initEEPROM(int numbytes, uint8_t initvalue) {
 //    );
 //
 //    return i;
-//}
+//   }
 //
 ///**
 // * Quick subtract one byte from another, saturating at 0x00
@@ -378,7 +376,7 @@ void initEEPROM(int numbytes, uint8_t initvalue) {
 ////    if( t < 0) t = 0;
 ////    return t;
 //
-//    asm volatile(
+//    asm volatile (
 //    /* First, subtract j from i, conditioning the C flag */
 //    "sub %0, %1    \n\t"
 //
@@ -394,7 +392,7 @@ void initEEPROM(int numbytes, uint8_t initvalue) {
 //    );
 //
 //    return i;
-//}
+//    }
 //
 //
 ///**

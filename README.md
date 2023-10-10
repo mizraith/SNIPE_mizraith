@@ -355,6 +355,7 @@ _SLC commands use [D7] and [D8] and [D9] by default on a nano._
   - 1:  On, Steady State
   - 2:  On, Pulsing.  Option subtoken for full-cycle blink rate in ms.
   - 3:  On, Flashing.  Optional subtoken for full-cycle blink rate in ms.
+  - 4:  On, Rainbow.  Wash through colors over cycle_ms time.
 - **cycle rate argument:** <optional>
   - in milliseconds full cycle time.
   - default: 1000

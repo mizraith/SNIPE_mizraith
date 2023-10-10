@@ -187,7 +187,7 @@ uint32_t colorWithBrightness(uint32_t c, uint8_t brightness) {
     b = getBlueFromColor(c);
   
     uint32_t temp = 0;
-    temp = brite * r;              //we have to add this extra line or we get a gcc compiler error
+    temp = brite * r;              //we have to add this extra line, or we get a gcc compiler error
     r = (uint8_t) (temp / 256);
   
     temp = brite * g;
@@ -221,7 +221,7 @@ uint32_t colorWithBrightnessExpo(uint32_t c, uint8_t brightness) {
  * @param v   brightness:  0 = black, no light.  255 is full bright.
  * @return   uint32 color value in 0xRRGGBB the way it should be (I'm looking at you openCV)
  *
- * A rainbow can be achieved by spinnning h from 0:255 and have s=255 and v=255
+ * A rainbow can be achieved by spinning h from 0:255 and have s=255 and v=255
  */
 //Thanks again to RRRus and Tom Corboline for this method
 //  Returns a 32-bit RGB value based on HSV inputs.
@@ -232,7 +232,7 @@ uint32_t hsv(uint8_t h, uint8_t s, uint8_t v) {
     // h = 85 : green
     // h = 170 : blue
     // h = 255 : almost red
-    uint8_t r, g, b, region, remain, p, q, t;;
+    uint8_t r, g, b, region, remain, p, q, t;
     uint32_t color;
 
     if (s == 0)  {
@@ -245,9 +245,9 @@ uint32_t hsv(uint8_t h, uint8_t s, uint8_t v) {
         region = h / 43;
         remain = (h - (region * 43)) * 6;
 
-        p = (uint32_t)(v * (255 - s)) >> 8;   // casting important or we get a weird off-by  -1   on the arduino
-        q = (uint32_t)(v * (255 - (((uint32_t)s * remain) >> 8))) >> 8;  // casting important or we get a weird off-by  -1   on the arduino
-        t = (uint32_t)(v * (255 - (((uint32_t)s * (255 - remain)) >> 8))) >> 8;  // casting important or we get a weird off-by  -1   on the arduino
+        p = (uint32_t)(v * (255 - s)) >> 8;   // casting important, or we get a weird off-by  -1   on the arduino
+        q = (uint32_t)(v * (255 - (((uint32_t)s * remain) >> 8))) >> 8;  // casting important, or we get a weird off-by  -1   on the arduino
+        t = (uint32_t)(v * (255 - (((uint32_t)s * (255 - remain)) >> 8))) >> 8;  // casting important, or we get a weird off-by  -1   on the arduino
 
         switch (region)  {
             case 0:

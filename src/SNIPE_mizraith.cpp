@@ -7,7 +7,7 @@ Date:         6/28/2023
 # SNIPE_mizraith
 **Extensible serial to I2C-and-more tool.  Easily control your Arduino over a comm port. Now with Andon Stack Light Tower type features.  Control some neopixels (slowly) over serial!**
 
-_Major Release:_ 4.0
+_Major Release:_ 4.0 rc1
 
 _Grammar Version:_   2.0
 
@@ -46,9 +46,7 @@ _Changes in 4.0:  Added Stack light commands_.
 
 // PROJECT LIBRARIES
 #include "SNIPE_StackLight.h"
-#include "SNIPE_ExponentialDecay.h"
 #include "SNIPE_Strings.h"
-#include "SNIPE_ColorUtilities.h"
 #include "SNIPE_GeneralUtilities.h"
 #include "SNIPE_Conversions.h"
 #include "SNIPE_Color.h"
@@ -112,7 +110,6 @@ void handle_SID();
 void handle_VER();
 void handle_DESC();
 void stacklight_startup_sequence();
-void stacklight_update();
 void handle_SLP_worker(uint8_t);
 bool try_handle_stackpercent_query(uint8_t, String &);
 bool try_handle_stackpercent_numeric(uint8_t, String &);
@@ -150,7 +147,7 @@ void checkRAM();
 
 #pragma mark Application Globals
 const DateTime COMPILED_ON = DateTime(__DATE__, __TIME__);
-const String CURRENT_VERSION = "003";
+const String CURRENT_VERSION = "004";
 const String DESCRIPTION = "SNIPE_for_Arduino";
 
 #pragma mark Pinouts
@@ -186,25 +183,18 @@ char * subtokens[MAX_NUMBER_TOKENS];       // Yes, an array of char* pointers.  
 String output_string = "";                 // might as well use the helper libraries supplied by arduino
 //char transaction_ID_string[9];           // Transaction ID, max 8 chars
 
-#pragma mark Stack Light Variables
-//default mode is solid
-#define MODE_DEFAULT 0
-#define MODE_FLASH   1
-#define MODE_PULSE   2
-#define MODE_RAINBOW 3
-#define kMAX_MODE_NUM 4
-//#define MODE_CYLON_RING  3
-// text based colors ... would be cool tos support
-#define RED  0xFF0000
-#define ORANGE 0xFF5500
-#define YELLOW 0xFFFF00
-#define GREEN 0x00FF00
-#define AQUA 0x00FFFF
-#define BLUE 0x0000FF
-#define INDIGO 0x3300FF
-#define VIOLET 0xFF00FF
-#define WHITE  0xFFFFFF
-#define BLACK  0x000000
+
+//// text based colors ... moved to color library class
+//#define RED  0xFF0000
+//#define ORANGE 0xFF5500
+//#define YELLOW 0xFFFF00
+//#define GREEN 0x00FF00
+//#define AQUA 0x00FFFF
+//#define BLUE 0x0000FF
+//#define INDIGO 0x3300FF
+//#define VIOLET 0xFF00FF
+//#define WHITE  0xFFFFFF
+//#define BLACK  0x000000
 
 // Parameter 1 = number of pixels in the strip.
 // Parameter 2 = SLx_PIN ....Digital pin number (most are valid)
@@ -230,11 +220,9 @@ SNIPE_StackLight stack_lights[kNUM_STACKLIGHTS] =  {
 
 //= new SNIPE_StackLight [kNUM_STACKLIGHTS];  // our array of classes...we'll init in setup.
 
-//PPC_ButtonLEDManager *ButtonLEDMgr = new PPC_ButtonLEDManager(kNUMBER_OF_LED_BUTTONS);  // init for 3 buttons
-
-unsigned long SL_loop_time = 0;
+//unsigned long SL_loop_time = 0;
 unsigned long SL_next_heartbeat = 0;        //  Timer for our next refresh
-#define kHEARTBEAT_INTVL_ms 50
+#define kHEARTBEAT_INTVL_ms 25
 
 #pragma mark I2C Variables
 // Variables for I2C
@@ -328,7 +316,6 @@ void setup() {
 
     stacklight_startup_sequence();
     printSerialDataStart();
-    SL_loop_time = millis();
     SL_next_heartbeat = millis();    // Set to now
 
 
@@ -349,7 +336,9 @@ void loop() {
 
     if (millis() > SL_next_heartbeat) {
         SL_next_heartbeat = millis() + kHEARTBEAT_INTVL_ms;
-        stacklight_update();
+        for (uint8_t lightnum=0; lightnum < kNUM_STACKLIGHTS; lightnum++) {
+            stack_lights[lightnum].update();
+        }
     }
 
     if (input_string_ready) {
@@ -530,7 +519,7 @@ void handleToken(char* ctoken) {
 
     //checkRAMandExitIfLow(22);
 
-    // make cmd into uppercase so that our commands are case insensitive  // TODO: VERIFY THIS WORKS
+    // make cmd into uppercase so that our commands are case insensitive
     i = 0;
     while (subtokens[0][i])
     {
@@ -883,14 +872,14 @@ void handle_DESC() {
 void stacklight_startup_sequence() {
     Serial.println(F("# Doing Stack Light Startup Sequence"));
     const uint8_t numwashclrs = 5;
-    uint32_t wash_colors[numwashclrs] = {RED, YELLOW, GREEN, BLUE, BLACK};
+    uint32_t wash_colors[numwashclrs] = {cRED.value, cYELLOW.value, cGREEN.value, cBLUE.value, cBLACK.value};
     uint32_t wash_color;
     uint8_t n = 0;
     uint8_t max_numpixels = 0;
     for (uint8_t lightnum=0; lightnum < kNUM_STACKLIGHTS; lightnum++) {
         max_numpixels = max(max_numpixels, stack_lights[lightnum].numpixels );
     }
-    for(uint8_t x; x < numwashclrs; x++) {
+    for(uint8_t x=0; x < numwashclrs; x++) {
         wash_color = wash_colors[x];
         for (uint8_t i = 0; i < max_numpixels; i++) {
             for (uint8_t lightnum=0; lightnum < kNUM_STACKLIGHTS; lightnum++) {
@@ -906,38 +895,6 @@ void stacklight_startup_sequence() {
     }
 }
 
-void stacklight_update() {
-    // Go through each stack light.
-    //
-    // 1) Calculate number active
-    // 2) Handle Next Strobe Step and/or mode change
-    // 3) Handle Next Flash Step  and/or mode change
-    // 4)
-    uint8_t numactive;
-
-    for (uint8_t lightnum=0; lightnum < kNUM_STACKLIGHTS; lightnum++) {
-        numactive = int((float)stack_lights[lightnum].numpixels * ((float)stack_lights[lightnum].perc_lit / 100));
-        numactive = min(numactive, stack_lights[lightnum].numpixels);   // make sure our math doesn't overshoot.
-        if (stack_lights[lightnum].mode == MODE_FLASH) {
-            stack_lights[lightnum].update_flash_color();
-        }
-        if (stack_lights[lightnum].mode == MODE_PULSE) {
-            stack_lights[lightnum].update_pulse_color();
-        }
-        if (stack_lights[lightnum].mode == MODE_RAINBOW) {
-            stack_lights[lightnum].update_rainbow_color();
-        }
-        // At this point, current_color holds the calculated value.
-        // Do the actual work
-        for(uint16_t i=0; i < numactive; i++) {
-            stack_lights[lightnum].strip->setPixelColor(i, stack_lights[lightnum].current_color);
-        }
-        for(uint16_t i=numactive; i < stack_lights[lightnum].numpixels; i++) {
-            stack_lights[lightnum].strip->setPixelColor(i, BLACK);
-        }
-        stack_lights[lightnum].strip->show();
-    }
-}
 
 /**
  * function: handle_SLP_worker
@@ -1122,7 +1079,7 @@ bool try_handle_stacklight_numeric(uint8_t sl_num, String &resp) {
     bool handled = false;
     uint32_t clr = 0;
     char *__endptr;
-    // strtoul handles  '0x' or decimilar if we give it base==0
+    // strtoul handles  '0x' or decimal if we give it base==0
     long longcolor = strtoul(str_val_token.c_str(), &__endptr, 0);
     // Use following block if you want to check that entire string is converted to a number.
     // For now we are happy with handling whatever number we can pull out. Ignore the rest.
@@ -1243,17 +1200,6 @@ bool try_handle_stacklight_colorname(uint8_t sl_num, String &resp){
 /**
  * Stack light mode workers handlers.
  */
-void handle_SLM1(){
-    handle_SLM_worker(1);
-}
-
-void handle_SLM2(){
-    handle_SLM_worker(2);
-}
-
-void handle_SLM3(){
-    handle_SLM_worker(3);
-}
 
 /**
  * function:  handle_SLM_worker
@@ -1347,7 +1293,8 @@ bool try_handle_stackmode_numeric(uint8_t sl_num, String &resp) {
     // AT THIS POINT we should have a value to set, e.g. "SLM1:2" gotta convert 2nd token to a number
     // NOTE that atoi returns 0 for just about any non-number
     switch (mode) {
-        case MODE_DEFAULT:
+        case MODE_OFF:
+        case MODE_STEADY:
         case MODE_FLASH:
         case MODE_PULSE:
         case MODE_RAINBOW:
@@ -1812,7 +1759,7 @@ void serialPrintHeaderString() {
 }
 
 void printSerialInputInstructions( ) {
-    char * buff[10];
+    //char * buff[10];
     Serial.println(F("#"));
     Serial.println(F("#--------------------------------------------------"));
     Serial.println(F("# Serial Control Instructions"    ));

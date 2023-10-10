@@ -1,4 +1,4 @@
-#/bin/python
+# /bin/python
 # -*- coding: utf-8 -*-
 #
 # TEST SUITE FOR SNIPE 
@@ -26,35 +26,33 @@ from datetime import datetime, timedelta
 import serial
 from optparse import OptionParser
 
-DATA_STRING      =    "#####DATA#####"
-VALUE_MISSING    =    "VALUE_MISSING"
-VALUE_ERROR      =    "VALUE_ERROR"
-Q_REQUIRED       =    "?_MISSING"
-ERR_SID_TOO_LONG =    "SID_>_30"
-OUT_OF_RANGE     =    "OUT_OF_RANGE"
-BYTE_SETTING_ERR =    "BYTE_SETTING_ERR"
-NONE_FOUND       =    "NONE_FOUND"
-DATA_LENGTH_ERR  =    "DATA_LENGTH_ERR"
+DATA_STRING = "#####DATA#####"
+VALUE_MISSING = "VALUE_MISSING"
+VALUE_ERROR = "VALUE_ERROR"
+Q_REQUIRED = "?_MISSING"
+ERR_SID_TOO_LONG = "SID_>_30"
+OUT_OF_RANGE = "OUT_OF_RANGE"
+BYTE_SETTING_ERR = "BYTE_SETTING_ERR"
+NONE_FOUND = "NONE_FOUND"
+DATA_LENGTH_ERR = "DATA_LENGTH_ERR"
 
-colors =  {"RED":    "0xFF0000",
-           "ORANGE": "0xFF5500",
-           "YELLOW": "0xFFFF00",
-           "GREEN":  "0x00FF00",
-           "AQUA":   "0x00FFFF",
-           "BLUE":   "0x0000FF",
-           "INDIGO": "0x3300FF",
-           "VIOLET": "0xFF00FF",
-           "WHITE":  "0xFFFFFF",
-           "BLACK":  "0x000000"}
-
+colors = {"RED": "0xFF0000",
+          "ORANGE": "0xFF5500",
+          "YELLOW": "0xFFFF00",
+          "GREEN": "0x00FF00",
+          "AQUA": "0x00FFFF",
+          "BLUE": "0x0000FF",
+          "INDIGO": "0x3300FF",
+          "VIOLET": "0xFF00FF",
+          "WHITE": "0xFFFFFF",
+          "BLACK": "0x000000"}
 
 
 class SnipeTests(unittest.TestCase):
-
-#    def setUp(self):
-#        pass
-#    def tearDown(self):
-#        pass
+    #    def setUp(self):
+    #        pass
+    #    def tearDown(self):
+    #        pass
 
     port = ""
     baudrate = 57600
@@ -68,12 +66,11 @@ class SnipeTests(unittest.TestCase):
         """
         in_header_mode = True
         try:
-            SnipeTests.ser = serial.Serial(port =     SnipeTests.port,
-                                baudrate = SnipeTests.baudrate,
-                                timeout =  SnipeTests.timeout)
+            SnipeTests.ser = serial.Serial(port=SnipeTests.port,
+                                           baudrate=SnipeTests.baudrate,
+                                           timeout=SnipeTests.timeout)
             if not SnipeTests.ser.isOpen():
                 raise Exception("Serial port is not open: " + SnipeTests.port)
-
 
             while in_header_mode:
                 resp = SnipeTests.ser.readline().decode()
@@ -87,7 +84,6 @@ class SnipeTests(unittest.TestCase):
         finally:
             pass
 
-
     @classmethod
     def tearDownClass(cls):
         """
@@ -99,8 +95,6 @@ class SnipeTests(unittest.TestCase):
         except Exception as e:
             print("ERROR CLOSING SERIAL PORT: ")
             print(e.args)
-
-
 
     def _handle_cmd_exp(self, cmd, exp):
         """
@@ -139,12 +133,11 @@ class SnipeTests(unittest.TestCase):
         :param cmd:  e.g. "A0"   or "D2"
         """
         xcmd = ">" + cmd
-        exp =  "!" + cmd + ":" + VALUE_MISSING
+        exp = "!" + cmd + ":" + VALUE_MISSING
         self._handle_cmd_exp(xcmd, exp)
         xcmd = ">" + cmd + ":"
         exp = "!" + cmd + ":" + VALUE_MISSING
         self._handle_cmd_exp(xcmd, exp)
-
 
     def _test_q_required(self, cmd):
         """
@@ -157,18 +150,15 @@ class SnipeTests(unittest.TestCase):
         exp = "!" + cmd + ":" + Q_REQUIRED
         self._handle_cmd_exp(xcmd, exp)
 
-
     def test_improper_command(self):
         # test poor formatted command
         cmd = "?"
         exp = "!Invalid_input:"
-        self._handle_cmd_exp(cmd,exp)
-
-
-
+        self._handle_cmd_exp(cmd, exp)
 
     def test_A0_thru_A3(self):
-        print("\n--------------> ", sys._getframe().f_code.co_name, " <-------------- ")   # cool trick prints current function name
+        print("\n--------------> ", sys._getframe().f_code.co_name,
+              " <-------------- ")  # cool trick prints current function name
 
         for i in range(0, 4):
             cmd = ">A%d:?" % i
@@ -179,12 +169,12 @@ class SnipeTests(unittest.TestCase):
         self._test_value_missing_conditions("A0")
         self._test_q_required("A0")
 
-
     def test_D2_thru_D6(self):
-        print("\n--------------> ", sys._getframe().f_code.co_name, " <-------------- ")   # cool trick prints current function name
+        print("\n--------------> ", sys._getframe().f_code.co_name,
+              " <-------------- ")  # cool trick prints current function name
 
         # Set all to 0, then 1
-        for v in range(0,2):
+        for v in range(0, 2):
             for i in range(2, 7):
                 cmd = ">D%d:%d" % (i, v)
                 exp = "@D%d:%d:BIN" % (i, v)
@@ -226,10 +216,11 @@ class SnipeTests(unittest.TestCase):
     #     self._handle_cmd_exp(cmd, exp)
 
     def test_SID(self):
-        print("\n--------------> ", sys._getframe().f_code.co_name, " <-------------- ")   # cool trick prints current function name
+        print("\n--------------> ", sys._getframe().f_code.co_name,
+              " <-------------- ")  # cool trick prints current function name
 
         cmd = ">SID:?"
-        exp = "@SID:"      #won't test the full thing
+        exp = "@SID:"  # won't test the full thing
         print("cmd:\t%s" % cmd)
         tx = cmd + '\r\n'
         SnipeTests.ser.write(tx.encode())
@@ -252,12 +243,11 @@ class SnipeTests(unittest.TestCase):
         # set it to a test string
         cmd = ">SID:TEST"
         exp = "@SID:TEST"
-        self._handle_cmd_exp(cmd,exp)
+        self._handle_cmd_exp(cmd, exp)
         # set it back
         cmd = ">SID:" + oldsid
         exp = "@SID:" + oldsid
         self._handle_cmd_exp(cmd, exp)
-
 
         # poorly formatted command testing
         self._test_value_missing_conditions("SID")
@@ -265,9 +255,9 @@ class SnipeTests(unittest.TestCase):
         exp = "!SID:" + ERR_SID_TOO_LONG
         self._handle_cmd_exp(cmd, exp)
 
-
     def test_VER(self):
-        print("\n--------------> ", sys._getframe().f_code.co_name, " <-------------- ")   # cool trick prints current function name
+        print("\n--------------> ", sys._getframe().f_code.co_name,
+              " <-------------- ")  # cool trick prints current function name
 
         cmd = ">VER:?"
         exp = "@VER:"
@@ -277,9 +267,9 @@ class SnipeTests(unittest.TestCase):
         self._test_value_missing_conditions("VER")
         self._test_q_required("VER")
 
-
     def test_DESC(self):
-        print("\n--------------> ", sys._getframe().f_code.co_name, " <-------------- ")   # cool trick prints current function name
+        print("\n--------------> ", sys._getframe().f_code.co_name,
+              " <-------------- ")  # cool trick prints current function name
 
         cmd = ">DESC:?"
         exp = "@DESC:"
@@ -289,16 +279,16 @@ class SnipeTests(unittest.TestCase):
         self._test_value_missing_conditions("DESC")
         self._test_q_required("DESC")
 
-
     def test_I2A(self):
-        print("\n--------------> ", sys._getframe().f_code.co_name, " <-------------- ")   # cool trick prints current function name
+        print("\n--------------> ", sys._getframe().f_code.co_name,
+              " <-------------- ")  # cool trick prints current function name
 
         cmd = ">I2A:123"
         exp = "@I2A:123"
         self._handle_cmd_exp(cmd, exp)
         cmd = ">I2A:?"
         exp = "@I2A:123"
-        self._handle_cmd_exp(cmd,exp)
+        self._handle_cmd_exp(cmd, exp)
         # test out of range
         cmd = ">I2A:270"
         exp = "!I2A:" + OUT_OF_RANGE
@@ -307,16 +297,16 @@ class SnipeTests(unittest.TestCase):
         # poorly formatted
         self._test_value_missing_conditions("I2A")
 
-
     def test_I2B(self):
-        print("\n--------------> ", sys._getframe().f_code.co_name, " <-------------- ")   # cool trick prints current function name
+        print("\n--------------> ", sys._getframe().f_code.co_name,
+              " <-------------- ")  # cool trick prints current function name
 
         cmd = ">I2B:3"
         exp = "@I2B:3"
         self._handle_cmd_exp(cmd, exp)
         cmd = ">I2B:?"
         exp = "@I2B:3"
-        self._handle_cmd_exp(cmd,exp)
+        self._handle_cmd_exp(cmd, exp)
         # test out of range
         cmd = ">I2B:20"
         exp = "!I2B:" + BYTE_SETTING_ERR
@@ -325,16 +315,16 @@ class SnipeTests(unittest.TestCase):
         # poorly formatted
         self._test_value_missing_conditions("I2B")
 
-
     def test_I2S(self):
-        print("\n--------------> ", sys._getframe().f_code.co_name, " <-------------- ")   # cool trick prints current function name
+        print("\n--------------> ", sys._getframe().f_code.co_name,
+              " <-------------- ")  # cool trick prints current function name
 
         cmd = ">I2S:5"
         exp = "@I2S:5"
         self._handle_cmd_exp(cmd, exp)
         cmd = ">I2S:?"
         exp = "@I2S:5"
-        self._handle_cmd_exp(cmd,exp)
+        self._handle_cmd_exp(cmd, exp)
         # test out of range
         cmd = ">I2S:270"
         exp = "!I2S:" + OUT_OF_RANGE
@@ -343,18 +333,16 @@ class SnipeTests(unittest.TestCase):
         # poorly formatted
         self._test_value_missing_conditions("I2S")
 
-
-
     def test_I2W(self):
-        print("\n--------------> ", sys._getframe().f_code.co_name, " <-------------- ")   # cool trick prints current function name
-
+        print("\n--------------> ", sys._getframe().f_code.co_name,
+              " <-------------- ")  # cool trick prints current function name
 
         cmd = ">I2B:1 I2W:0xFF"
         exp = "@I2B:1 I2W:0xFF"
         self._handle_cmd_exp(cmd, exp)
         cmd = ">I2W:?"
         exp = "@I2W:0xFF"
-        self._handle_cmd_exp(cmd,exp)
+        self._handle_cmd_exp(cmd, exp)
 
         # test byte error
         cmd = ">I2B:2 I2W:0xFF"
@@ -369,25 +357,24 @@ class SnipeTests(unittest.TestCase):
         # poorly formatted
         self._test_value_missing_conditions("I2W")
 
-
     def test_I2R(self):
-        print("\n--------------> ", sys._getframe().f_code.co_name, " <-------------- ")   # cool trick prints current function name
-
+        print("\n--------------> ", sys._getframe().f_code.co_name,
+              " <-------------- ")  # cool trick prints current function name
 
         cmd = ">I2A:104 I2S:3 I2B:1 I2R:?"
         exp = "@I2A:104 I2S:3 I2B:1 I2R:"
         self._handle_cmd_exp(cmd, exp)
         cmd = ">I2R:?"
         exp = "@I2R:"
-        self._handle_cmd_exp(cmd,exp)
+        self._handle_cmd_exp(cmd, exp)
 
         # poorly formatted
         self._test_value_missing_conditions("I2R")
         self._test_q_required("I2R")
 
-
     def test_I2F(self):
-        print("\n--------------> ", sys._getframe().f_code.co_name, " <-------------- ")   # cool trick prints current function name
+        print("\n--------------> ", sys._getframe().f_code.co_name,
+              " <-------------- ")  # cool trick prints current function name
 
         # we don't know what's hooked up to your arduino, so just check for a response
         cmd = ">I2F:?"
@@ -398,9 +385,9 @@ class SnipeTests(unittest.TestCase):
         self._test_value_missing_conditions("I2F")
         self._test_q_required("I2F")
 
-
     def test_BLINK(self):
-        print("\n--------------> ", sys._getframe().f_code.co_name, " <-------------- ")   # cool trick prints current function name
+        print("\n--------------> ", sys._getframe().f_code.co_name,
+              " <-------------- ")  # cool trick prints current function name
 
         # we don't know what's hooked up to your arduino, so just check for a response
         cmd = ">BLINK:10000"
@@ -414,9 +401,9 @@ class SnipeTests(unittest.TestCase):
         # poorly formatted
         self._test_value_missing_conditions("BLINK")
 
-
     def test_lowercase(self):
-        print("\n--------------> ", sys._getframe().f_code.co_name, " <-------------- ")   # cool trick prints current function name
+        print("\n--------------> ", sys._getframe().f_code.co_name,
+              " <-------------- ")  # cool trick prints current function name
 
         # test a few lowercase commands to make sure it doesn't matter
         cmd = ">sid:?"
@@ -435,19 +422,18 @@ class SnipeTests(unittest.TestCase):
         # poorly formatted
         self._test_value_missing_conditions("BLINK")
 
-
     # NEW 4.0 Stack Light Commands
 
-
     def test_SLC1_thru_SLC3_basic(self):
-        print("\n--------------> ", sys._getframe().f_code.co_name, " <-------------- ")   # cool trick prints current function name
+        print("\n--------------> ", sys._getframe().f_code.co_name,
+              " <-------------- ")  # cool trick prints current function name
 
         clr = 0x555555
         clrtxt = "0x555555"
         # Basic set colors
-        for i in range(1,4):
+        for i in range(1, 4):
             cmd = ">SLC%d:%d" % (i, clr)
-            exp = "@SLC%d:%s" % (i,clrtxt)
+            exp = "@SLC%d:%s" % (i, clrtxt)
             self._handle_cmd_exp(cmd, exp)
 
         # check the ? -- all should still be at same color
@@ -463,7 +449,8 @@ class SnipeTests(unittest.TestCase):
         self._handle_cmd_exp(cmd, exp)
 
     def test_SLC1_colornames(self):
-        print("\n--------------> ", sys._getframe().f_code.co_name, " <-------------- ")   # cool trick prints current function name
+        print("\n--------------> ", sys._getframe().f_code.co_name,
+              " <-------------- ")  # cool trick prints current function name
 
         # SET by uppercase name
         for key, value in colors.items():
@@ -483,7 +470,8 @@ class SnipeTests(unittest.TestCase):
         self._handle_cmd_exp(cmd, exp)
 
     def test_SLC1_colorvalues(self):
-        print("\n--------------> ", sys._getframe().f_code.co_name, " <-------------- ")   # cool trick prints current function name
+        print("\n--------------> ", sys._getframe().f_code.co_name,
+              " <-------------- ")  # cool trick prints current function name
 
         # SET known values first
         for key, value in colors.items():
@@ -498,14 +486,15 @@ class SnipeTests(unittest.TestCase):
         # off by one....should clear the 'red' that is appended since we don't have a color match
         cmd = f">SLC1:0xFF0001"
         exp = f"@SLC1:0xFF0001"
-        self._handle_cmd_exp(cmd,exp)
+        self._handle_cmd_exp(cmd, exp)
         # set to another color to make sure
         cmd = f">SLC1:0x00FF00"
         exp = f"@SLC1:0x00FF00:GREEN"
         self._handle_cmd_exp(cmd, exp)
 
     def test_SLP_query(self):
-        print("\n--------------> ", sys._getframe().f_code.co_name, " <-------------- ")   # cool trick prints current function name
+        print("\n--------------> ", sys._getframe().f_code.co_name,
+              " <-------------- ")  # cool trick prints current function name
 
         for i in range(1, 4):
             cmd = f">SLP{i}:99"
@@ -518,7 +507,8 @@ class SnipeTests(unittest.TestCase):
             self._handle_cmd_exp(cmd, exp)
 
     def test_SLM_query(self):
-        print("\n--------------> ", sys._getframe().f_code.co_name, " <-------------- ")   # cool trick prints current function name
+        print("\n--------------> ", sys._getframe().f_code.co_name,
+              " <-------------- ")  # cool trick prints current function name
 
         for i in range(1, 4):
             cmd = f">SLM{i}:0"
@@ -538,9 +528,9 @@ class SnipeTests(unittest.TestCase):
         # poorly formatted command testing
         self._test_value_missing_conditions("SLM1")
 
-
     def test_SLP_values(self):
-        print("\n--------------> ", sys._getframe().f_code.co_name, " <-------------- ")   # cool trick prints current function name
+        print("\n--------------> ", sys._getframe().f_code.co_name,
+              " <-------------- ")  # cool trick prints current function name
 
         values = ['0', '20', '40', '60', '80', '100']
         hexvals = ['0x0', '0x14', '0x28', '0x3C', '0x50', '0x64']
@@ -554,7 +544,7 @@ class SnipeTests(unittest.TestCase):
         # test hex values
         for i in range(len(values)):
             cmd = f">SLP1:{hexvals[i]}"
-            exp = f"@SLP1:{values[i]}"         # it converts to decimal for us
+            exp = f"@SLP1:{values[i]}"  # it converts to decimal for us
             self._handle_cmd_exp(cmd, exp)
             time.sleep(.125)
 
@@ -568,32 +558,32 @@ class SnipeTests(unittest.TestCase):
         exp = f"!SLP1:" + VALUE_ERROR
         self._handle_cmd_exp(cmd, exp)
 
-
     def test_SLM_values(self):
-        print("\n--------------> ", sys._getframe().f_code.co_name, " <-------------- ")   # cool trick prints current function name
+        print("\n--------------> ", sys._getframe().f_code.co_name,
+              " <-------------- ")  # cool trick prints current function name
         default = "500"
         minval = 100
         maxval = 10000
         # test with no value given...default is 500ms on startup
         for i in range(1, 4):
-            for mode in range(0, 3):
+            for mode in range(0, 5):
                 cmd = f">SLM{i}:{mode}"
                 exp = f"@SLM{i}:{mode}"
                 self._handle_cmd_exp(cmd, exp)
         # test in range cycle values, regardless of mode
-        for mode in range(0, 3):
+        for mode in range(0, 5):
             for cycle in range(minval, maxval, 2000):
                 cmd = f">SLM1:{mode}:{cycle}"
                 exp = f"@SLM1:{mode}:{cycle}"
                 self._handle_cmd_exp(cmd, exp)
 
         # test below range
-        cmd = f">SLM1:1:{minval-5}"
+        cmd = f">SLM1:1:{minval - 5}"
         exp = f"@SLM1:1:{minval}"
         self._handle_cmd_exp(cmd, exp)
 
         # test above range
-        cmd = f">SLM1:1:{maxval + 5 }"
+        cmd = f">SLM1:1:{maxval + 5}"
         exp = f"@SLM1:1:{maxval}"
         self._handle_cmd_exp(cmd, exp)
 
@@ -609,31 +599,24 @@ class SnipeTests(unittest.TestCase):
 
 
 # SLC1, SLC2, SLC3
-    # SLM1, SLM2, SLM3
-    # SLA
-
-
-
-
-
-
+# SLM1, SLM2, SLM3
+# SLA
 
 
 if __name__ == '__main__':
-    #parser = OptionParser()
-    #parser.add_option("-p", "--port", dest="port",
+    # parser = OptionParser()
+    # parser.add_option("-p", "--port", dest="port",
     #              help="Set SNIPE Arduino port", metavar="PORT")
-    #parser.add_option("-b", "--baud", dest="baud", default=57600,
+    # parser.add_option("-b", "--baud", dest="baud", default=57600,
     #              help="Baud rate for SNIPE Arduino, default 57600")
     #
-    #(options, args) = parser.parse_args()
-    #if options.port:
+    # (options, args) = parser.parse_args()
+    # if options.port:
     #    SnipeTests.port = options.port
-    #if options.baud:
+    # if options.baud:
     #    SnipeTests.baudrate = options.baud
     if len(sys.argv) > 1:
         SnipeTests.port = sys.argv.pop()
-
 
     print("----- RUNNING SNIPE TEST SUITE  v20160211 -------")
     print("port: " + SnipeTests.port + "\tbaudrate: " + str(SnipeTests.baudrate))
@@ -642,5 +625,3 @@ if __name__ == '__main__':
         unittest.main()
     except:
         pass
-
-    

@@ -35,9 +35,9 @@ uint32_t hsv(uint8_t h, uint8_t s, uint8_t v) {
         region = h / 43;
         remain = (h - (region * 43)) * 6;
 
-        p = (v * (255 - s)) >> 8;                             // off by -1 when arduino does it
-        q = (v * (255 - ((s * remain) >> 8))) >> 8;           // off by -1 when arduino does it
-        t = (v * (255 - ((s * (255 - remain)) >> 8))) >> 8;   // off by -1 when arduino does it
+        p = (v * (255 - s)) >> 8;                             // off by -1 when arduino does it   THE FINAL FIX WAS TO (uint32_t) ALL THE VALUES
+        q = (v * (255 - ((s * remain) >> 8))) >> 8;           // off by -1 when arduino does it     THE FINAL FIX WAS TO (uint32_t) ALL THE VALUES
+        t = (v * (255 - ((s * (255 - remain)) >> 8))) >> 8;   // off by -1 when arduino does it       THE FINAL FIX WAS TO (uint32_t) ALL THE VALUES
 
         switch (region)  {
             case 0:

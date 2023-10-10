@@ -5,21 +5,6 @@
 #include "SNIPE_StackLight.h"
 #include "SNIPE_ColorUtilities.h"
 
-//
-//public:                         // Access specifier
-//    uint32_t color{BLACK};         // default 0 value
-//    uint32_t current_color{BLACK}; // currently working color
-//    uint8_t mode{MODE_DEFAULT};    // solid state
-//    uint16_t cycle_ms{500};        // 500 ms full cycle time
-//    unsigned long update_time{0};       // immediate
-//    bool flash_is_on{false};
-//    bool pulse_going_up{true};
-//    uint8_t numpixels{8};         // how many pixes in this stack light
-//    uint8_t perc_lit{100};         // single digit, no floats please
-//    Adafruit_NeoPixel strip;
-//    bool mode_did_change{false};
-//
-
 void SNIPE_StackLight::change_mode(uint8_t new_mode) {
     // At this point, new_mode is already vetted against the appropriate values.
     // handle mode switches.  Where we want to keep the color on even when flash/pulse has changed
@@ -30,6 +15,50 @@ void SNIPE_StackLight::change_mode(uint8_t new_mode) {
     }
     return;
 }
+
+/**
+ * 1) Calculate number active
+ * 2) Handle Next Strobe Step and/or mode change
+ * 3) Handle Next Flash Step  and/or mode change
+ */
+void SNIPE_StackLight::update() {
+    uint8_t numactive;
+    numactive = int((float)this->numpixels * ((float)this->perc_lit / 100));
+    numactive = min(numactive, this->numpixels);   // make sure our math doesn't overshoot.
+    if (this->mode == MODE_OFF) {
+        this->current_color = BLACK;
+        if (this->mode_did_change) {
+            this->mode_did_change = false;
+            this->flash_is_on = false;
+        }
+    }
+    if (this->mode == MODE_STEADY) {
+        this->current_color = this->color;
+        if (this->mode_did_change) {
+            this->mode_did_change = false;
+            this->flash_is_on = false;
+        }
+    }
+    if (this->mode == MODE_FLASH) {
+        this->update_flash_color();
+    }
+    if (this->mode == MODE_PULSE) {
+        this->update_pulse_color();
+    }
+    if (this->mode == MODE_RAINBOW) {
+        this->update_rainbow_color();
+    }
+    // At this point, current_color holds the calculated value.
+    // Do the actual work
+    for(uint16_t i=0; i < numactive; i++) {
+        this->strip->setPixelColor(i, this->current_color);
+    }
+    for(uint16_t i=numactive; i < this->numpixels; i++) {
+        this->strip->setPixelColor(i, BLACK);
+    }
+    this->strip->show();
+}
+
 
 void SNIPE_StackLight::update_pulse_color() {
     // calculate and put result in current color
@@ -89,12 +118,11 @@ void SNIPE_StackLight::update_rainbow_color() {
         // Going from red->blue so we want to start at 0
         uint8_t hue = 255 - (uint8_t)((255 * remaining_ms) / (cycle_ms));  // our cycleposition within our half step is our brightness
         current_color = hsv(hue, 255, 255);  // no saturation, full bright.
-        uint8_t r = getRedFromColor(current_color);
-        uint8_t g = getGreenFromColor(current_color);
-        uint8_t b = getBlueFromColor(current_color);
+//        uint8_t r = getRedFromColor(current_color);
+//        uint8_t g = getGreenFromColor(current_color);
+//        uint8_t b = getBlueFromColor(current_color);
 //        Serial.print("rem:\t");Serial.print(remaining_ms);Serial.print("\thue:\t");Serial.print(hue);
 //        Serial.print("\tr:\t");Serial.print(r);Serial.print("\tg:\t");Serial.print(g);Serial.print("\tb:\t");Serial.println(b);
-
 
         return;
 
