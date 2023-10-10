@@ -573,7 +573,7 @@ class SnipeTests(unittest.TestCase):
         print("\n--------------> ", sys._getframe().f_code.co_name, " <-------------- ")   # cool trick prints current function name
         default = "500"
         minval = 100
-        maxval = 5000
+        maxval = 10000
         # test with no value given...default is 500ms on startup
         for i in range(1, 4):
             for mode in range(0, 3):
@@ -602,6 +602,10 @@ class SnipeTests(unittest.TestCase):
         exp = f"@SLM1:1:" + VALUE_ERROR
         self._handle_cmd_exp(cmd, exp)
 
+        # test float value -- it works but ignores the decimal
+        cmd = f">SLM1:1:1000.8"
+        exp = f"@SLM1:1:1000"
+        self._handle_cmd_exp(cmd, exp)
 
 
 # SLC1, SLC2, SLC3

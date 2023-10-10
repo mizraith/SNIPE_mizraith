@@ -357,8 +357,9 @@ _SLC commands use [D7] and [D8] and [D9] by default on a nano._
   - 3:  On, Flashing.  Optional subtoken for full-cycle blink rate in ms.
 - **cycle rate argument:** <optional>
   - in milliseconds full cycle time.
+  - default: 1000
   - MIN: 100   (setting below this -> 100)
-  - MAX: 5000  (setting above this -> 5000)
+  - MAX: 10000  (setting above this -> 5000)
 - **example:**
   - command: `>SLM1:1`
   - response:`@SLM1:1`   The mode for #1 is ON, Steady State.
@@ -368,7 +369,13 @@ _SLC commands use [D7] and [D8] and [D9] by default on a nano._
   - repsonse: `@SLM1:3:100`  Returns the value it rounded up to.
   - command: `>SLM1:0`
   - response: `@SLM1:0`  The light for stack light #1 is off
-
+  - command: `>SLM1:0:1000`   You can even set the cycle time in steady mode (to carry forward)
+  - response: `@SLM1:0:1000`
+  - command:  `>SLM1:1:1000.8`  You *can* send a float, but everything after the "." is ignored.
+  - response: `@SLM1:1:1000`
+  - command:  `>SLM1:1:abcd`   Alpha's won't get parsed as values
+  - response:  `@SLM1:1:VALUE_ERROR`   The mode is accepted (so "@", not "!" but VALUE_ERROR for cycle subtoken)
+  
 #### SLP1, SLP2, SLP3
 - **description** Stack Light Percentage   Set how many of the lights are on
 - **input argument** ? or int percentage of pixels on.
@@ -376,8 +383,16 @@ _SLC commands use [D7] and [D8] and [D9] by default on a nano._
 - **example:**
   - command: `>SLP1:100`
   - response: `@SLP1:100`   All lights are on
-  - command: `>SPL1:25`
+  - command: `>SLP1:25`
   - response: `@SLP1:25`    25% of the lights are on, closest to controller
+  - command: `>SLP1:101`    Unlike cycle time, we currently do not round percentages
+  - response: `!SLP1:VALUE_ERROR
+  - command:  `>SLP1:0x28`  Hex is accepted
+  - response: `@SLP1:40`
+  - command: `>SLP1:50.3`    But floats are NOT
+  - response: `SLP1:VALUE_ERROR`
+  - command: `>SLP1:?`         standard query syntax
+  - response: `@SLP1:40`
 
 #### SLA
 - **description:**  Stack Light alarm.  Convenience method for setting digital pin high to activate annoying beeper.

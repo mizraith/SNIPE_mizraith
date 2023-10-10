@@ -214,10 +214,17 @@ uint32_t colorWithBrightnessExpo(uint32_t c, uint8_t brightness) {
 }
 
 
-
+/**
+ *
+ * @param h   hue:  unsignted 8 bit. 0=red  85=green.  170=blue.  255=almost red
+ * @param s   saturation:  0 = full bright - white!.   255 is dark, fully saturated, black.
+ * @param v   brightness:  0 = black, no light.  255 is full bright.
+ * @return   uint32 color value in 0xRRGGBB the way it should be (I'm looking at you openCV)
+ */
 //Thanks again to RRRus and Tom Corboline for this method
 //  Returns a 32-bit RGB value based on HSV inputs.
 //  Modified as standalone method.
+
 uint32_t hsv(uint8_t h, uint8_t s, uint8_t v) {
     // h = 0 : red
     // h = 85 : green
@@ -229,7 +236,7 @@ uint32_t hsv(uint8_t h, uint8_t s, uint8_t v) {
 
     if (s == 0)  {
         r = v;    //no saturation, everything equals brightness value
-	g = v;
+	    g = v;
         b = v;
     }
     

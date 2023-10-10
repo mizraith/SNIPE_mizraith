@@ -77,6 +77,31 @@ void SNIPE_StackLight::update_flash_color() {
     return;
 }
 
+void SNIPE_StackLight::update_rainbow_color() {
+    // calculate and put result in current color
+    if (mode_did_change) {
+        mode_did_change = false;
+        pulse_going_up = false;
+        current_color = color;
+    } else if (millis() < update_time) {    // not a flip, how much longer until we do?
+        // how far along are we in our cycle_ms. Our hue maps from 0 --> cycle_ms : 0 -> 255
+        unsigned long remaining_ms = cycle_ms - (update_time - millis());
+        // Going from red->blue so we want to start at 0
+        uint8_t hue = 255 - (uint8_t)((255 * remaining_ms) / (cycle_ms));  // our cycleposition within our half step is our brightness
+        current_color = hsv(hue, 255, 255);  // no saturation, full bright.
+        Serial.print("rem: ");Serial.print(remaining_ms);Serial.print("\thue: ");Serial.print(hue);Serial.print("\tcolor: ");Serial.println(current_color, HEX);
+
+
+        return;
+
+    } else {    // flip
+        pulse_going_up = !pulse_going_up;  // why not
+        update_time = millis() + (unsigned long) (cycle_ms);
+    }
+    return;
+}
+
+
 
 void SNIPE_StackLight::setup_strip() {
     this->strip = new Adafruit_NeoPixel(this->numpixels, this->lightpin, this->neopixel_type);
@@ -86,24 +111,25 @@ void SNIPE_StackLight::setup_strip() {
 }
 
 void SNIPE_StackLight::print_info() {
-    Serial.println(F("----------- StackLight Info ----------"));
-    Serial.print(F("\t&this:     "));Serial.println((unsigned int)this, DEC);
-    Serial.print(F("\tsize_of:   "));Serial.println(sizeof(SNIPE_StackLight));
-    Serial.print(F("\tcolor:     "));Serial.println(this->color);
-    Serial.print(F("\tmode:      "));Serial.println(this->mode);
-    Serial.print(F("\tcycle_ms:  "));Serial.println(this->cycle_ms);
-    Serial.print(F("\tflash on:  "));Serial.println(this->flash_is_on);
-    Serial.print(F("\tpulse->up: "));Serial.println(this->pulse_going_up);
-    Serial.print(F("\tnumpixels: "));Serial.println(this->numpixels);
-    Serial.print(F("\tperc_lit:  "));Serial.println(this->perc_lit);
-    Serial.print(F("\t&(*strip): "));Serial.println((unsigned int)&(this->strip), DEC);
-    Serial.print(F("\t&strip: "));Serial.println((unsigned int)this->strip, DEC);
+    Serial.println(F("#"));
+    Serial.print(F("#---------- SLINFO: [ "));Serial.print(this->id);Serial.println(F(" ] -----------"));
+    Serial.print(F("#\t&this:     "));Serial.println((unsigned int)this, DEC);
+    Serial.print(F("#\tsize_of:   "));Serial.println(sizeof(SNIPE_StackLight));
+    Serial.print(F("#\tcolor:     "));Serial.println(this->color);
+    Serial.print(F("#\tmode:      "));Serial.println(this->mode);
+    Serial.print(F("#\tcycle_ms:  "));Serial.println(this->cycle_ms);
+    Serial.print(F("#\tflash on:  "));Serial.println(this->flash_is_on);
+    Serial.print(F("#\tpulse->up: "));Serial.println(this->pulse_going_up);
+    Serial.print(F("#\tnumpixels: "));Serial.println(this->numpixels);
+    Serial.print(F("#\tperc_lit:  "));Serial.println(this->perc_lit);
+    Serial.print(F("#\t&(*strip): "));Serial.println((unsigned int)&(this->strip), DEC);
+    Serial.print(F("#\t&strip: "));Serial.println((unsigned int)this->strip, DEC);
 
     char buffstr[kCOLORLENGTH];
     const char * string_in_progmem = (const char *) this->colorname_p;
     strcpy_P(buffstr, string_in_progmem);
-    Serial.print(F("\tcolorname: "));Serial.println(buffstr);
-    Serial.println(F("------------------------------------\n"));
+    Serial.print(F("#\tcolorname: "));Serial.println(buffstr);
+    Serial.println(F("#------------------------------------"));
 
     //Serial.print(F("\tstripbytes: "));Serial.println((uint16_t )this->strip->numBytes);
 

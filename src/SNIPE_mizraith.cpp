@@ -166,7 +166,7 @@ const String DESCRIPTION = "SNIPE_for_Arduino";
 
 // min and max full cycle time for our flash or pulse modes.
 #define kMIN_CYCLE_TIME 100
-#define kMAX_CYCLE_TIME 5000
+#define kMAX_CYCLE_TIME 10000
 
 #pragma mark String Lengths
 // STRING LENGTH & EEPROM LOCATION CONSTANTS
@@ -191,7 +191,8 @@ String output_string = "";                 // might as well use the helper libra
 #define MODE_DEFAULT 0
 #define MODE_FLASH   1
 #define MODE_PULSE   2
-#define kMAX_MODE_NUM 3
+#define MODE_RAINBOW 3
+#define kMAX_MODE_NUM 4
 //#define MODE_CYLON_RING  3
 // text based colors ... would be cool tos support
 #define RED  0xFF0000
@@ -222,9 +223,9 @@ String output_string = "";                 // might as well use the helper libra
 // STACK LIGHT CONTROLLER supporting variables
 #define kNUM_STACKLIGHTS 3
 SNIPE_StackLight stack_lights[kNUM_STACKLIGHTS] =  {
-        SNIPE_StackLight(SL1_PIN, 8, NEO_GRB + NEO_KHZ800),
-        SNIPE_StackLight(SL2_PIN, 3, NEO_GRB + NEO_KHZ800),
-        SNIPE_StackLight(SL3_PIN, 2, NEO_GRB + NEO_KHZ800),
+        SNIPE_StackLight(1, SL1_PIN, 8, NEO_GRB + NEO_KHZ800),
+        SNIPE_StackLight(2, SL2_PIN, 3, NEO_GRB + NEO_KHZ800),
+        SNIPE_StackLight(3, SL3_PIN, 2, NEO_GRB + NEO_KHZ800),
 };
 
 //= new SNIPE_StackLight [kNUM_STACKLIGHTS];  // our array of classes...we'll init in setup.
@@ -311,10 +312,11 @@ void setup() {
 
 
     // Allocate memory and big objects
-    Adafruit_NeoPixel SL1_strip = Adafruit_NeoPixel(10, SL1_PIN, NEO_GRB + NEO_KHZ800);
-    Serial.print("--> SIZE OF SL1 10 pixel strip: ");Serial.println(sizeof(SL1_strip));
-    SL1_strip.begin();
-    SL1_strip.show();
+    // TODO:  CLEAN THIS UP
+//    Adafruit_NeoPixel SL1_strip = Adafruit_NeoPixel(10, SL1_PIN, NEO_GRB + NEO_KHZ800);
+//    Serial.print("--> SIZE OF SL1 10 pixel strip: ");Serial.println(sizeof(SL1_strip));
+//    SL1_strip.begin();
+//    SL1_strip.show();
     //SL1_strip.setBrightness((uint8_t)255);
 //    delay(1000);
 //    SL1_strip.setPixelColor(2, BLUE);
@@ -341,9 +343,6 @@ void setup() {
         stack_lights[lightnum].setup_strip();
     }
 
-    // FOR DEBUGGING -- should comment out
-    handle_SLINFO_worker();
-
     // Developer note: This next line is key to prevent our output_string (String class)
     // from growing in size over time and fragmenting the heap.  By calling this now
     // we end up saving about 50-60bytes of heap fragmentation.
@@ -353,6 +352,9 @@ void setup() {
     checkRAMandExitIfLow(0);
 
     printSerialInputInstructions();
+    // PRINT OUT STACKLIGHT INFO -- should comment out
+    handle_SLINFO_worker();
+
     stacklight_startup_sequence();
     printSerialDataStart();
     SL_loop_time = millis();
@@ -951,6 +953,9 @@ void stacklight_update() {
         if (stack_lights[lightnum].mode == MODE_PULSE) {
             stack_lights[lightnum].update_pulse_color();
         }
+        if (stack_lights[lightnum].mode == MODE_RAINBOW) {
+            stack_lights[lightnum].update_rainbow_color();
+        }
         // At this point, current_color holds the calculated value.
         // Do the actual work
         for(uint16_t i=0; i < numactive; i++) {
@@ -1374,6 +1379,7 @@ bool try_handle_stackmode_numeric(uint8_t sl_num, String &resp) {
         case MODE_DEFAULT:
         case MODE_FLASH:
         case MODE_PULSE:
+        case MODE_RAINBOW:
             resp += mode;    // append our result: "SLM1:3" -> "SLM1:3" but "SLM1:FUN" -> "SLM1:0" due to atoi
             //set # to mode, return string
             // We are assuming sl_num has been doublechecked at this point...or bad bad array access
@@ -1417,8 +1423,6 @@ void handle_SLINFO_worker() {
     String resp("");
 
     for (uint8_t lightnum = 0; lightnum < kNUM_STACKLIGHTS; lightnum++) {
-        Serial.println();
-        Serial.print(F("----------------- #"));Serial.print(lightnum + 1, DEC);Serial.println(F(" -----------------"));
         stack_lights[lightnum].print_info();
     }
     processing_is_ok = true;
