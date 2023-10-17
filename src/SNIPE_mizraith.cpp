@@ -45,6 +45,7 @@ _Changes in 4.0:  Added Stack light commands_.
 #include"mizraith_DateTime.h"   
 
 // PROJECT LIBRARIES
+#include "SNIPE_EEPROM.h"
 #include "SNIPE_StackLight.h"
 #include "SNIPE_Strings.h"
 #include "SNIPE_GeneralUtilities.h"
@@ -147,8 +148,11 @@ void checkRAM();
 
 #pragma mark Application Globals
 const DateTime COMPILED_ON = DateTime(__DATE__, __TIME__);
+#define SNIPE_VERSION 4
 const String CURRENT_VERSION = "004";
 const String DESCRIPTION = "SNIPE_for_Arduino";
+
+
 
 #pragma mark Pinouts
 // PIN OUTS
@@ -213,8 +217,8 @@ String output_string = "";                 // might as well use the helper libra
 // STACK LIGHT CONTROLLER supporting variables
 #define kNUM_STACKLIGHTS 3
 SNIPE_StackLight stack_lights[kNUM_STACKLIGHTS] =  {
-        SNIPE_StackLight(1, SL1_PIN, 8, NEO_GRB + NEO_KHZ800),
-        SNIPE_StackLight(2, SL2_PIN, 3, NEO_GRB + NEO_KHZ800),
+        SNIPE_StackLight(1, SL1_PIN, 16, NEO_GRB + NEO_KHZ800),
+        SNIPE_StackLight(2, SL2_PIN, 60, NEO_GRB + NEO_KHZ800),
         SNIPE_StackLight(3, SL3_PIN, 2, NEO_GRB + NEO_KHZ800),
 };
 
@@ -265,15 +269,25 @@ const int blink_toggle_time_ms = 250;
 void setup() {
     Serial.begin(57600);  // was 57600
     Wire.begin();
+    bool is_virgin_eeprom;
 
-    if (isVirginEEPROM()) {
-        Serial.println(F("# Setup: Init'ing EEPROM"));
+    is_virgin_eeprom = isVirginEEPROM();
+
+    serialPrintHeaderString();
+
+    if (is_virgin_eeprom) {
+        Serial.println(F("# __Setup: Init'ing virgin EEPROM."));
         initEEPROM(1024, 0x00);
-        Serial.print("# Setup: Will init SID to: " );
+        Serial.print("# __Setup: Will init SID to: " );
         Serial.println(SID);
         writeSIDToEEPROM();      // write out the default SID
+        //TODO:  init_default_settings
     }
     readSIDFromEEPROM();
+
+    struct user_settings * SETTINGS = new struct user_settings;
+    loadSettingsFromEEPROM(SETTINGS);  // handles eeprom defaults
+
 
     pinMode(ANALOG_INPUT, INPUT);
     pinMode(A1, INPUT);
@@ -307,7 +321,6 @@ void setup() {
     // we end up saving about 50-60bytes of heap fragmentation.
     output_string.reserve(MAX_OUTPUT_LENGTH);
 
-    serialPrintHeaderString();
     checkRAMandExitIfLow(0);
 
     printSerialInputInstructions();
@@ -888,10 +901,10 @@ void stacklight_startup_sequence() {
                 //Serial.print("  numpix: ");Serial.println(stack_lights[lightnum].numpixels);
                 stack_lights[lightnum].strip->setPixelColor(n, wash_color);
                 stack_lights[lightnum].strip->show();
-                delay(25);
+                delay(5);
             }
         }
-        delay(100);
+        delay(50);
     }
 }
 
@@ -1800,7 +1813,7 @@ void printSerialInputInstructions( ) {
 
 void printSerialDataStart() {
     Serial.println(F("#"));
-    Serial.print(F("# Current Station ID: "));
+    Serial.print(F("# Current Station ID (SID): "));
     Serial.println(SID);
     Serial.println(F("#"));
     Serial.println("#####DATA#####");

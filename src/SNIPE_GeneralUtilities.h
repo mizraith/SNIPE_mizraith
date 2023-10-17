@@ -19,10 +19,6 @@ void checkRAMandExitIfLow(uint8_t);
 void gotoEndLoop();
 //void checkRAM();
 
-# pragma mark EEPROM Utils
-uint8_t isVirginEEPROM();
-void initEEPROM(int, uint8_t);
-
 # pragma mark I2C / Wire Helpers
 //static inline void wiresend(uint8_t);
 //static inline uint8_t wirereceive();

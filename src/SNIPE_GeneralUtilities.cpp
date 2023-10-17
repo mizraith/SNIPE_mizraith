@@ -66,42 +66,6 @@ int freeRam () {
 
 
 
-#pragma mark EEPROM helpers
-/***************************************************
- ***************************************************
- *   EEPROM HELPERS
- ***************************************************
- ***************************************************/
-// Virgin AVR EEPROM start at 0xFF, which can
-// make a mess of string checking.
-// This method is intended to be called during setup
-// to see if an EEPROM blank is required.  This
-// method basically loops through the first 10
-// addresses in EEPROM and if they all equal 0xFF
-// it will return 1 (true).  If not virgin, returns 0 (false).
-uint8_t isVirginEEPROM() {
-    uint8_t val = 0xFF;
-    Serial.print(F("# Setup: Checking EEPROM:"));
-    for( int i=0; i < 10; i++) {
-        val = EEPROM.read(i);
-        if (val != 0xFF) {
-            Serial.println(F(" NOT a virgin EEPROM"));
-            return 0;
-        }
-    }
-    Serial.println(F(" IS a virgin EEPROM"));
-    return 1;
-}
-
-// I prefer my EEPROMS init to 0
-// pass in numbytes (for atmega328p should be 1024)
-void initEEPROM(int numbytes, uint8_t initvalue) {
-    for (int i=0; i < numbytes; i++) {
-        EEPROM.write(i, initvalue);
-    }
-}
-
-
 //// minihelper
 //static inline void wiresend(uint8_t x) {
 //#if ARDUINO >= 100
