@@ -21,7 +21,7 @@
 // it will return 1 (true).  If not virgin, returns 0 (false).
 uint8_t isVirginEEPROM() {
     uint8_t val = 0xFF;
-    Serial.print(F("# Setup: Checking EEPROM:"));
+    Serial.print(F("# __Setup: Checking EEPROM:"));
     for( int i=0; i < 10; i++) {
         val = EEPROM.read(i);
         if (val != 0xFF) {
@@ -46,7 +46,7 @@ void loadSettingsFromEEPROM(user_settings * SETTINGS) {
     boolean settings_changed = false;
     uint16_t settings_addr = kSETTINGS_START_ADDRESS;
 
-    Serial.print(F("#  __EEPROM Settings @: "));Serial.println(settings_addr, DEC);
+    Serial.print(F("# __EEPROM Settings @: "));Serial.println(settings_addr, DEC);
 
     EEPROM_readAnything(settings_addr, *SETTINGS);
 
@@ -86,7 +86,7 @@ void loadSettingsFromEEPROM(user_settings * SETTINGS) {
 
 
 void printUserSettings(struct user_settings * SETTINGS) {
-    Serial.println(F("# __ STORED SETTINGS __"));
+    Serial.println(F("# __STORED SETTINGS__"));
     Serial.print(F("#     Snipe_Version : "));Serial.println(SETTINGS->snipe_version, DEC);
     Serial.print(F("#     SL1 # pixels  : ")), Serial.println(SETTINGS->sl1_numpixels, DEC);
     Serial.print(F("#     SL2 # pixels  : ")), Serial.println(SETTINGS->sl2_numpixels, DEC);

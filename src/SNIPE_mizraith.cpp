@@ -271,9 +271,9 @@ void setup() {
     Wire.begin();
     bool is_virgin_eeprom;
 
-    is_virgin_eeprom = isVirginEEPROM();
+    serialPrintHeaderString();   // print this early to send out ######HEADER######
 
-    serialPrintHeaderString();
+    is_virgin_eeprom = isVirginEEPROM();
 
     if (is_virgin_eeprom) {
         Serial.println(F("# __Setup: Init'ing virgin EEPROM."));

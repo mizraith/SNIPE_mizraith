@@ -395,6 +395,21 @@ _SLC commands use [D7] and [D8] and [D9] by default on a nano._
   - command: `>SLP1:?`         standard query syntax
   - response: `@SLP1:40`
 
+#### SLNP1, SLNP2, SLNP3
+- **description** Stack Light Num Pixels   Set how many pixels are on a stacklight.  REQUIRES A REBOOT TO TAKE
+- **input argument** ? or uint8_t number of pixels.
+- **input values** 1:255
+- **example:**
+  - command: `>SLNP1:100`
+  - response: `@SLNP1:100:REBOOT_NOW`   StackLight #1 has 100 pixels...that's a lot
+  - command: `>SLNP2:10`
+  - response: `@SLNP2:10:REBOOT_NOW`   Confirming 10 pixels, asking for reboot
+  - command: `>SLNP2:?` 
+  - response: `@SLNP2:10`   Will return value stored in EEPROM
+  - command: `>SLNP1:20.3`   Floats are NOT accepted
+  - response: `SLNP1:VALUE_ERROR`
+
+
 #### SLA
 - **description:**  Stack Light alarm.  Convenience method for setting digital pin high to activate annoying beeper.
 - **input argument:** ? or binary argument.
