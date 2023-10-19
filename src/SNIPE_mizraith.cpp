@@ -162,7 +162,7 @@ const String DESCRIPTION = "SNIPE_for_Arduino";
 #define SL1_PIN        7    // 7 <<< SHOULD BE 7.  Using 5 for debug only based on other design.
 #define SL2_PIN        8
 #define SL3_PIN        9
-#define SLA_PIN      A6
+const uint8_t SLA_PIN = A6;
 //#define NUMPIXELS      8   // number of pixels per stacklight.  Nominal 24.
 
 // min and max full cycle time for our flash or pulse modes.
@@ -187,19 +187,6 @@ char * subtokens[MAX_NUMBER_TOKENS];       // Yes, an array of char* pointers.  
 String output_string = "";                 // might as well use the helper libraries supplied by arduino
 //char transaction_ID_string[9];           // Transaction ID, max 8 chars
 
-
-//// text based colors ... moved to color library class
-//#define RED  0xFF0000
-//#define ORANGE 0xFF5500
-//#define YELLOW 0xFFFF00
-//#define GREEN 0x00FF00
-//#define AQUA 0x00FFFF
-//#define BLUE 0x0000FF
-//#define INDIGO 0x3300FF
-//#define VIOLET 0xFF00FF
-//#define WHITE  0xFFFFFF
-//#define BLACK  0x000000
-
 // Parameter 1 = number of pixels in the strip.
 // Parameter 2 = SLx_PIN ....Digital pin number (most are valid)
 // Parameter 3 = pixel type flags, add together as needed:
@@ -221,8 +208,6 @@ SNIPE_StackLight stack_lights[kNUM_STACKLIGHTS] =  {
         SNIPE_StackLight(2, SL2_PIN, 60, NEO_GRB + NEO_KHZ800),
         SNIPE_StackLight(3, SL3_PIN, 2, NEO_GRB + NEO_KHZ800),
 };
-
-//= new SNIPE_StackLight [kNUM_STACKLIGHTS];  // our array of classes...we'll init in setup.
 
 //unsigned long SL_loop_time = 0;
 unsigned long SL_next_heartbeat = 0;        //  Timer for our next refresh
@@ -272,6 +257,21 @@ void setup() {
     bool is_virgin_eeprom;
 
     serialPrintHeaderString();   // print this early to send out ######HEADER######
+
+    // TODO:  SOME RESET OPTIONS
+//    void(* resetFunc) (void) = 0;
+//    resetFunc();
+//
+//
+//    void reset() { asm volatile ("jmp 0"); }
+//
+//
+//    void reboot() {               // /THIS IS DEEMED THE CLEANEST/A
+//        wdt_disable();
+//        wdt_enable(WDTO_15MS);
+//        while (1) {}
+//    }
+    // TODO ------- ^^^^^^^^^^^^^^^^^^^^^^^^^
 
     is_virgin_eeprom = isVirginEEPROM();
 
@@ -1366,7 +1366,8 @@ void handle_SLINFO_worker() {
 /**
  * function:  handle_SLA
  * appends:  the state to the output display
- * Used to set the alarm state.
+ * Used to set the alarm state.   We control this through
+ * stack light #1 only.   That way it can be sync'd with flashing/pulsing or steady.
  */
 void handle_SLA() {
     char buff[10];
@@ -1383,15 +1384,22 @@ void handle_SLA() {
         strcpy_P(err, str_VALUE_MISSING);
         resp += err;
     } else if (strcmp_P(subtokens[1], str_QUERY) == 0) {
-        resp += digitalRead(SLA_PIN);
+        if (stack_lights[0].alarm_enabled ) {
+            strcpy_P(buff, str_ON);
+        } else {
+            strcpy_P(buff, str_OFF);
+        }
+        resp += buff;
         append_cb = true;
     } else if (strcmp_P(subtokens[1], str_ON) == 0) {
-        digitalWrite(SLA_PIN, HIGH);
-        resp += digitalRead(SLA_PIN);
+        stack_lights[0].alarm_enabled = true;
+        strcpy_P(buff, str_ON);
+        resp += buff;
         append_cb = true;
     } else if (strcmp_P(subtokens[1], str_OFF) == 0) {
-        digitalWrite(SLA_PIN, LOW);
-        resp += digitalRead(SLA_PIN);
+        stack_lights[0].alarm_enabled = false;
+        strcpy_P(buff, str_OFF);
+        resp += buff;
         append_cb = true;
     } else {                              // "SLA:238"  Got some weird second token other than 1 or 0
         processing_is_ok = false;

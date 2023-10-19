@@ -5,6 +5,8 @@
 #include "SNIPE_StackLight.h"
 #include "SNIPE_ColorUtilities.h"
 
+extern uint8_t SLA_PIN;
+
 void SNIPE_StackLight::change_mode(uint8_t new_mode) {
     // At this point, new_mode is already vetted against the appropriate values.
     // handle mode switches.  Where we want to keep the color on even when flash/pulse has changed
@@ -12,6 +14,18 @@ void SNIPE_StackLight::change_mode(uint8_t new_mode) {
         mode_did_change = true;
         mode = new_mode;
         update_time = millis();
+
+        // handle steady-state alarm modes
+        if (alarm_enabled) {
+            if (mode == MODE_OFF) {
+                alarm_enabled = false;
+                digitalWrite(SLA_PIN, LOW);
+            } else if ( (mode == MODE_STEADY) or (mode == MODE_RAINBOW) ) {
+                digitalWrite(SLA_PIN, HIGH);
+            }  // WE WILL HANDLE THE REST IN handle_strobing_alarm()
+        }
+
+
     }
     return;
 }
@@ -48,6 +62,9 @@ void SNIPE_StackLight::update() {
     if (this->mode == MODE_RAINBOW) {
         this->update_rainbow_color();
     }
+
+    this->handle_strobing_alarm();
+
     // At this point, current_color holds the calculated value.
     // Do the actual work
     for(uint16_t i=0; i < numactive; i++) {
@@ -131,6 +148,30 @@ void SNIPE_StackLight::update_rainbow_color() {
         update_time = millis() + (unsigned long) (cycle_ms);
     }
     return;
+}
+
+void SNIPE_StackLight::handle_strobing_alarm() {
+    if (!alarm_enabled) {
+        if (digitalRead(SLA_PIN)) {
+            digitalWrite(SLA_PIN, LOW);
+        }
+        return;
+    } else {   // alarm is enabled
+        if (mode == MODE_FLASH) {
+            if (flash_is_on) {
+                digitalWrite(SLA_PIN, HIGH);
+            } else {
+                digitalWrite(SLA_PIN, LOW);
+            }
+        }
+        if (mode == MODE_PULSE) {
+            if (pulse_going_up) {
+                digitalWrite(SLA_PIN, HIGH);
+            } else {
+                digitalWrite(SLA_PIN, LOW);
+            }
+        }
+    }
 }
 
 

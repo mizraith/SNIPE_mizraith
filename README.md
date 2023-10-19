@@ -395,25 +395,30 @@ _SLC commands use [D7] and [D8] and [D9] by default on a nano._
   - command: `>SLP1:?`         standard query syntax
   - response: `@SLP1:40`
 
-#### SLNP1, SLNP2, SLNP3
+#### SLX1, SLX2, SLX3
 - **description** Stack Light Num Pixels   Set how many pixels are on a stacklight.  REQUIRES A REBOOT TO TAKE
 - **input argument** ? or uint8_t number of pixels.
 - **input values** 1:255
 - **example:**
-  - command: `>SLNP1:100`
-  - response: `@SLNP1:100:REBOOT_NOW`   StackLight #1 has 100 pixels...that's a lot
-  - command: `>SLNP2:10`
-  - response: `@SLNP2:10:REBOOT_NOW`   Confirming 10 pixels, asking for reboot
-  - command: `>SLNP2:?` 
-  - response: `@SLNP2:10`   Will return value stored in EEPROM
-  - command: `>SLNP1:20.3`   Floats are NOT accepted
-  - response: `SLNP1:VALUE_ERROR`
+  - command: `>SLX1:100`
+  - response: `@SLX1:100:REBOOT_NOW`   StackLight #1 has 100 pixels...that's a lot
+  - command: `>SLX2:10`
+  - response: `@SLX2:10:REBOOT_NOW`   Confirming 10 pixels, asking for reboot
+  - command: `>SLX2:?` 
+  - response: `@SLX2:10`   Will return value stored in EEPROM
+  - command: `>SLX1:20.3`   Floats are NOT accepted
+  - response: `SLX1:VALUE_ERROR`
 
 
 #### SLA
-- **description:**  Stack Light alarm.  Convenience method for setting digital pin high to activate annoying beeper.
+- **description:**  Stack Light alarm.  Enables annoying beeper.  Beeper matches StackLight 1 mode and cycle time.  Will be off or steady in those modes.  Will pulse at cycle_ms for flash or pulse modes to match their on or going-up state.  If the alarm is operating and SLM1 --> 0  then the alarm will be disabled and will not turn on when SLM1 goes to another mode (prevent annoyance).
 - **input argument:** ? or binary argument.
 - **input values:**  0 : 1. 0 = Alarm Off.  1 = Alarm On.
+- **example:**
+  - command:  `>SLA:?`
+  - response: `@SLA:0:BIN`
+  - command:  `>SLA:1`
+  - response: `@SLA:1:BIN`
 - _NOTE:  SLA will be wired to [A6] as a digital output._
 
 ### I2C Commands

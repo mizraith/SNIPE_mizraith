@@ -11,6 +11,8 @@
 // used in several places as a default
 #define BLACK 0x000000
 
+extern const uint8_t SLA_PIN;
+
 #pragma mark Stack Light Variables
 //default mode is solid
 #define MODE_DEFAULT 0
@@ -40,6 +42,7 @@ public:                         // Access specifier
     Adafruit_NeoPixel *strip;
     bool mode_did_change {false};
     char * colorname_p;   // pointer to string in progmem
+    bool alarm_enabled {false};
 
     // dummy constructor for new, just take the defaults
     SNIPE_StackLight(): id(1) {
@@ -59,6 +62,7 @@ public:                         // Access specifier
     void update_pulse_color();
     void update_flash_color();
     void update_rainbow_color();
+    void handle_strobing_alarm();
     void setup_strip();
     void print_info();
 };
