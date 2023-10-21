@@ -98,6 +98,7 @@ _Changes in 4.0:  Added Stack light commands_.
 //extern void loop();
 // SETUP
 void blinky_worker();
+void beepy_worker();
 // SERIAL INTERRUPT FUNCTION
 void serialEvent();
 // INPUT STRING PROCESSING
@@ -122,7 +123,6 @@ void handle_SLM_worker(uint8_t);
 bool try_handle_stackmode_query(uint8_t, String &);
 bool try_handle_stackmode_numeric(uint8_t, String &);
 void handle_SLINFO_worker();
-void handle_SLA();
 void handle_I2A();
 void handle_I2B();
 void handle_I2W();
@@ -130,6 +130,10 @@ void handle_I2R();
 void handle_I2S();
 void handle_I2F();
 void handle_BLINK();
+void handle_BEEP();
+void handle_HELP();
+void handle_REBOOT();
+
 // SETUP HELPERS
 void serialPrintHeaderString();
 void printSerialInputInstructions();
@@ -158,11 +162,11 @@ const String DESCRIPTION = "SNIPE_for_Arduino";
 // PIN OUTS
 #define ANALOG_INPUT   A0
 #define LED_PIN        13
-#define RELAY_PIN      6
 #define SL1_PIN        7    // 7 <<< SHOULD BE 7.  Using 5 for debug only based on other design.
 #define SL2_PIN        8
 #define SL3_PIN        9
-const uint8_t SLA_PIN = A6;
+#define RELAY_PIN      6
+#define BEEP_PIN       6
 //#define NUMPIXELS      8   // number of pixels per stacklight.  Nominal 24.
 
 // min and max full cycle time for our flash or pulse modes.
@@ -241,7 +245,8 @@ unsigned long last_blink_change = 0;
 boolean is_blinking = false;
 const int blink_toggle_time_ms = 250;
 
-
+#pragma mark Beep Variables
+boolean beep_enabled = false;
 
 
 #pragma mark Setup & Main
@@ -293,24 +298,29 @@ void setup() {
     pinMode(A1, INPUT);
     pinMode(A2, INPUT);
     pinMode(A3, INPUT);
-    pinMode(SLA_PIN,OUTPUT);
     pinMode(2,  OUTPUT);
     pinMode(3,  OUTPUT);
     pinMode(4,  OUTPUT);
     pinMode(5,  OUTPUT);
-    pinMode(6,  OUTPUT);
+    //pinMode(6,  OUTPUT);
+    pinMode(BEEP_PIN,OUTPUT);
     pinMode(SL1_PIN, OUTPUT);
     pinMode(SL2_PIN, OUTPUT);
     pinMode(SL3_PIN,OUTPUT);
     pinMode(LED_PIN, OUTPUT);
 
-    digitalWrite(SLA_PIN, LOW);
+
     digitalWrite(2, LOW);
     digitalWrite(3, LOW);
     digitalWrite(4, LOW);
     digitalWrite(5, LOW);
-    digitalWrite(6, LOW);
+    //digitalWrite(6, LOW);
+    digitalWrite(BEEP_PIN, LOW);
     digitalWrite(LED_PIN, LOW);
+
+//    digitalWrite(BEEP_PIN, HIGH);
+//    delay(3000);
+//    digitalWrite(BEEP_PIN, LOW);
 
     for (uint8_t lightnum=0; lightnum < kNUM_STACKLIGHTS; lightnum++) {
         stack_lights[lightnum].setup_strip();
@@ -363,6 +373,9 @@ void loop() {
         blinky_worker();
     }
 
+    beepy_worker();
+
+
     //delay(15);   // really slows things up, unnecessary
 }
 
@@ -378,6 +391,51 @@ void blinky_worker() {
         last_blink_change = millis();
     }
 }
+
+void beepy_worker() {
+    uint8_t is_beep;
+    is_beep = (bool) digitalRead(BEEP_PIN);
+
+    // ---------- beep is off        easiest to handle off condition and exit
+    if (!beep_enabled) {
+        if (is_beep) {
+            digitalWrite(BEEP_PIN, LOW);
+        }
+        return;
+    }
+
+    // ---------- beep is enabled
+    // handle steady state modes
+    if ((stack_lights[0].mode != MODE_PULSE) and (stack_lights[0].mode != MODE_FLASH)) {
+        if (!is_beep) {
+            // we need to switch on
+            //Serial.print("Stuck in STEADY:");
+            digitalWrite(BEEP_PIN, HIGH);
+        }
+        return;
+    }
+    // handle pulse modes -- sync with light state...start with a double-check on mode
+    if ((stack_lights[0].mode == MODE_PULSE) or (stack_lights[0].mode == MODE_FLASH)) {
+        if (stack_lights[0].flash_on_pulse_up) {
+            if (!is_beep) {
+                // we need to switch on
+                //Serial.println("flash on");
+                digitalWrite(BEEP_PIN, HIGH);
+            }
+            // otherwise, it's already on
+            return;
+        } else {
+            if (is_beep) {
+                // we need to switch off
+                //Serial.println("flash off");
+                digitalWrite(BEEP_PIN, LOW);
+            }
+            //otherwise, it's already off
+            return;
+        }
+    }
+}
+
 
 
 #pragma mark Serial Interrupt Function
@@ -579,8 +637,6 @@ void handleToken(char* ctoken) {
         handle_SLM_worker(3);
     } else if (strcmp_P(subtokens[0], str_SLINFO) == 0) {
         handle_SLINFO_worker();
-    } else if (strcmp_P(subtokens[0], str_SLA) == 0) {
-        handle_SLA();
     } else if (strcmp_P(subtokens[0], str_SID) == 0) {     // could use (0 == strcmp(subtokens[0], "SID")) (strcmp_P(subtokens[0], PSTR("SID")) == 0 ) (cmd.equalsIgnoreCase(str_SID))
         handle_SID();
     } else if (strcmp_P(subtokens[0], str_VER) == 0) {
@@ -601,6 +657,8 @@ void handleToken(char* ctoken) {
         handle_DESC();
     } else if (strcmp_P(subtokens[0], str_BLINK) == 0) {
         handle_BLINK();
+    } else if (strcmp_P(subtokens[0], str_BEEP) == 0) {
+        handle_BEEP();
     } else if (strcmp_P(subtokens[0], str_RAM) == 0) {
         checkRAM();
     } else {
@@ -1364,64 +1422,6 @@ void handle_SLINFO_worker() {
 
 
 /**
- * function:  handle_SLA
- * appends:  the state to the output display
- * Used to set the alarm state.   We control this through
- * stack light #1 only.   That way it can be sync'd with flashing/pulsing or steady.
- */
-void handle_SLA() {
-    char buff[10];
-    String resp("");
-    strcpy_P(buff, str_SLA);
-    resp = buff;
-    strcpy_P(buff, str_COLON);       // "SLA:"
-    resp += buff;
-
-    boolean append_cb = false;
-    if ( (subtokens[1] == NULL ) || (strlen(subtokens[1]) == 0)) {  // didn't give us a long enough token, e.g. "SLA:" or "SLA"
-        processing_is_ok = false;
-        char err[MAX_ERROR_STRING_LENGTH];
-        strcpy_P(err, str_VALUE_MISSING);
-        resp += err;
-    } else if (strcmp_P(subtokens[1], str_QUERY) == 0) {
-        if (stack_lights[0].alarm_enabled ) {
-            strcpy_P(buff, str_ON);
-        } else {
-            strcpy_P(buff, str_OFF);
-        }
-        resp += buff;
-        append_cb = true;
-    } else if (strcmp_P(subtokens[1], str_ON) == 0) {
-        stack_lights[0].alarm_enabled = true;
-        strcpy_P(buff, str_ON);
-        resp += buff;
-        append_cb = true;
-    } else if (strcmp_P(subtokens[1], str_OFF) == 0) {
-        stack_lights[0].alarm_enabled = false;
-        strcpy_P(buff, str_OFF);
-        resp += buff;
-        append_cb = true;
-    } else {                              // "SLA:238"  Got some weird second token other than 1 or 0
-        processing_is_ok = false;
-        char err[MAX_ERROR_STRING_LENGTH];
-        strcpy_P(err, str_VALUE_ERROR);
-        resp += err;
-    }
-
-    if (append_cb) {
-        strcpy_P(buff, str_COLON);
-        resp += buff;
-        strcpy_P(buff, str_BIN);
-        resp += buff;
-    }
-
-    strcpy_P(buff, str_SPACE);
-    resp += buff;
-    output_string.concat(resp);
-}
-
-
-/**
  * function: handle_I2A
  * appends:  the I2C Address to output display
  * Used to query or set the I2C target address
@@ -1748,6 +1748,63 @@ void handle_BLINK() {
     resp += buff;
     output_string.concat(resp);
 }
+
+
+/**
+ * function:  handle_BEEP
+ * Used to set the alarm state.  Operates Independantly of Stack Light 1, but will pulse if SL is pulsing/flashing.
+ */
+void handle_BEEP() {
+    char buff[10];
+    String resp("");
+    strcpy_P(buff, str_BEEP);
+    resp = buff;
+    strcpy_P(buff, str_COLON);       // "SLA:"
+    resp += buff;
+
+    boolean append_cb = false;
+    if ( (subtokens[1] == NULL ) || (strlen(subtokens[1]) == 0)) {  // didn't give us a long enough token, e.g. "BEEP:" or "BEEP"
+        processing_is_ok = false;
+        char err[MAX_ERROR_STRING_LENGTH];
+        strcpy_P(err, str_VALUE_MISSING);
+        resp += err;
+    } else if (strcmp_P(subtokens[1], str_QUERY) == 0) {
+        if (beep_enabled) {
+            strcpy_P(buff, str_ON);
+        } else {
+            strcpy_P(buff, str_OFF);
+        }
+        resp += buff;
+        append_cb = true;
+    } else if (strcmp_P(subtokens[1], str_ON) == 0) {
+        beep_enabled = true;
+        strcpy_P(buff, str_ON);
+        resp += buff;
+        append_cb = true;
+    } else if (strcmp_P(subtokens[1], str_OFF) == 0) {
+        beep_enabled = false;
+        strcpy_P(buff, str_OFF);
+        resp += buff;
+        append_cb = true;
+    } else {                              // "SLA:238"  Got some weird second token other than 1 or 0
+        processing_is_ok = false;
+        char err[MAX_ERROR_STRING_LENGTH];
+        strcpy_P(err, str_VALUE_ERROR);
+        resp += err;
+    }
+
+    if (append_cb) {
+        strcpy_P(buff, str_COLON);
+        resp += buff;
+        strcpy_P(buff, str_BIN);
+        resp += buff;
+    }
+
+    strcpy_P(buff, str_SPACE);
+    resp += buff;
+    output_string.concat(resp);
+}
+
 
 
 

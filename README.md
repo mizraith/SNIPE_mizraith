@@ -214,7 +214,7 @@ case -insensitive- but this could change.
   - response: `@A0:254:ARB`
 - _Note: A0 is the recommended standard analog input._
               
-##### D2, D3, D4, D5, [D6]    
+##### [D2], D3, D4, D5, [[D6]]    
 - **description:**     Set or Get the digital pin value
 - **input argument:**  ?    or   0:1
 - **value range:**     0 : 1
@@ -224,7 +224,8 @@ case -insensitive- but this could change.
   - response: `@D6:0:BIN`
   - command:  `>D6:1`
   - response: `@D6:1:BIN` 
-- _Note:     D6 is the recommended standard digital output since it is not used for much on the Arduino._
+- _Note:    D2 & D3 are recommended standard digital pins
+- _Note:    The BEEP command is wired to D6
 
 ### Macro Commands
 ##### ECHO
@@ -276,6 +277,19 @@ case -insensitive- but this could change.
   - response: `@BLINK:5000`
   - command:  `>BLINK:?`
   - response: `@BLINK:3502`
+
+  
+#### BEEP
+- **description:**  Alarm.  Enables annoying beeper.  Beeper attempts to match StackLight 1 mode and cycle time. Will pulse at cycle_ms for flash or pulse modes to match their on or going-up state.
+- **input argument:** ? or binary argument.
+- **input values:**  0 : 1. 0 = Alarm Off.  1 = Alarm On.
+- **example:**
+  - command:  `>BEEP:?`
+  - response: `@BEEP:0:BIN`
+  - command:  `>BEEP:1`
+  - response: `@BEEP:1:BIN`
+- _NOTE:  BEEP will be wired to [D6] as a digital output._
+
 
 #### REBOOT
 - **description:**  Restarts the Arduino...as if on a power cycle.  Can be useful if chaning the SLX (number of stack lights on a strand) programatically.
@@ -369,18 +383,6 @@ _SLC commands use [D7] and [D8] and [D9] by default on a nano._
   - response: `@SLX2:10`   Will return value stored in EEPROM
   - command: `>SLX1:20.3`   Floats are NOT accepted
   - response: `SLX1:VALUE_ERROR`
-
-
-#### SLA
-- **description:**  Stack Light alarm.  Enables annoying beeper.  Beeper matches StackLight 1 mode and cycle time.  Will be off or steady in those modes.  Will pulse at cycle_ms for flash or pulse modes to match their on or going-up state.  If the alarm is operating and SLM1 --> 0  then the alarm will be disabled and will not turn on when SLM1 goes to another mode (prevent annoyance).
-- **input argument:** ? or binary argument.
-- **input values:**  0 : 1. 0 = Alarm Off.  1 = Alarm On.
-- **example:**
-  - command:  `>SLA:?`
-  - response: `@SLA:0:BIN`
-  - command:  `>SLA:1`
-  - response: `@SLA:1:BIN`
-- _NOTE:  SLA will be wired to [A6] as a digital output._
 
 ### I2C Commands
 _I2C commands use SCL and SDA pins.  This is [A4] and [A5] on a nano._

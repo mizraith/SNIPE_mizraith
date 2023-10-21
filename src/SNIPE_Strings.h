@@ -85,7 +85,7 @@ const char str_SLM1  [] PROGMEM = "SLM1";     // Stack Light Mode
 const char str_SLM2  [] PROGMEM = "SLM2";     // Stack Light Mode
 const char str_SLM3  [] PROGMEM = "SLM3";     // Stack Light Mode
 const char str_SLINFO[] PROGMEM = "SLINFO";   // Stack Light Info...debugging use only
-const char str_SLA  [] PROGMEM = "SLA";     // Stack Light Alarm
+const char str_BEEP  [] PROGMEM = "BEEP";     // Annoying Beeper
 const char str_I2A  [] PROGMEM = "I2A";     // I2C target chip address
 const char str_I2S  [] PROGMEM = "I2S";     // I2C target setting
 const char str_I2B  [] PROGMEM = "I2B";     // I2C target byte count
@@ -93,7 +93,8 @@ const char str_I2W  [] PROGMEM = "I2W";     // I2C Write command
 const char str_I2R  [] PROGMEM = "I2R";     // I2C Read command
 const char str_I2F  [] PROGMEM = "I2F";     // I2C Find devices on the bus
 const char str_RAM  [] PROGMEM = "RAM";     // Checks free RAM
-const char str_REBOOT [] PROGMEM = "REBOOT";
+const char str_REBOOT [] PROGMEM = "REBOOT";  // REBOOT COMMAND
+const char str_HELP [] PROGMEM = "HELP";    // Send out HELP
 // 4 character commands & identifiers
 const char str_DESC     [] PROGMEM =    "DESC";     // Description identifier/command
 // 5 character commands & identifiers

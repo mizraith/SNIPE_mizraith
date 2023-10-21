@@ -11,8 +11,6 @@
 // used in several places as a default
 #define BLACK 0x000000
 
-extern const uint8_t SLA_PIN;
-
 #pragma mark Stack Light Variables
 //default mode is solid
 #define MODE_DEFAULT 0
@@ -35,8 +33,7 @@ public:                         // Access specifier
     uint8_t mode {MODE_DEFAULT};    // solid state
     uint16_t cycle_ms {1000};        // 500 ms full cycle time
     unsigned long update_time {0};       // immediate
-    bool flash_is_on {false};
-    bool pulse_going_up {true};
+    bool flash_on_pulse_up {false};
     const uint8_t numpixels {24};         // how many pixels in this stack light
     uint8_t perc_lit {100};         // single digit, no floats please
     Adafruit_NeoPixel *strip;
@@ -62,7 +59,6 @@ public:                         // Access specifier
     void update_pulse_color();
     void update_flash_color();
     void update_rainbow_color();
-    void handle_strobing_alarm();
     void setup_strip();
     void print_info();
 };
