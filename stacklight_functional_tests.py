@@ -7,7 +7,7 @@ import serial
 import time
 
 #sl = serial.Serial("COM7", 57600)
-sl = serial.Serial("/dev/cu.usbserial-A92517JR", 57600, timeout=.5)
+sl = serial.Serial("/dev/cu.usbserial-A92517JR", 57600, timeout=1)
 
 
 lead = ">"
