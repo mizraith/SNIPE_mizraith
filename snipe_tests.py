@@ -110,7 +110,7 @@ class SnipeTests(unittest.TestCase):
         time.sleep(0.001)
         resp = SnipeTests.ser.readline().decode()
         end_ns = time.time_ns()
-        delta_ms = round((end_ns - start_ns) / 10e6, 0)
+        delta_ms = round((end_ns - start_ns) / 10e5, 0)
         while resp:
             if resp.startswith("#"):
                 print("#:\t%s" % resp.strip())
@@ -519,6 +519,20 @@ class SnipeTests(unittest.TestCase):
             cmd = f">SLM{i}:?"
             exp = f"@SLM{i}:0"
             self._handle_cmd_exp(cmd, exp)
+
+
+    def test_SLA_query(self):
+        print("\n--------------> ", sys._getframe().f_code.co_name,
+              " <-------------- ")  # cool trick prints current function name
+
+        cmd = f">SLA:0"    # we won't turn it on....too loud
+        exp = f"@SLA:0"
+        self._handle_cmd_exp(cmd, exp)
+
+        cmd = f">SLA:?"
+        exp = f"@SLA:0"
+        self._handle_cmd_exp(cmd, exp)
+
 
     def test_SLP_missing_value(self):
         # poorly formatted command testing

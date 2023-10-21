@@ -198,53 +198,6 @@ Depending on the command/identifier, SNIPE uses the following units.
             ARB     arbitrary
             HEX     hexadecimal value
 
-
-## Identifiers:
-Following is a list of **identifiers** that this version of SNIPE supports.
-Identifiers are returned in ALL CAPS, but should be considered
-case -insensitive-.
-        
-##### [A0], A1, A2, A3
-- **description:**  Analog 0:3 pin readback
-- **value range:**  0 - 1024
-- **units:**        ARB
-- **example:**      `@A0:254:ARB`
-- _Note:  A0 is the recommended standard analog input._
-              
-##### D1, D2, D3, D4, D5, [D6]    
-- **description:**  Digital 6 readback
-- **value range:**  0 : 1
-- **units:**        BIN
-- **example:**      `@D6:0:BIN`
-- _Note:     D6 is the recommended standard digital output since it is not used for much on the Arduino._
-
-##### ECHO
-- **description:**  Turn response echo on/off
-- **value range:**  0:1    Default is 0
-- **units:**        BIN
-- **example:**
-  - command:  `>ECHO:1`
-  - response: `# RECEIVED_INPUT->ECHO:1`
-  - response: `@ECHO:1`
-  - command:  `>ECHO:0`
-  - response: `@ECHO:0`
-
-##### SID   
-- **description:**  Station ID  
-- **value range:**  string value set by user, can NOT contain spaces
-- **example:**      `SID:My_Uno_3`
-
-##### DESC  
-- **description:**  Description of our device
-- **value range:**  string, < 32 ASCII chars without spaces
-- **example:**      `DESC:SNIPE_FOR_ARDUINO`
-                        
-##### VER   
-- **description:**  Version
-- **value range:**  integer number as string  0:999
-- **example:**      `VER:24`
-               
-
 ## Commands:
 The following is a complete listing of **commands** this version of
 SNIPE supports.   Commands are shown in all caps and are currently
@@ -261,7 +214,7 @@ case -insensitive- but this could change.
   - response: `@A0:254:ARB`
 - _Note: A0 is the recommended standard analog input._
               
-##### D2, D3, D4, D5, D6    
+##### D2, D3, D4, D5, [D6]    
 - **description:**     Set or Get the digital pin value
 - **input argument:**  ?    or   0:1
 - **value range:**     0 : 1
@@ -323,6 +276,14 @@ case -insensitive- but this could change.
   - response: `@BLINK:5000`
   - command:  `>BLINK:?`
   - response: `@BLINK:3502`
+
+#### REBOOT
+- **description:**  Restarts the Arduino...as if on a power cycle.  Can be useful if chaning the SLX (number of stack lights on a strand) programatically.
+- **example:**
+  - command: `>REBOOT`
+  - response `@REBOOT:GOODBYE`
+- _Note: Be prepared to go through the startup preamble again. Depending on your system you may or may not have to re-establish your serial port again._
+
 
 ### Stack Light Commands
 _SLC commands use [D7] and [D8] and [D9] by default on a nano._

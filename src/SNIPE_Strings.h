@@ -93,6 +93,7 @@ const char str_I2W  [] PROGMEM = "I2W";     // I2C Write command
 const char str_I2R  [] PROGMEM = "I2R";     // I2C Read command
 const char str_I2F  [] PROGMEM = "I2F";     // I2C Find devices on the bus
 const char str_RAM  [] PROGMEM = "RAM";     // Checks free RAM
+const char str_REBOOT [] PROGMEM = "REBOOT";
 // 4 character commands & identifiers
 const char str_DESC     [] PROGMEM =    "DESC";     // Description identifier/command
 // 5 character commands & identifiers

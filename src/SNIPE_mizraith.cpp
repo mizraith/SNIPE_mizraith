@@ -363,7 +363,7 @@ void loop() {
         blinky_worker();
     }
 
-    //delay(15);
+    //delay(15);   // really slows things up, unnecessary
 }
 
 

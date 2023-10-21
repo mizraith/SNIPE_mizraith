@@ -5,7 +5,7 @@
 #include "SNIPE_StackLight.h"
 #include "SNIPE_ColorUtilities.h"
 
-extern uint8_t SLA_PIN;
+extern const uint8_t SLA_PIN;
 
 void SNIPE_StackLight::change_mode(uint8_t new_mode) {
     // At this point, new_mode is already vetted against the appropriate values.
