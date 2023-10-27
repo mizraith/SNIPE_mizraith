@@ -32,7 +32,6 @@ const class SNIPE_Color *  kCOLORS []  = {
 
 const size_t kCOLORS_len = sizeof(kCOLORS) / sizeof(kCOLORS[0]);
 
-
 bool SNIPE_Color::is_equal_value(uint32_t colorvalue) const {
     if (this->value == colorvalue) {
         return true;

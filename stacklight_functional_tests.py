@@ -7,8 +7,20 @@ import serial
 import time
 
 #sl = serial.Serial("COM7", 57600)         # 115200 / 57600 / 38400 / 19200  /  9600
-sl = serial.Serial("/dev/cu.usbserial-A92517JR", 115200, timeout=0.25)      # AT 9600 we don't see the serial interrupt breaking the input string
+#  PASSES TESTING AT 115200   If you change baud rate, re-test to make sure wait timing is not impacted.
+sl = serial.Serial("/dev/cu.usbserial-A92517JR", 115200, timeout=0.25)
 
+# DELAY BETWEEN TX AND RX --- impacts failure rate and retries if you send messages too quick.
+# Tests on an 8MHz nano over USB serial.   Tuned the nano delay loops to lower this number.
+# When the nano heartbeat rate was set higher (25-50ms) the failure rate went up as well.
+#     TURNED DOWN the heartbeat rate to 1ms and things stopped failing!!!
+# results at  .05  -- no retries    51-55ms turnarounds.
+# results at  .03  -- no retries, no garbled messages.  delta_ms around 33-35ms
+# results at  .02  -- 0% retry rate. garbled input as we clobber prior message. delta_ms around 23-25ms
+# results at  .01  -- 0% retry rate.  19-21ms turnarounds.  (nano heartbeat set to 5ms. When higher, failure rate went up too)
+# results at  .005 -- 0% retry rate   10-26ms turnarounds
+# results at  0    -- 0% retry rate    6-20ms turnarounds
+DELAY_BETWEEN = 0.001
 
 lead = ">"
 crlf = '\r\n'
@@ -30,30 +42,34 @@ setmode = "SLM"
 setpercentage = "SLP"
 
 NUM_CMDS = 0
-TOTAL_BAD = 0
+TOTAL_RETRIES = 0
 
 def send_command(cmd):
     global NUM_CMDS
-    global TOTAL_BAD
+    global TOTAL_RETRIES
 
     tx = cmd + crlf
     start_ns = time.time_ns()
     retries = 0
+    NUM_CMDS += 1
     not_complete = True
     sl.write(tx.encode())
-    time.sleep(0.03)
-    print(f"TX: {cmd:<20}")
+
+    print(f"\n___SEND___:\tTX: {cmd:<20}")
 
     # --- Receive Open Loop
     while(not_complete):
+        time.sleep(DELAY_BETWEEN)
         rx = sl.readline().decode().rstrip()
         if rx == "":
             not_complete = False
         elif  rx.startswith("@"):
             not_complete = False
-        print(f"{retries}\t\tRX: {rx:<20}")
-        time.sleep(0.03)
+        print(f"\t\tretry#:{retries}\t\t  response:\t{rx:<20}")
         retries += 1
+
+    retries = retries - 1   # correct for do-while above
+
 
     # --- Receive Counting "Bads"
     # while(not_complete):
@@ -74,8 +90,8 @@ def send_command(cmd):
     end_ns = time.time_ns()
     delta_ns = end_ns - start_ns
     delta_ms = round((end_ns - start_ns) / 10e5, 0)
-    print(f"\tTX: {cmd:<20} \t RX:{rx:<20}\t\tdelta_ms: {delta_ms}\t\tRETRIES: {retries}")   #   s:{start_ns}  e:{end_ns}")
-    TOTAL_BAD += retries
+    print(f"___RESULT___:\tTX: {cmd:<20}\tRX:\t{rx:<20}\t\tdelta_ms: {delta_ms}\t\tRETRIES: {retries}")   #   s:{start_ns}  e:{end_ns}")
+    TOTAL_RETRIES += retries
 
 # When a stack light comes up - it starts in MODE 0 (off) and color BLACK (0x000000)
 # We need to parse through its' preamble
@@ -100,7 +116,7 @@ for color in colors:
     cmd1 = lead + setcolor + lightnum + delim + color
     cmd2 = lead + setcolor + lightnum2 + delim + color
     send_command(cmd1)
-    time.sleep(.05)
+    time.sleep(DELAY_BETWEEN)
     send_command(cmd2)
     time.sleep(1)
 
@@ -115,18 +131,18 @@ time.sleep(0.5)
 print(f"{'Setting Flash Mode':-^80}")
 cmd = lead + setmode + lightnum + delim + mode_flash + delim + "1000"    # 500 is ms in flash cycle
 send_command(cmd)
-time.sleep(3)
+time.sleep(2)
 cmd = lead + setmode + lightnum + delim + mode_flash + delim + "500"    # 500 is ms in flash cycle
 send_command(cmd)
-time.sleep(3)
+time.sleep(1)
 cmd = lead + setmode + lightnum + delim + mode_flash + delim + "250"    # 500 is ms in flash cycle
 send_command(cmd)
-time.sleep(3)
+time.sleep(1)
 # change color on the fly
 print(f"{'Setting Back to Red':-^80}")
 cmd = lead + setcolor + lightnum + delim + "RED"
 send_command(cmd)
-time.sleep(2)
+time.sleep(1)
 
 
 
@@ -134,50 +150,50 @@ time.sleep(2)
 print(f"{'Setting Pulse Mode':-^80}")
 cmd = lead + setmode + lightnum + delim + mode_pulse + delim + "2000"
 send_command(cmd)
-time.sleep(5)
+time.sleep(3)
 
 print(f"{'Setting to 50%':-^80}")
 # show percentage....not really useful for a stacklight inside a dome
 cmd = lead + setpercentage + lightnum + delim + "50"
 send_command(cmd)
-time.sleep(2)
+time.sleep(1)
 
 print(f"{'Stop pulsing':-^80}")
 # whoops...forgot to take off of pulse...
 cmd = lead + setmode + lightnum + delim + mode_on
 send_command(cmd)
-time.sleep(2)
-
+time.sleep(1)
 print(f"{'Setting to 25%':-^80}")
 # set to 25 %
 cmd = lead + setpercentage + lightnum + delim + "25"
 send_command(cmd)
-time.sleep(2)
+time.sleep(1)
 print(f"{'Setting to 100%':-^80}")
 # set back to 100%
 cmd = lead + setpercentage + lightnum + delim + "100"
 send_command(cmd)
-time.sleep(2)
+time.sleep(1)
 
 # why not rainbow with a long interval
 print(f"{'Setting Rainbow Mode':-^80}")
 cmd = lead + setmode + lightnum + delim + mode_rainbow + delim + "5000"    # 5 second cycle
 send_command(cmd)
-time.sleep(5)
+time.sleep(2)
 
 # turn off
 print(f"{'Setting OFF':-^80}")
 cmd = lead + setmode + lightnum + delim + mode_off
 send_command(cmd)
-time.sleep(0.25)
+time.sleep(1)
 
 # back to steady green...we can set color while off
 print(f"{'Leaving at green solid':-^80}")
 cmd = lead + setcolor + lightnum + delim + "GREEN"
 send_command(cmd)
-time.sleep(0.1)
+time.sleep(DELAY_BETWEEN)
 cmd = lead + setmode + lightnum + delim + mode_on
 send_command(cmd)
+time.sleep(1)
 
 # Work with StackLight #2
 print(f"{'Setting up, working with StackLight #2':-^80}")
@@ -193,12 +209,13 @@ send_command(cmd)
 cmd = lead + setmode + lightnum2 + delim + mode_on
 send_command(cmd)
 
+print(f"{'RAPID FIRE PERCENTAGE SETTING':-^80}")
 ci = 0
 for x in range(0, 100):
     print(f"\t\tPercentage: {x}")
     cmd = lead + setpercentage + lightnum2 + delim + str(x)
     send_command(cmd)
-    time.sleep(0.1)
+    # time.sleep(DELAY_BETWEEN)  # <<<< comment out for stress test rapid fire...faster than the full stacklight can show() update
     if x % len(colors) == 0:
         ci += 1
         if ci >= len(colors):
@@ -231,7 +248,7 @@ while True:
         break
 
 print(f"{'TOTALS':-^80}")
-print(f"NUM_SENDS: {NUM_CMDS}\t\tTOTAL BAD => {TOTAL_BAD}")
+print(f"NUM_CMDS: {NUM_CMDS}\t\tTOTAL RETRIES => {TOTAL_RETRIES}")
 
 
 sl.close()

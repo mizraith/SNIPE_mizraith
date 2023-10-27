@@ -112,6 +112,7 @@ void SNIPE_StackLight::update() {
 
     //  SEE IF current_color is different
     if (current_color != last_color) {
+        //Serial.print("curr: ");Serial.print(current_color, HEX);Serial.print("  last: ");Serial.println(last_color, HEX);
         strip_changed = true;
         last_color = current_color;
     }
@@ -124,11 +125,11 @@ void SNIPE_StackLight::update() {
 
     // ONLY UPDATE if something has changed, like current_color or percentage.
     if (strip_changed) {
-        prioritize_serial(id);
-        Serial.print(F("Update: "));Serial.print(id, DEC);Serial.print("  ms: ");Serial.println(millis(), DEC);
-        strip->show();    // moved this out to here for better control
         strip_changed = false;
         last_updated = millis();
+        prioritize_serial(id);
+        //Serial.print(F("Update: "));Serial.print(id, DEC);Serial.print("  ms: ");Serial.println(millis(), DEC);
+        strip->show();    // moved this out to here for better control
     }
 }
 

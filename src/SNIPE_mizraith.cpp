@@ -173,8 +173,11 @@ const String DESCRIPTION = "SNIPE_for_Arduino";
 #pragma mark Timing Globals
 // baud  115200 / 57600 / 38400 / 19200  /  9600was 57600  but this may be too fast for the nano's interrupts
 #define kBAUD_RATE 115200
+// YOUR serialEvent wait limit below is highly dependent on baud rate.  Too short and neopixel.show() could clobber
+// serial input.  Too long and you become non-responsive.  Seems correct to roughly your 64char input time.
 // At 57600, 5760 chars/sec.  1 char every 0.173ms.   64chars input = 11ms. But string copies
-const uint8_t kSerialWaitLimit_ms = 12;
+// At 115200, 11520 chars/sec, 1 car every 0.0868ms   64chars input = 5.5ms
+const uint8_t kSerialWaitLimit_ms = 5;  //  roughly your 64char input time.
 // min and max full cycle time for our flash or pulse modes.
 #define kMIN_CYCLE_TIME 100
 #define kMAX_CYCLE_TIME 10000
@@ -224,7 +227,12 @@ SNIPE_StackLight stack_lights[kNUM_STACKLIGHTS] =  {
 
 //unsigned long SL_loop_time = 0;
 unsigned long SL_next_heartbeat = 0;        //  Timer for our next refresh
-#define kSL_HEARTBEAT_INTVL_ms 25              // reduced to limit chance of clobbering serial
+// THIS NEXT impacts serial performance.  Too fast an update speed and too likely to clobber incoming messages.
+// @ 25ms  30ms transmissions delay result in 0% failure.   However a 20ms transmission delay yields 4-6% failures.
+// @ 50ms  30ms transmissions resulted in 3% failure rate.  Counter-intuitive
+// @ 10ms  20ms trasnmissions resulted in 1% failure rate,  30ms resulted in 0%
+// @ 1ms   1ms transmission delay = 0% failure......
+#define kSL_HEARTBEAT_INTVL_ms 1           // set this low low low. less clobber, less wait for serial
 
 #pragma mark I2C Variables
 // Variables for I2C
@@ -360,30 +368,30 @@ void setup() {                 // AT 9600 we don't see any missed serial chars. 
  ***************************************************
  ***************************************************/
 void loop() {
-    // put your main code here, to run repeatedly:
-    A_values[0] = analogRead(A0);
-    A_values[1] = analogRead(A1);
-    A_values[2] = analogRead(A2);
-    A_values[3] = analogRead(A3);
-
-    if (millis() > SL_next_heartbeat) {
-        SL_next_heartbeat = millis() + kSL_HEARTBEAT_INTVL_ms;
-        for (uint8_t lightnum=0; lightnum < kNUM_STACKLIGHTS; lightnum++) {
-            stack_lights[lightnum].update();
-        }
-    }
-
+    // stay responsive on input strings
     if (input_string_ready) {
         handleInputString();
     }
 
-    if (is_blinking) {
-        blinky_worker();
+    // PUT slow, low priority or infrequent things behind a heartbeat check
+    if (millis() > SL_next_heartbeat) {
+        SL_next_heartbeat = millis() + kSL_HEARTBEAT_INTVL_ms;
+
+        if (is_blinking) {
+            blinky_worker();
+        }
+
+        beepy_worker();
+
+        for (uint8_t lightnum=0; lightnum < kNUM_STACKLIGHTS; lightnum++) {
+            stack_lights[lightnum].update();
+        }
+        // analogRead is slow...only do it every so often
+        A_values[0] = analogRead(A0);
+        A_values[1] = analogRead(A1);
+        A_values[2] = analogRead(A2);
+        A_values[3] = analogRead(A3);
     }
-
-    beepy_worker();
-
-
     //delay(15);   // really slows things up, unnecessary
 }
 
@@ -493,9 +501,9 @@ void serialEvent() {
             input_string_ready = true;
             accumulating_serial_string = false;
             cindex = 0;
-            if (cindex > (MAX_INPUT_LENGTH - 2) ){
-                Serial.println(F("!YOUR_INPUT_IS_TOO_LONG!"));
-            }
+//            if (cindex > (MAX_INPUT_LENGTH - 2) ){
+//                Serial.println(F("!INPUT_IS_TOO_LONG!"));
+//            }
             return;
         } else {
             input_buffer[cindex] = c;
@@ -593,7 +601,7 @@ void handleInputString() {
     tempstring = strdup(input_buffer);
     input_string_ready = false;  // now that we have a copy, we can prep to accum more.
 
-    Serial.print("input_buffer: ");Serial.println(tempstring);
+    //Serial.print("input_buffer: ");Serial.println(tempstring);
 
     if (tempstring != NULL) {
         stringtofree = tempstring;    //store copy for later release
@@ -1050,11 +1058,11 @@ void prioritize_serial(uint8_t ref) {
     uint32_t endtime = millis() + kSerialWaitLimit_ms;
     while(millis() < endtime) {
         if(!accumulating_serial_string) {
-            Serial.print(ref, DEC);Serial.print("   entry:");Serial.print(entry, DEC);Serial.print(" done_accum: ");Serial.println(millis(), DEC);
+            //Serial.print(ref, DEC);Serial.print("   entry:");Serial.print(entry, DEC);Serial.print(" done_accum: ");Serial.println(millis(), DEC);
             return;
         }
     }
-    Serial.print(ref, DEC);Serial.print("   entry:");Serial.print(entry, DEC);Serial.print(" exit:");Serial.print(millis(), DEC);Serial.println();
+    //Serial.print(ref, DEC);Serial.print("   entry:");Serial.print(entry, DEC);Serial.print(" exit:");Serial.print(millis(), DEC);Serial.println();
 }
 
 
@@ -1148,7 +1156,8 @@ void handle_SLC_worker(uint8_t sl_num) {
     char buff[kCOLORLENGTH];
     char err[MAX_ERROR_STRING_LENGTH];
     bool handled = false;
-    String resp("");
+    char blank[MAX_OUTPUT_LENGTH];  // may not be necessary - make string long enough
+    String resp(blank);
     processing_is_ok = true;
     // Step 1:  Add "SLCx" to response
     switch (sl_num) {
@@ -1333,17 +1342,19 @@ bool try_handle_stacklight_colorname(uint8_t sl_num, String &resp){
 //            // The above gets us our first letter "R" as decimal 82
             const char * string_in_progmem = (const char *) kCOLORS[i]->name_p;  // << The magic dereference
             strcpy_P(buff, string_in_progmem);
-            //Serial.print("colorname:   ");Serial.println(buff);      // THIS WORKS!!!!
+            //Serial.print("->name_p:   ");Serial.println(buff);      // THIS WORKS!!!!
 
             // Set the value, the base color and the current color value. Add value to response.
             stack_lights[sl_num - 1].set_color(kCOLORS[i]->value);
+            //Serial.print("->value:");Serial.println(kCOLORS[i]->value, HEX);
 
-            //Serial.print("Value from ->value:");Serial.println(kCOLORS[i]->value, HEX);
-            char *hexstr = new char[UNS_HEX_STR_SIZE];
+            //char *hexstr = new char[UNS_HEX_STR_SIZE];
+            char hexstr[UNS_HEX_STR_SIZE];
             color_uint_to_hex_string(kCOLORS[i]->value, hexstr, UNS_HEX_STR_SIZE);
             resp += hexstr;
             strcpy_P(buff, str_COLON);
             resp += buff;
+            //delete(hexstr);      // if you use new, don't forget this or you get weird overruns
 
             // Set the text, add to response
             stack_lights[sl_num - 1].colorname_p = (char *) kCOLORS[i]->name_p;
@@ -1706,9 +1717,6 @@ void handle_I2R() {
     //checkRAMandExitIfLow(6);           //this is possibly the 'deepest' RAM use point in the program.
 }
 
-
-
-
 /**
  * function: handle_I2S
  * appends:  the I2C Setting to output display
@@ -1974,7 +1982,7 @@ void printSerialDataStart() {
     Serial.print(F("# Current Station ID (SID): "));
     Serial.println(SID);
     Serial.println(F("#"));
-    Serial.println("#####DATA#####");
+    Serial.println(F("#####DATA#####"));
 }
 
 
@@ -2029,7 +2037,7 @@ void writeSIDToEEPROM( ) {
  ***************************************************/
 
 void printBytesAsDec(uint8_t *data, uint8_t len) {
-    Serial.print(F("# ByteArrayAsDec: "));
+    //Serial.print(F("# ByteArrayAsDec: "));
     for(uint8_t i=0; i<len; i++) {
         Serial.print(data[i], DEC);
         Serial.print(F("  "));
