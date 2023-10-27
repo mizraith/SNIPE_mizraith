@@ -120,7 +120,7 @@ for color in colors:
     send_command(cmd1)
     time.sleep(DELAY_BETWEEN)
     send_command(cmd2)
-    time.sleep(1)
+    time.sleep(.5)
 
 cmd = lead + setcolor + lightnum + delim + "GREEN"
 send_command(cmd)
@@ -136,10 +136,10 @@ send_command(cmd)
 time.sleep(2)
 cmd = lead + setmode + lightnum + delim + mode_flash + delim + "500"    # 500 is ms in flash cycle
 send_command(cmd)
-time.sleep(1)
+time.sleep(2)
 cmd = lead + setmode + lightnum + delim + mode_flash + delim + "250"    # 500 is ms in flash cycle
 send_command(cmd)
-time.sleep(1)
+time.sleep(2)
 # change color on the fly
 print(f"{'Setting Back to Red':-^80}")
 cmd = lead + setcolor + lightnum + delim + "RED"

@@ -166,20 +166,20 @@ void SNIPE_StackLight::update_flash_color() {
     // calculate and put result in current color
     if (mode_did_change) {
         mode_did_change = false;
-        flash_on_pulse_up = true;
-    } else if (millis() > update_time) {    // change state
-        if (flash_on_pulse_up) {
-            flash_on_pulse_up = false;
-            current_color = BLACK;
-        } else {
-            flash_on_pulse_up = true;
-            current_color = color;
-        }
-    } else if (millis() < update_time) {    // nothing has changed.  current_color is still valid.
+    }
+    if (millis() < update_time) {  // nothing has changed.  current_color is still valid.
         return;
     }
-    update_time = millis() + (unsigned long) (cycle_ms / 2);  // changed mode or state
-    return;
+    else if (millis() > update_time) {    // change state
+        if (flash_on_pulse_up) {
+            current_color = BLACK;
+        } else {
+            current_color = color;
+        }
+        flash_on_pulse_up = !flash_on_pulse_up;
+        update_time = millis() + ((unsigned long) (cycle_ms / 2));  // changed mode or state
+        return;
+    }
 }
 
 /**
