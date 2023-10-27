@@ -7,7 +7,7 @@
 
 extern void prioritize_serial(uint8_t);
 
-void SNIPE_StackLight::change_mode(uint8_t new_mode) {
+void SNIPE_StackLight::set_mode(uint8_t new_mode) {
     // At this point, new_mode is already vetted against the appropriate values.
     // handle mode switches.  Where we want to keep the color on even when flash/pulse has changed
     if (new_mode != mode) {
@@ -18,9 +18,14 @@ void SNIPE_StackLight::change_mode(uint8_t new_mode) {
     return;
 }
 
+uint8_t SNIPE_StackLight::get_mode() {
+    return mode;
+}
+
+
 void SNIPE_StackLight::set_color(uint32_t new_color) {
-    color = new_color;
-    current_color = new_color;
+    this->color = new_color;
+    this->current_color = new_color;
     strip_changed = true;
     return;
 }
@@ -33,12 +38,26 @@ void SNIPE_StackLight::set_percentage(uint8_t percent){
     if (percent > 100) {
         percent = 100;
     }
-    perc_lit = percent;
+    this->perc_lit = percent;
     strip_changed = true;
 }
 
 uint8_t SNIPE_StackLight::get_percentage() {
     return perc_lit;
+}
+
+void SNIPE_StackLight::set_cycle_ms(uint16_t cycle_ms)
+{
+    this->cycle_ms = cycle_ms;
+    strip_changed = true;
+}
+
+uint16_t SNIPE_StackLight::get_cycle_ms() {
+    return cycle_ms;
+}
+
+bool SNIPE_StackLight::get_flash_on() {
+    return flash_on_pulse_up;
 }
 
 /**
@@ -106,6 +125,7 @@ void SNIPE_StackLight::update() {
     // ONLY UPDATE if something has changed, like current_color or percentage.
     if (strip_changed) {
         prioritize_serial(id);
+        Serial.print(F("Update: "));Serial.println(id, DEC);
         strip->show();    // moved this out to here for better control
         strip_changed = false;
         last_updated = millis();

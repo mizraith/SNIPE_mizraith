@@ -172,7 +172,7 @@ const String DESCRIPTION = "SNIPE_for_Arduino";
 
 #pragma mark Timing Globals
 // baud  115200 / 57600 / 38400 / 19200  /  9600was 57600  but this may be too fast for the nano's interrupts
-#define kBAUD_RATE 57600
+#define kBAUD_RATE 115200
 // At 57600, 5760 chars/sec.  1 char every 0.173ms.   64chars input = 11ms. But string copies
 const uint8_t kSerialWaitLimit_ms = 12;
 // min and max full cycle time for our flash or pulse modes.
@@ -224,7 +224,7 @@ SNIPE_StackLight stack_lights[kNUM_STACKLIGHTS] =  {
 
 //unsigned long SL_loop_time = 0;
 unsigned long SL_next_heartbeat = 0;        //  Timer for our next refresh
-#define kHEARTBEAT_INTVL_ms 50              // reduced to limit chance of clobbering serial
+#define kSL_HEARTBEAT_INTVL_ms 25              // reduced to limit chance of clobbering serial
 
 #pragma mark I2C Variables
 // Variables for I2C
@@ -367,7 +367,7 @@ void loop() {
     A_values[3] = analogRead(A3);
 
     if (millis() > SL_next_heartbeat) {
-        SL_next_heartbeat = millis() + kHEARTBEAT_INTVL_ms;
+        SL_next_heartbeat = millis() + kSL_HEARTBEAT_INTVL_ms;
         for (uint8_t lightnum=0; lightnum < kNUM_STACKLIGHTS; lightnum++) {
             stack_lights[lightnum].update();
         }
@@ -414,7 +414,7 @@ void beepy_worker() {
 
     // ---------- beep is enabled
     // handle steady state modes
-    if ((stack_lights[0].mode != MODE_PULSE) and (stack_lights[0].mode != MODE_FLASH)) {
+    if ((stack_lights[0].get_mode() != MODE_PULSE) and (stack_lights[0].get_mode() != MODE_FLASH)) {
         if (!is_beep) {
             // we need to switch on
             //Serial.print("Stuck in STEADY:");
@@ -423,8 +423,8 @@ void beepy_worker() {
         return;
     }
     // handle pulse modes -- sync with light state...start with a double-check on mode
-    if ((stack_lights[0].mode == MODE_PULSE) or (stack_lights[0].mode == MODE_FLASH)) {
-        if (stack_lights[0].flash_on_pulse_up) {
+    if ((stack_lights[0].get_mode() == MODE_PULSE) or (stack_lights[0].get_mode() == MODE_FLASH)) {
+        if (stack_lights[0].get_flash_on()) {
             if (!is_beep) {
                 // we need to switch on
                 //Serial.println("flash on");
@@ -1435,12 +1435,14 @@ bool try_handle_stackmode_query(uint8_t sl_num, String & resp) {
     }
     char buff[8];
     //  Got  SLP1:?    return   SLP1:99
-    resp += stack_lights[sl_num - 1].mode;
+    resp += stack_lights[sl_num - 1].get_mode();
 
-    if ((stack_lights[sl_num - 1].mode == 2) or (stack_lights[sl_num - 1].mode == 3)) {
+    if ((stack_lights[sl_num - 1].get_mode() == MODE_FLASH) or
+        (stack_lights[sl_num - 1].get_mode() == MODE_PULSE) or
+        (stack_lights[sl_num - 1].get_mode() == MODE_RAINBOW) ) {
         strcpy_P(buff, str_COLON);
         resp += buff;
-        resp += stack_lights[sl_num - 1].cycle_ms;
+        resp += stack_lights[sl_num - 1].get_cycle_ms();
     }
     return true;
 }
@@ -1463,7 +1465,7 @@ bool try_handle_stackmode_numeric(uint8_t sl_num, String &resp) {
             resp += mode;    // append our result: "SLM1:3" -> "SLM1:3" but "SLM1:FUN" -> "SLM1:0" due to atoi
             //set # to mode, return string
             // We are assuming sl_num has been doublechecked at this point...or bad bad array access
-            stack_lights[sl_num - 1].change_mode( mode );  // sets a flag...
+            stack_lights[sl_num - 1].set_mode(mode);  // sets a flag...
             handled = true;
             break;
         default:   // NOTE ONE OF OUR DEFINED MODES
@@ -1488,7 +1490,7 @@ bool try_handle_stackmode_numeric(uint8_t sl_num, String &resp) {
         // NOW SET IT
         if (cycle != 0) {
             resp += cycle;
-            stack_lights[sl_num - 1].cycle_ms = cycle;
+            stack_lights[sl_num - 1].set_cycle_ms(cycle);
         }
     }
     return true;

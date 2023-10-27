@@ -7,7 +7,7 @@ import serial
 import time
 
 #sl = serial.Serial("COM7", 57600)         # 115200 / 57600 / 38400 / 19200  /  9600
-sl = serial.Serial("/dev/cu.usbserial-A92517JR", 57600, timeout=0.25)      # AT 9600 we don't see the serial interrupt breaking the input string
+sl = serial.Serial("/dev/cu.usbserial-A92517JR", 115200, timeout=0.25)      # AT 9600 we don't see the serial interrupt breaking the input string
 
 
 lead = ">"
