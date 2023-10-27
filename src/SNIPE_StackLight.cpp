@@ -5,7 +5,7 @@
 #include "SNIPE_StackLight.h"
 #include "SNIPE_ColorUtilities.h"
 
-extern void prioritize_serial();
+extern void prioritize_serial(uint8_t);
 
 void SNIPE_StackLight::change_mode(uint8_t new_mode) {
     // At this point, new_mode is already vetted against the appropriate values.
@@ -98,13 +98,14 @@ void SNIPE_StackLight::update() {
     }
 
     //  Has it been a LONG time since we've updated?
-    if (last_updated - millis() > 2000) {
+    if ((millis() - last_updated) > 5000) {
+        Serial.print(F("Force_updating_strip "));Serial.println(id, DEC);
         strip_changed = true;
     }
 
     // ONLY UPDATE if something has changed, like current_color or percentage.
     if (strip_changed) {
-        prioritize_serial();
+        prioritize_serial(id);
         strip->show();    // moved this out to here for better control
         strip_changed = false;
         last_updated = millis();
@@ -193,7 +194,7 @@ void SNIPE_StackLight::setup_strip() {
     strip->begin();
     strip->clear();
     strip->setBrightness(255);
-    prioritize_serial();  // ALWAYS CALL BEFORE CALLING SHOW...MAKE SURE WE GET OUR MESSAGE FIRST
+    prioritize_serial(id);  // ALWAYS CALL BEFORE CALLING SHOW...MAKE SURE WE GET OUR MESSAGE FIRST
     strip->show();
 }
 

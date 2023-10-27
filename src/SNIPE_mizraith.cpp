@@ -142,7 +142,7 @@ void printSerialDataStart();
 void readSIDFromEEPROM();
 void writeSIDToEEPROM();
 // LOW LEVEL HELPERS
-void prioritize_serial();
+void prioritize_serial(uint8_t ref);
 void printBytesAsDec(uint8_t*, uint8_t);
 // I2C HELPERS
 void perform_I2C_write();
@@ -173,7 +173,7 @@ const String DESCRIPTION = "SNIPE_for_Arduino";
 #pragma mark Timing Globals
 // baud  115200 / 57600 / 38400 / 19200  /  9600was 57600  but this may be too fast for the nano's interrupts
 #define kBAUD_RATE 57600
-// At 57600, 5760 chars/sec.  1 char every 0.173ms.   64chars input = 11ms
+// At 57600, 5760 chars/sec.  1 char every 0.173ms.   64chars input = 11ms. But string copies
 const uint8_t kSerialWaitLimit_ms = 12;
 // min and max full cycle time for our flash or pulse modes.
 #define kMIN_CYCLE_TIME 100
@@ -474,9 +474,9 @@ void beepy_worker() {
 volatile char c;
 volatile uint8_t cindex = 0;
 const char NONE = -1;
-bool accumulating_serial_string = false;
+volatile bool accumulating_serial_string = false;
 
-// New version -- do less, don't make a copy in here
+// New version -- do less and do it faster, don't make a copy of string in here
 void serialEvent() {
     c = Serial.read();
 
@@ -1028,7 +1028,7 @@ void stacklight_startup_sequence() {
                 //Serial.print("  numpix: ");Serial.println(stack_lights[lightnum].numpixels);
                 stack_lights[lightnum].strip->setPixelColor(n, wash_color);
 
-                prioritize_serial();
+                prioritize_serial(lightnum + 1);
                 stack_lights[lightnum].strip->show();
                 delay(5);
             }
@@ -1042,7 +1042,7 @@ void stacklight_startup_sequence() {
  * We've learned that we need to run this BEFORE calling show() for neopixels.
  * Delay until our serial is done doing its thing.
  */
-void prioritize_serial() {
+void prioritize_serial(uint8_t ref) {
     if(!accumulating_serial_string) {
         return;
     }
@@ -1050,11 +1050,11 @@ void prioritize_serial() {
     uint32_t endtime = millis() + kSerialWaitLimit_ms;
     while(millis() < endtime) {
         if(!accumulating_serial_string) {
-            Serial.println("Done_accum");
-            break;
+            Serial.print(ref, DEC);Serial.print("   entry:");Serial.print(entry, DEC);Serial.print(" done_accum: ");Serial.println(millis(), DEC);
+            return;
         }
     }
-    Serial.print("start:");Serial.print(entry, DEC);Serial.print(" curret:");Serial.print(millis(), DEC);Serial.println();
+    Serial.print(ref, DEC);Serial.print("   entry:");Serial.print(entry, DEC);Serial.print(" exit:");Serial.print(millis(), DEC);Serial.println();
 }
 
 
