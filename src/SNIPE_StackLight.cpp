@@ -118,14 +118,14 @@ void SNIPE_StackLight::update() {
 
     //  Has it been a LONG time since we've updated?
     if ((millis() - last_updated) > 5000) {
-        Serial.print(F("Force_updating_strip "));Serial.println(id, DEC);
+        //Serial.print(F("Force_updating_strip "));Serial.println(id, DEC);
         strip_changed = true;
     }
 
     // ONLY UPDATE if something has changed, like current_color or percentage.
     if (strip_changed) {
         prioritize_serial(id);
-        Serial.print(F("Update: "));Serial.println(id, DEC);
+        Serial.print(F("Update: "));Serial.print(id, DEC);Serial.print("  ms: ");Serial.println(millis(), DEC);
         strip->show();    // moved this out to here for better control
         strip_changed = false;
         last_updated = millis();
