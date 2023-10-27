@@ -8,7 +8,9 @@ import time
 
 #sl = serial.Serial("COM7", 57600)         # 115200 / 57600 / 38400 / 19200  /  9600
 #  PASSES TESTING AT 115200   If you change baud rate, re-test to make sure wait timing is not impacted.
-sl = serial.Serial("/dev/cu.usbserial-A92517JR", 115200, timeout=0.25)
+#sl = serial.Serial("/dev/cu.usbserial-A92517JR", 115200, timeout=0.25)
+sl = serial.Serial("/dev/cu.usbserial-A702Y4T1", 115200, timeout=0.25)
+
 
 # DELAY BETWEEN TX AND RX --- impacts failure rate and retries if you send messages too quick.
 # Tests on an 8MHz nano over USB serial.   Tuned the nano delay loops to lower this number.
@@ -19,7 +21,7 @@ sl = serial.Serial("/dev/cu.usbserial-A92517JR", 115200, timeout=0.25)
 # results at  .02  -- 0% retry rate. garbled input as we clobber prior message. delta_ms around 23-25ms
 # results at  .01  -- 0% retry rate.  19-21ms turnarounds.  (nano heartbeat set to 5ms. When higher, failure rate went up too)
 # results at  .005 -- 0% retry rate   10-26ms turnarounds
-# results at  0    -- 0% retry rate    6-20ms turnarounds
+# results at  0    -- <0.25% retry rate    4-20ms turnarounds   <<<<<<<<<<<<<<<<<<<<<<<<  WINNER WINNER CHICKEN DINNER
 DELAY_BETWEEN = 0.001
 
 lead = ">"

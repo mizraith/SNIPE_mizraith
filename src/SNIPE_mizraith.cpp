@@ -481,7 +481,7 @@ void beepy_worker() {
  ***************************************************/
 volatile char c;
 volatile uint8_t cindex = 0;
-const char NONE = -1;
+//const char NONE = -1;
 volatile bool accumulating_serial_string = false;
 
 // New version -- do less and do it faster, don't make a copy of string in here
