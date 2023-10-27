@@ -5,6 +5,8 @@
 #include "SNIPE_StackLight.h"
 #include "SNIPE_ColorUtilities.h"
 
+extern void prioritize_serial();
+
 void SNIPE_StackLight::change_mode(uint8_t new_mode) {
     // At this point, new_mode is already vetted against the appropriate values.
     // handle mode switches.  Where we want to keep the color on even when flash/pulse has changed
@@ -16,27 +18,56 @@ void SNIPE_StackLight::change_mode(uint8_t new_mode) {
     return;
 }
 
+void SNIPE_StackLight::set_color(uint32_t new_color) {
+    color = new_color;
+    current_color = new_color;
+    strip_changed = true;
+    return;
+}
+
+uint32_t SNIPE_StackLight::get_color() {
+    return color;
+}
+
+void SNIPE_StackLight::set_percentage(uint8_t percent){
+    if (percent > 100) {
+        percent = 100;
+    }
+    perc_lit = percent;
+    strip_changed = true;
+}
+
+uint8_t SNIPE_StackLight::get_percentage() {
+    return perc_lit;
+}
+
 /**
  * 1) Calculate number active
  * 2) Handle Next Strobe Step and/or mode change
  * 3) Handle Next Flash Step  and/or mode change
+ * 4) Only sends strip.show() if something has changed or it has been a long time since a refresh
+ * Should be safe to call frequently (every 25-50ms) regardless of mode.
  */
 void SNIPE_StackLight::update() {
     uint8_t numactive;
-    numactive = int((float)this->numpixels * ((float)this->perc_lit / 100));
-    numactive = min(numactive, this->numpixels);   // make sure our math doesn't overshoot.
+
+    if (mode_did_change) {
+        // mode_did_change = false;  // this flip handled by each mode
+        flash_on_pulse_up = false;   // flash mode does this different
+        current_color = color;       // off mode does this different
+    }
+
+    //  THE MODES UPDATE current_color
     if (this->mode == MODE_OFF) {
         this->current_color = BLACK;
         if (this->mode_did_change) {
             this->mode_did_change = false;
-            this->flash_on_pulse_up = false;
         }
     }
     if (this->mode == MODE_STEADY) {
         this->current_color = this->color;
         if (this->mode_did_change) {
             this->mode_did_change = false;
-            this->flash_on_pulse_up = false;
         }
     }
     if (this->mode == MODE_FLASH) {
@@ -51,22 +82,42 @@ void SNIPE_StackLight::update() {
 
     // At this point, current_color holds the calculated value.
     // Do the actual work
+    numactive = int((float)this->numpixels * ((float)this->perc_lit / 100));
+    numactive = min(numactive, this->numpixels);   // make sure our math doesn't overshoot.
     for(uint16_t i=0; i < numactive; i++) {
         this->strip->setPixelColor(i, this->current_color);
     }
     for(uint16_t i=numactive; i < this->numpixels; i++) {
         this->strip->setPixelColor(i, BLACK);
     }
-    this->strip->show();
+
+    //  SEE IF current_color is different
+    if (current_color != last_color) {
+        strip_changed = true;
+        last_color = current_color;
+    }
+
+    //  Has it been a LONG time since we've updated?
+    if (last_updated - millis() > 2000) {
+        strip_changed = true;
+    }
+
+    // ONLY UPDATE if something has changed, like current_color or percentage.
+    if (strip_changed) {
+        prioritize_serial();
+        strip->show();    // moved this out to here for better control
+        strip_changed = false;
+        last_updated = millis();
+    }
 }
 
-
+/**
+ * figure out if it is time to update current_color
+ */
 void SNIPE_StackLight::update_pulse_color() {
     // calculate and put result in current color
     if (mode_did_change) {
         mode_did_change = false;
-        flash_on_pulse_up = false;
-        current_color = color;
     } else if (millis() < update_time) {    // not a flip, how much longer until we do?
         // how far along are we in our cycle_ms
         unsigned long remaining_ms = cycle_ms - (update_time - millis());
@@ -86,12 +137,14 @@ void SNIPE_StackLight::update_pulse_color() {
     return;
 }
 
+/**
+ * figure out if it is time to update current_color in a strobe like flash
+ */
 void SNIPE_StackLight::update_flash_color() {
     // calculate and put result in current color
     if (mode_did_change) {
         mode_did_change = false;
         flash_on_pulse_up = true;
-        current_color = color;
     } else if (millis() > update_time) {    // change state
         if (flash_on_pulse_up) {
             flash_on_pulse_up = false;
@@ -107,12 +160,13 @@ void SNIPE_StackLight::update_flash_color() {
     return;
 }
 
+/**
+ * figure out if it is time to update current_color in a rainbow wash
+ */
 void SNIPE_StackLight::update_rainbow_color() {
     // calculate and put result in current color
     if (mode_did_change) {
         mode_did_change = false;
-        flash_on_pulse_up = false;
-        current_color = color;
     } else if (millis() < update_time) {    // not a flip, how much longer until we do?
         // how far along are we in our cycle_ms. Our hue maps from 0 --> cycle_ms : 0 -> 255
         unsigned long remaining_ms = cycle_ms - (update_time - millis());
@@ -124,7 +178,6 @@ void SNIPE_StackLight::update_rainbow_color() {
 //        uint8_t b = getBlueFromColor(current_color);
 //        Serial.print("rem:\t");Serial.print(remaining_ms);Serial.print("\thue:\t");Serial.print(hue);
 //        Serial.print("\tr:\t");Serial.print(r);Serial.print("\tg:\t");Serial.print(g);Serial.print("\tb:\t");Serial.println(b);
-
         return;
 
     } else {    // flip
@@ -135,10 +188,13 @@ void SNIPE_StackLight::update_rainbow_color() {
 
 
 void SNIPE_StackLight::setup_strip() {
-    this->strip = new Adafruit_NeoPixel(this->numpixels, this->lightpin, this->neopixel_type);
-    this->strip->begin();
-    this->strip->setBrightness(255);
-    this->strip->show();
+    strip = new Adafruit_NeoPixel(numpixels, lightpin, neopixel_type);
+    //Adafruit_NeoPixel strip(numpixels, lightpin, neopixel_type);
+    strip->begin();
+    strip->clear();
+    strip->setBrightness(255);
+    prioritize_serial();  // ALWAYS CALL BEFORE CALLING SHOW...MAKE SURE WE GET OUR MESSAGE FIRST
+    strip->show();
 }
 
 void SNIPE_StackLight::print_info() {

@@ -6,8 +6,8 @@
 import serial
 import time
 
-#sl = serial.Serial("COM7", 57600)
-sl = serial.Serial("/dev/cu.usbserial-A92517JR", 57600, timeout=1)
+#sl = serial.Serial("COM7", 57600)         # 115200 / 57600 / 38400 / 19200  /  9600
+sl = serial.Serial("/dev/cu.usbserial-A92517JR", 57600, timeout=0.25)      # AT 9600 we don't see the serial interrupt breaking the input string
 
 
 lead = ">"
@@ -39,26 +39,42 @@ def send_command(cmd):
     tx = cmd + crlf
     start_ns = time.time_ns()
     retries = 0
-    not_success = True
-    while(not_success):
-        sl.write(tx.encode())
-        NUM_CMDS += 1
-        #time.sleep(0.025)
-        # @ 50ms TOTAL_BAD = 12
-        # @ 25ms TOTAL_BAD = 64, 59
-        # @ 10ms TOTAL_BAD = 20, 16
-        # @ 0ms TOTAL_BAD = 15, 17, 18, 14, 22
+    not_complete = True
+    sl.write(tx.encode())
+    time.sleep(0.03)
+    print(f"TX: {cmd:<20}")
 
+    # --- Receive Open Loop
+    while(not_complete):
         rx = sl.readline().decode().rstrip()
-        if rx[0] == "@" or retries > 5:
-            not_success = False
-        else:
-            retries += 1
-            print(f"Bad tx/rx:  {cmd}\t\t{rx}")
+        if rx == "":
+            not_complete = False
+        elif  rx.startswith("@"):
+            not_complete = False
+        print(f"{retries}\t\tRX: {rx:<20}")
+        time.sleep(0.03)
+        retries += 1
+
+    # --- Receive Counting "Bads"
+    # while(not_complete):
+    #     sl.write(tx.encode())
+    #     NUM_CMDS += 1
+    #     #time.sleep(0.025)
+    #     # @ 50ms TOTAL_BAD = 12
+    #     # @ 25ms TOTAL_BAD = 64, 59
+    #     # @ 10ms TOTAL_BAD = 20, 16
+    #     # @ 0ms TOTAL_BAD = 15, 17, 18, 14, 22
+    #
+    #     rx = sl.readline().decode().rstrip()
+    #     if rx[0] == "@" or retries > 5:
+    #         not_complete = False
+    #     else:
+    #         retries += 1
+    #         print(f"{retries}\ttx: {cmd}\t\ttx: {rx}")
     end_ns = time.time_ns()
     delta_ns = end_ns - start_ns
     delta_ms = round((end_ns - start_ns) / 10e5, 0)
-    print(f"\tTX: {cmd:<20} \t RX:{rx:<20}\t\tdelta_ns: {delta_ms}\t\tRETRIES: {retries}")   #   s:{start_ns}  e:{end_ns}")
+    print(f"\tTX: {cmd:<20} \t RX:{rx:<20}\t\tdelta_ms: {delta_ms}\t\tRETRIES: {retries}")   #   s:{start_ns}  e:{end_ns}")
     TOTAL_BAD += retries
 
 # When a stack light comes up - it starts in MODE 0 (off) and color BLACK (0x000000)
@@ -182,7 +198,7 @@ for x in range(0, 100):
     print(f"\t\tPercentage: {x}")
     cmd = lead + setpercentage + lightnum2 + delim + str(x)
     send_command(cmd)
-    time.sleep(0.3)
+    time.sleep(0.1)
     if x % len(colors) == 0:
         ci += 1
         if ci >= len(colors):

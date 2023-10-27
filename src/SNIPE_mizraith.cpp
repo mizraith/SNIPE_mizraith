@@ -142,6 +142,7 @@ void printSerialDataStart();
 void readSIDFromEEPROM();
 void writeSIDToEEPROM();
 // LOW LEVEL HELPERS
+void prioritize_serial();
 void printBytesAsDec(uint8_t*, uint8_t);
 // I2C HELPERS
 void perform_I2C_write();
@@ -169,9 +170,15 @@ const String DESCRIPTION = "SNIPE_for_Arduino";
 #define BEEP_PIN       6
 //#define NUMPIXELS      8   // number of pixels per stacklight.  Nominal 24.
 
+#pragma mark Timing Globals
+// baud  115200 / 57600 / 38400 / 19200  /  9600was 57600  but this may be too fast for the nano's interrupts
+#define kBAUD_RATE 57600
+// At 57600, 5760 chars/sec.  1 char every 0.173ms.   64chars input = 11ms
+const uint8_t kSerialWaitLimit_ms = 12;
 // min and max full cycle time for our flash or pulse modes.
 #define kMIN_CYCLE_TIME 100
 #define kMAX_CYCLE_TIME 10000
+
 
 #pragma mark String Lengths
 // STRING LENGTH & EEPROM LOCATION CONSTANTS
@@ -181,11 +188,13 @@ const int SID_MAX_LENGTH    = 30;   //24 + null
 const int SID_EEPROM_START_ADDRESS = 0;
 const int MAX_NUMBER_TOKENS = 10;
 
+
+
 #pragma mark Variable Strings
 // VARIABLE STRINGS
 char SID[SID_MAX_LENGTH] = "USE_>SID:xxx_TO_SET";
 char input_buffer[MAX_INPUT_LENGTH];       // buffer to accumulate our input string into
-char input_string[MAX_INPUT_LENGTH];       // copy of input_buffer for processing
+//char input_string[MAX_INPUT_LENGTH];       // copy of input_buffer for processing
 //char output_string[MAX_OUTPUT_LENGTH];   // buffer for building our output string
 char * subtokens[MAX_NUMBER_TOKENS];       // Yes, an array of char* pointers.  We should never have 10 subtokens!
 String output_string = "";                 // might as well use the helper libraries supplied by arduino
@@ -215,7 +224,7 @@ SNIPE_StackLight stack_lights[kNUM_STACKLIGHTS] =  {
 
 //unsigned long SL_loop_time = 0;
 unsigned long SL_next_heartbeat = 0;        //  Timer for our next refresh
-#define kHEARTBEAT_INTVL_ms 25
+#define kHEARTBEAT_INTVL_ms 50              // reduced to limit chance of clobbering serial
 
 #pragma mark I2C Variables
 // Variables for I2C
@@ -256,8 +265,8 @@ boolean beep_enabled = false;
  ***************************************************
  ***************************************************/
 
-void setup() {
-    Serial.begin(57600);  // was 57600
+void setup() {                 // AT 9600 we don't see any missed serial chars.  Otherwise we'll drop 1 in 25 messages.
+    Serial.begin(kBAUD_RATE);
     Wire.begin();
     bool is_virgin_eeprom;
 
@@ -366,7 +375,6 @@ void loop() {
 
     if (input_string_ready) {
         handleInputString();
-        input_string_ready = false;
     }
 
     if (is_blinking) {
@@ -445,61 +453,117 @@ void beepy_worker() {
 //     ACTS IMMEDIATELY ONE CHAR AT A TIME TO
 //     BUILD UP THE INPUT STRING
 //     UNTIL IT SEES A CARRIAGE RETURN OR LINE FEED
+//
+// Timing notes, at 57600bps, there are 5760 chars per second (10bits per char)
+//   That's 1 char every 0.174ms
+//   Our long message (>SLCx:YELLOW) is 12 chars or 2ms
+//   A much longer 24char message is 4ms and our full length 64 char input length is 11.2ms
+//
+// I've noted (and confirmed) that Neopixel.show() turns off interrupts, which drops serial comm.
+//  At 57600 I will see 15% of messages drop between 1-6 character.  Worst case (6chars) is a 1ms neopixel interruption.
+//  At 9600 I'm not seeing any drops (each character takes 1ms)...or at least drops are significantly more rare.
+//
+// THEREFORE - the recommended strategy will be to:isolate the .show() command and DO NOT CALL it if we a
+//   1)  Recognize the start char and set our "accumulating_serial_string" flag
+//   2)  centralize .show() and put a hold going into it if "accumulating_serial_string" is true. Hold max of baudrate * 64bits
+//           --> This function is called  prioritize_serial();
+ //   3)  simplify serialEvent and do the processing outside of it.
+
  ***************************************************
  ***************************************************/
-char c;
+volatile char c;
+volatile uint8_t cindex = 0;
 const char NONE = -1;
-bool accumulatestring = false;
+bool accumulating_serial_string = false;
 
+// New version -- do less, don't make a copy in here
 void serialEvent() {
     c = Serial.read();
-    if (  (c == char_CR ) ||
-          (c == char_LF ) )  {
-        c = NONE;
-        if(accumulatestring) {
-            accumulatestring = false;
-            strcpy(input_string, "");  // blank it
-            strcpy(input_string, input_buffer);  // back it up, then send to process
+
+    if (accumulating_serial_string) {
+        if ( c == char_CMD ) {
+            // We will strip out (ignore) additional command chars:  ">SLM1:1 >SLM2:1"  -->  "SLM1:1  SLM2:2"
+            // as this is probably what the user intended in the first place.
+            return;
+        } else if (  (c == char_CR ) ||
+                     (c == char_LF ) ||
+                     (cindex > (MAX_INPUT_LENGTH - 2) ))  {
+            // end of string condition handling
+            input_buffer[cindex] = '\0';   // null terminator
             input_string_ready = true;
+            accumulating_serial_string = false;
+            cindex = 0;
+            if (cindex > (MAX_INPUT_LENGTH - 2) ){
+                Serial.println(F("!YOUR_INPUT_IS_TOO_LONG!"));
+            }
             return;
         } else {
-            return;  //we're not accumulating bare newlines, so just ignore
+            input_buffer[cindex] = c;
+            cindex++;
         }
-    }
-
-    if( c == char_CMD ) {
-        accumulatestring = true;
-        strcpy(input_buffer, "");  //blank it to accumulate
-    }
-
-    if(accumulatestring) {
+    } else {  // NOT ACCUMULATING
         if ( c == char_CMD ) {
-            return;  //don't accumulate start char
-        }  else {
-            if (strlen(input_buffer) > (MAX_INPUT_LENGTH - 2) ) {
-                return;               //too long, don't append anymore
-            } else {
-                char cbuff[2] = " ";  //char plus null0
-                cbuff[0] = c;
-                strcat(input_buffer,  cbuff);
-            }
+            accumulating_serial_string = true;
+            cindex = 0;    // reset to 0 position
+            //strcpy(input_buffer, "");  //blank it to accumulate
+            return;
+        } else if (  (c == char_CR ) ||
+                     (c == char_LF ) )  {
+            accumulating_serial_string = false;
+            cindex = 0;
+            return;  // spurious newlines during non accumulation
         }
-//    } else if (c != NONE) {
-//      //SEE IF USER ENTERED A MODE NUMBER
-//      int x = c - 48;     //simple c to i conversion minus 1 for array indexing :  ord for 0 is 48. 
-//      if ( (x >= mizraith_DigitalClock::INPUT_EVENT_OFFSET ) && (x < mizraith_DigitalClock::MAX_NUMBER_OF_INPUT_EVENTS ) ) {
-//        input_event = x;
-//        input_event_data = 0;
-//        Serial.print(F("Input Event Via Serial: "));
-//        Serial.println(x);
-    } else {
-        // we're not accumulating but getting characters...yuck!
-        Serial.print(F("!Invalid_input:"));
-        Serial.print(c);
-        Serial.println(F(":Commands_start_with_>"));
+        // we're not accumulating and are getting characters...yuck!
+        Serial.print(F("!Invalid_input:"));Serial.print(c);Serial.println(F(":Commands_start_with_>"));
     }
-    c = NONE;       //reset
+    //c = NONE;       //reset
 }
+
+// OLD VERSION WAS GETTING CLOBBERED.   Worked at 9600 and for most cases but not with
+// active neopixels being updated-- I THINK WE WERE DOING TOO MUCH
+//void serialEvent() {
+//    c = Serial.read();
+//
+//    if ( c == char_CMD ) {
+//        accumulating_serial_string = true;
+//        strcpy(input_buffer, "");  //blank it to accumulate
+//        return;
+//    }
+//
+//    if (accumulating_serial_string) {
+//        if ( c == char_CMD ) {
+//            return;  //don't accumulate any start character
+//        } else if (  (c == char_CR ) ||
+//                     (c == char_LF ) )  {
+//            c = NONE;
+//            strcpy(input_string, "");  // blank it
+//            strcpy(input_string, input_buffer);  // back it up, then send to process
+//            input_string_ready = true;
+////            Serial.println(input_buffer);     //  TODO:  THIS LINE FOR TESTING
+//            Serial.println(input_string);     //  TODO:  THIS LINE FOR TESTING
+//            accumulating_serial_string = false;
+//            return;
+//        } else {
+//            if (strlen(input_buffer) > (MAX_INPUT_LENGTH - 2) ) {
+//                Serial.println("TOOOOOO LLOOOOOOOONG BABY");
+//                return;               //too long, don't append anymore
+//            } else {
+//                char cbuff[2] = " ";  //char plus null0
+//                cbuff[0] = c;
+//                strcat(input_buffer,  cbuff);
+//            }
+//        }
+//    } else {
+//        if (  (c == char_CR ) ||
+//                (c == char_LF ) )  {
+//            accumulating_serial_string = false;
+//            return;  // spurious newlines during non accumulation
+//        }
+//        // we're not accumulating but getting characters...yuck!
+//        Serial.print(F("!Invalid_input:"));Serial.print(c);Serial.println(F(":Commands_start_with_>"));
+//    }
+//    c = NONE;       //reset
+//}
 
 
 
@@ -525,7 +589,12 @@ void handleInputString() {
 
     output_string = "";                 // clear it
 
-    tempstring = strdup(input_string);
+    //tempstring = strdup(input_string); // < old code
+    tempstring = strdup(input_buffer);
+    input_string_ready = false;  // now that we have a copy, we can prep to accum more.
+
+    Serial.print("input_buffer: ");Serial.println(tempstring);
+
     if (tempstring != NULL) {
         stringtofree = tempstring;    //store copy for later release
 
@@ -958,6 +1027,8 @@ void stacklight_startup_sequence() {
                 n = min(i, stack_lights[lightnum].numpixels - 1);
                 //Serial.print("  numpix: ");Serial.println(stack_lights[lightnum].numpixels);
                 stack_lights[lightnum].strip->setPixelColor(n, wash_color);
+
+                prioritize_serial();
                 stack_lights[lightnum].strip->show();
                 delay(5);
             }
@@ -965,6 +1036,27 @@ void stacklight_startup_sequence() {
         delay(50);
     }
 }
+
+
+/**
+ * We've learned that we need to run this BEFORE calling show() for neopixels.
+ * Delay until our serial is done doing its thing.
+ */
+void prioritize_serial() {
+    if(!accumulating_serial_string) {
+        return;
+    }
+    uint32_t entry = millis();
+    uint32_t endtime = millis() + kSerialWaitLimit_ms;
+    while(millis() < endtime) {
+        if(!accumulating_serial_string) {
+            Serial.println("Done_accum");
+            break;
+        }
+    }
+    Serial.print("start:");Serial.print(entry, DEC);Serial.print(" curret:");Serial.print(millis(), DEC);Serial.println();
+}
+
 
 
 /**
@@ -1025,7 +1117,7 @@ bool try_handle_stackpercent_query(uint8_t sl_num, String & resp) {
         return false;
     }
     //  Got  SLP1:?    return   SLP1:99
-    resp += stack_lights[sl_num - 1].perc_lit;
+    resp += stack_lights[sl_num - 1].get_percentage();
     return true;
 }
 
@@ -1038,7 +1130,7 @@ bool try_handle_stackpercent_numeric(uint8_t sl_num, String & resp) {
     if (__endptr[0] == '\0') {  // strtoul sets endptr to last part of #, so /0 means we did the entire string
         if (percentage <= 100) {
             resp += percentage;
-            stack_lights[sl_num - 1].perc_lit = percentage;
+            stack_lights[sl_num - 1].set_percentage(percentage);
             handled = true;
         }
     }
@@ -1123,7 +1215,8 @@ bool try_handle_stacklight_query(uint8_t sl_num, String &resp) {
     //  Got  SLC1:?    return   SL1:0xAABBCC:COLOR
     //resp += C2HS(stack_lights[sl_num -1].color);  // "color 2 hex string"
     char *tempstr = new char[UNS_HEX_STR_SIZE];
-    color_uint_to_hex_string(stack_lights[sl_num - 1].color, tempstr, UNS_HEX_STR_SIZE);
+    uint32_t c = stack_lights[sl_num - 1].get_color();
+    color_uint_to_hex_string(c, tempstr, UNS_HEX_STR_SIZE);
     resp += tempstr;
     delete[] tempstr;
 
@@ -1177,8 +1270,7 @@ bool try_handle_stacklight_numeric(uint8_t sl_num, String &resp) {
         delete[] tempstr;
 
         // Set the value, the base color and the current color value.
-        stack_lights[sl_num - 1].color = clr;
-        stack_lights[sl_num - 1].current_color = clr;
+        stack_lights[sl_num - 1].set_color(clr);
         handled = true;
     }
 
@@ -1244,8 +1336,7 @@ bool try_handle_stacklight_colorname(uint8_t sl_num, String &resp){
             //Serial.print("colorname:   ");Serial.println(buff);      // THIS WORKS!!!!
 
             // Set the value, the base color and the current color value. Add value to response.
-            stack_lights[sl_num - 1].color = kCOLORS[i]->value;
-            stack_lights[sl_num - 1].current_color = kCOLORS[i]->value;
+            stack_lights[sl_num - 1].set_color(kCOLORS[i]->value);
 
             //Serial.print("Value from ->value:");Serial.println(kCOLORS[i]->value, HEX);
             char *hexstr = new char[UNS_HEX_STR_SIZE];
