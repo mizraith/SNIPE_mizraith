@@ -617,7 +617,6 @@ void handleInputString() {
 
     //tempstring = strdup(input_string); // < old code
     tempstring = strdup(input_buffer);
-    input_string_ready = false;  // now that we have a copy, we can prep to accum more.
 
     //Serial.print("input_buffer: ");Serial.println(tempstring);
 
@@ -634,7 +633,7 @@ void handleInputString() {
                 handleToken(token);
             }
         }  // end main token handling
-        free(stringtofree);
+        free(stringtofree);   // GETTING RID OF THIS LINE SIGNIFICANTLY INCREASES FAILURES
     }
 
     // SEND OUT OUR RESULT
@@ -654,10 +653,12 @@ void handleInputString() {
     //Serial.print(F("# Total execution (ms): "));
     //Serial.println(totaltime, DEC);
     //checkRAMandExitIfLow(11);
+    input_string_ready = false;  // now that we have a copy, we can prep to accum more.
 }
 
 
 void handleToken(char* ctoken) {
+    //Note that the ">" has already been removed by this point, so subtokens[0] contains the full command
     //checkRAMandExitIfLow(2);
     char *temptoken;
     char *tokentofree;
@@ -782,7 +783,7 @@ void handleToken(char* ctoken) {
         gotRead = false;
     }
     // clean it up
-    free(tokentofree);
+    free(tokentofree);    // REMOVING THIS LINE INCREASES FAILURES SIGNIFICANTLY
     free(temptoken);
     free(subtoken);
     //checkRAMandExitIfLow(222);
@@ -834,20 +835,22 @@ void handle_A_worker(uint8_t numA) {
     String resp("");
     String port("");
     uint16_t val = 0;
-    switch (numA) {
-        case 0 ... (kNUM_ANALOG_PINS - 1):
-            strcpy_P(buff, str_A);
-            resp += buff;
-            resp += numA;  // "A0" make use of that Arduino String += operation
-            val = A_values[numA];   // 0 index lines up nice
-            break;
-        default:
-            char err[MAX_ERROR_STRING_LENGTH];
-            strcpy_P(err, str_VALUE_ERROR);
-            port = err;
-            val = 0;
-            break;
-    }
+
+//    switch (numA) {
+//        case 0 ... (kNUM_ANALOG_PINS - 1):
+            resp += subtokens[0];    // copy over "A0"
+//            strcpy_P(buff, str_A);
+//            resp += buff;
+//            resp += numA;  // "A0" make use of that Arduino String += operation
+//            val = A_values[numA];   // 0 index lines up nice
+//            break;
+//        default:
+//            char err[MAX_ERROR_STRING_LENGTH];
+//            strcpy_P(err, str_VALUE_ERROR);
+//            port = err;
+//            val = 0;  // so we don't break external parsing
+//            break;
+//    }
     strcpy_P(buff, str_COLON);  //   resp --> "Ax:"
     resp += buff;
 
