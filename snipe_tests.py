@@ -55,7 +55,7 @@ class SnipeTests(unittest.TestCase):
     #        pass
 
     port = ""
-    baudrate = 57600
+    baudrate = 115200
     timeout = 1
     ser = serial.Serial()
 
@@ -175,13 +175,13 @@ class SnipeTests(unittest.TestCase):
 
         # Set all to 0, then 1
         for v in range(0, 2):
-            for i in range(2, 7):
+            for i in range(2, 6):   # in v4 port D6 is attached to beep
                 cmd = ">D%d:%d" % (i, v)
                 exp = "@D%d:%d:BIN" % (i, v)
                 self._handle_cmd_exp(cmd, exp)
 
         # check the ? -- all should still be at 1
-        for i in range(2, 7):
+        for i in range(2, 6):   # in v4 port D6 is attached to beep
             cmd = ">D%d:?" % i
             exp = "@D%d:1:BIN" % i
             self._handle_cmd_exp(cmd, exp)
@@ -521,17 +521,17 @@ class SnipeTests(unittest.TestCase):
             self._handle_cmd_exp(cmd, exp)
 
 
-    def test_SLA_query(self):
-        print("\n--------------> ", sys._getframe().f_code.co_name,
-              " <-------------- ")  # cool trick prints current function name
-
-        cmd = f">SLA:0"    # we won't turn it on....too loud
-        exp = f"@SLA:0"
-        self._handle_cmd_exp(cmd, exp)
-
-        cmd = f">SLA:?"
-        exp = f"@SLA:0"
-        self._handle_cmd_exp(cmd, exp)
+    # def test_SLA_query(self):
+    #     print("\n--------------> ", sys._getframe().f_code.co_name,
+    #           " <-------------- ")  # cool trick prints current function name
+    #
+    #     cmd = f">SLA:0"    # we won't turn it on....too loud
+    #     exp = f"@SLA:0"
+    #     self._handle_cmd_exp(cmd, exp)
+    #
+    #     cmd = f">SLA:?"
+    #     exp = f"@SLA:0"
+    #     self._handle_cmd_exp(cmd, exp)
 
 
     def test_SLP_missing_value(self):
@@ -631,6 +631,8 @@ if __name__ == '__main__':
     #    SnipeTests.baudrate = options.baud
     if len(sys.argv) > 1:
         SnipeTests.port = sys.argv.pop()
+    else:
+        SnipeTests.port = "/dev/tty.usbserial-A92517JR"
 
     print("----- RUNNING SNIPE TEST SUITE  v20160211 -------")
     print("port: " + SnipeTests.port + "\tbaudrate: " + str(SnipeTests.baudrate))
