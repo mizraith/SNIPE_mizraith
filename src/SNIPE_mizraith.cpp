@@ -373,27 +373,27 @@ void loop() {
     if (millis() > SL_next_heartbeat) {
         SL_next_heartbeat = millis() + kSL_HEARTBEAT_INTVL_ms;
 
-        if (is_blinking) {
-            blinky_worker();
-        }
-
+        blinky_worker();
         beepy_worker();
 
         for (uint8_t lightnum=0; lightnum < kNUM_STACKLIGHTS; lightnum++) {
             stack_lights[lightnum].update();
         }
+    }
+    // We are only going to check analog about once every 100ms
+    if (millis() > AIN_next_heartbeat) {
+        AIN_next_heartbeat = millis() + 25;
         // analogRead is slow...only do it every so often
-        A_values[0] = analogRead(A0);
-        A_values[1] = analogRead(A1);
-        A_values[2] = analogRead(A2);
-        A_values[3] = analogRead(A3);
+        analog_read_worker();
     }
     //delay(15);   // really slows things up, unnecessary
 }
 
 
-
 void blinky_worker() {
+    if (!is_blinking) {
+        return;
+    }
     unsigned long current_time = millis();
     if (current_time - blink_start > blink_time) {
         digitalWrite(LED_PIN, LOW);
