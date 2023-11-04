@@ -124,6 +124,7 @@ class SnipeTests(unittest.TestCase):
             self.assertTrue(exp in resp, f"\nexpected: {exp}   but got: {resp}\n\n\t\t\t\t!!!FAIL!!!")
             print("\t\t\t\t===PASS===")
         except AssertionError as a:
+            print("\t\t\t\t!!!FAIL!!!")
             raise a
 
     def _test_value_missing_conditions(self, cmd):

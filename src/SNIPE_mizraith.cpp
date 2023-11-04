@@ -36,6 +36,7 @@ _Changes in 4.0:  Added Stack light commands_.
 #pragma clang diagnostic ignored "-Wunknown-attributes"
 #pragma mark INCLUDES
 #include <limits.h>
+//#include <avr/wdt.h>    // for our reset function
 #include <Arduino.h>    // we make good use of String() class
 #include <avr/pgmspace.h>
 #include <EEPROM.h>
@@ -99,6 +100,7 @@ _Changes in 4.0:  Added Stack light commands_.
 // SETUP
 void blinky_worker();
 void beepy_worker();
+void analog_read_worker();
 // SERIAL INTERRUPT FUNCTION
 void serialEvent();
 // INPUT STRING PROCESSING
@@ -120,8 +122,11 @@ bool try_handle_stacklight_query(uint8_t, String &);
 bool try_handle_stacklight_numeric(uint8_t, String &);
 bool try_handle_stacklight_colorname(uint8_t, String &);
 void handle_SLM_worker(uint8_t);
+void handle_SLX_worker(uint8_t);
 bool try_handle_stackmode_query(uint8_t, String &);
+bool try_handle_stacknumled_query(uint8_t, String &);
 bool try_handle_stackmode_numeric(uint8_t, String &);
+bool try_handle_stacknumled_numeric(uint8_t, String &);
 void handle_SLINFO_worker();
 void handle_I2A();
 void handle_I2B();
@@ -154,7 +159,7 @@ void checkRAM();
 #pragma mark Application Globals
 const DateTime COMPILED_ON = DateTime(__DATE__, __TIME__);
 #define SNIPE_VERSION 4
-const String CURRENT_VERSION = "004";
+const String CURRENT_VERSION = "040";
 const String DESCRIPTION = "SNIPE_for_Arduino";
 
 
@@ -227,6 +232,8 @@ SNIPE_StackLight stack_lights[kNUM_STACKLIGHTS] =  {
 
 //unsigned long SL_loop_time = 0;
 unsigned long SL_next_heartbeat = 0;        //  Timer for our next refresh
+unsigned long AIN_next_heartbeat = 0;       //  Timer for analog input reads
+uint8_t analog_to_read = 0;
 // THIS NEXT impacts serial performance.  Too fast an update speed and too likely to clobber incoming messages.
 // @ 25ms  30ms transmissions delay result in 0% failure.   However a 20ms transmission delay yields 4-6% failures.
 // @ 50ms  30ms transmissions resulted in 3% failure rate.  Counter-intuitive
@@ -280,21 +287,6 @@ void setup() {                 // AT 9600 we don't see any missed serial chars. 
 
     serialPrintHeaderString();   // print this early to send out ######HEADER######
 
-    // TODO:  SOME RESET OPTIONS
-//    void(* resetFunc) (void) = 0;
-//    resetFunc();
-//
-//
-//    void reset() { asm volatile ("jmp 0"); }
-//
-//
-//    void reboot() {               // /THIS IS DEEMED THE CLEANEST/A
-//        wdt_disable();
-//        wdt_enable(WDTO_15MS);
-//        while (1) {}
-//    }
-    // TODO ------- ^^^^^^^^^^^^^^^^^^^^^^^^^
-
     is_virgin_eeprom = isVirginEEPROM();
 
     if (is_virgin_eeprom) {
@@ -309,7 +301,6 @@ void setup() {                 // AT 9600 we don't see any missed serial chars. 
 
     struct user_settings * SETTINGS = new struct user_settings;
     loadSettingsFromEEPROM(SETTINGS);  // handles eeprom defaults
-
 
     pinMode(ANALOG_INPUT, INPUT);
     pinMode(A1, INPUT);
@@ -342,6 +333,11 @@ void setup() {                 // AT 9600 we don't see any missed serial chars. 
     for (uint8_t lightnum=0; lightnum < kNUM_STACKLIGHTS; lightnum++) {
         stack_lights[lightnum].setup_strip();
     }
+//    Serial.println("+++++++++++++++++++++++++++++");
+//    Serial.print("WILL LOAD NUMPIXELS into StackLight: ");Serial.println(SETTINGS->sl1_numpixels) ;
+//    Serial.println("+++++++++++++++++++++++++++++++");
+//   // stack_lights[0] = SNIPE_StackLight(1, SL1_PIN, SETTINGS->sl1_numpixels, NEO_GRB + NEO_KHZ800);
+
 
     // Developer note: This next line is key to prevent our output_string (String class)
     // from growing in size over time and fragmenting the heap.  By calling this now
@@ -449,6 +445,29 @@ void beepy_worker() {
             //otherwise, it's already off
             return;
         }
+    }
+}
+
+
+
+void analog_read_worker() {
+    switch (analog_to_read) {
+        case 0:
+            A_values[0] = analogRead(A0);
+            break;
+        case 1:
+            A_values[1] = analogRead(A1);
+            break;
+        case 2:
+            A_values[2] = analogRead(A2);
+            break;
+        case 3:
+            A_values[3] = analogRead(A3);
+            break;
+        default:
+            if (analog_to_read > 3) {
+                analog_to_read = 0;
+            }
     }
 }
 
@@ -675,7 +694,7 @@ void handleToken(char* ctoken) {
         subtokens[0][i] = toupper(c);
         i++;
     }
-
+    // MATCH OUR TOKEN WITH OUR HANDLE-ABLE STRINGS
     if        (strcmp_P(subtokens[0], str_A0) == 0) {
         handle_A_worker(0);
     } else if (strcmp_P(subtokens[0], str_A1) == 0)  {
@@ -738,6 +757,8 @@ void handleToken(char* ctoken) {
         handle_BEEP();
     } else if (strcmp_P(subtokens[0], str_RAM) == 0) {
         checkRAM();
+    } else if (strcmp_P(subtokens[0], str_REBOOT) == 0) {
+        handle_REBOOT();
     } else {
         processing_is_ok = false;
         String resp("");
@@ -1439,6 +1460,91 @@ void handle_SLM_worker(uint8_t sl_num) {
     output_string.concat(resp);
 }
 
+void handle_SLX_worker(uint8_t sl_num) {
+    bool handled = false;
+    char buff[10];
+    char err[MAX_ERROR_STRING_LENGTH];
+    String resp("");
+
+    // Step 1:  Add "SLMx" to response
+    switch (sl_num) {
+        case 1 ... kNUM_STACKLIGHTS:   // double check
+            strcpy_P(buff, str_SLX);
+            resp = buff;
+            resp += sl_num;   // leverage the Arduino String class
+            break;
+        default:
+            strcpy_P(err, str_VALUE_ERROR);
+            resp += err;
+            handled = true;
+            break;
+    }
+
+    strcpy_P(buff, str_COLON);    // "SLMx"  --> "SLMx:"
+    resp += buff;
+
+    // STEP 2:  DO WE HAVE SUBTOKENS
+    if ((subtokens[1] == NULL) ||
+        (strlen(subtokens[1]) == 0)) {  // didn't give us a long enough token, e.g. "SLM:" or "SLM"
+        processing_is_ok = false;
+        strcpy_P(err, str_VALUE_MISSING);
+        resp += err;   // then we will skip the other processing.
+        handled = true;
+
+        // WE GOT SUBTOKENS
+    } else if ((sl_num >= 1) && (sl_num <= kNUM_STACKLIGHTS + 1)) {  // this is a triple check actually
+
+        handled = try_handle_stacknumled_query(sl_num, resp);
+
+        if (!handled) {
+            handled = try_handle_stacknumled_numeric(sl_num, resp);
+        }
+    }
+
+    // ...NOT SURE HOW TO PROCESS
+    if (!handled) {
+        processing_is_ok = false;
+        strcpy_P(err, str_VALUE_ERROR);
+        resp += err;
+    }
+    strcpy_P(buff, str_SPACE);
+    resp += buff;
+    output_string.concat(resp);
+}
+
+bool try_handle_stacknumled_numeric(uint8_t sl_num, String & resp) {
+    char buff[10];
+    String str_val_token = String(subtokens[1]);
+    bool handled = false;
+    uint8_t num_leds = 0;
+    char *__endptr;
+    // strtoul handles  '0x' or decimal if we give it base==0
+    long numgiven = strtoul(str_val_token.c_str(), &__endptr, 0);
+    // Use following block if you want to check that entire string is converted to a number.
+    // For now we are happy with handling whatever number we can pull out. Ignore the rest.
+//    if (__endptr[0] == '\0') {  // strtoul sets endptr to last part of #, so /0 means we did the entire string
+//        handled = true;        // full string handled, no extra text.
+//        Serial.println("HANDLED THE ENTIRE NUMBER WE DID!");
+    if (__endptr[0] != '\0') {
+        // We did NOT handle the entire string.
+        //Serial.println("Did not handle entire.");
+        if (numgiven == 0) {
+            // And we got an error back in our conversion...did not start with a number
+            //Serial.println("returning FALSE");
+            return false;   // < could not handle...get out of here
+        }
+    }
+    if (numgiven > 255) {
+        num_leds = 255;
+    }
+    //TODO:   1 -- update our strip  -- can we do this on the fly with new data?
+    //   TODO:   FREE, the re-assign new() the strip to take the change immediately
+    //TODO:   2 -- write to EEPROM
+    //TODO:   3 -- ASK FOR REBOOT??
+
+    return true;
+    }
+
 
 bool try_handle_stackmode_query(uint8_t sl_num, String & resp) {
     if (strcmp_P(subtokens[1], str_QUERY) != 0) {
@@ -1455,6 +1561,16 @@ bool try_handle_stackmode_query(uint8_t sl_num, String & resp) {
         resp += buff;
         resp += stack_lights[sl_num - 1].get_cycle_ms();
     }
+    return true;
+}
+
+bool try_handle_stacknumled_query(uint8_t sl_num, String & resp) {
+    if (strcmp_P(subtokens[1], str_QUERY) != 0) {
+        return false;
+    }
+    char buff[8];
+    //  Got  SLP1:?    return   SLP1:99
+    resp += stack_lights[sl_num - 1].numpixels;
     return true;
 }
 
@@ -1906,7 +2022,15 @@ void handle_BEEP() {
     output_string.concat(resp);
 }
 
-
+void handle_REBOOT() {
+    // this is a hard off, jump to 0, and this works
+    asm volatile ("jmp 0");
+    // /THIS was DEEMED THE CLEANEST, but requires #include <avr/wdt.h> AND THIS DOES NOT WORK
+//    wdt_disable();
+//    wdt_reset();
+//    wdt_enable(WDTO_15MS);
+//    while (1);
+}
 
 
 #pragma mark Setup Helpers
