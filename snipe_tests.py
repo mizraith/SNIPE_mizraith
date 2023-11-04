@@ -107,7 +107,7 @@ class SnipeTests(unittest.TestCase):
         tx = cmd + "\r\n"
         start_ns = time.time_ns()
         SnipeTests.ser.write(tx.encode())
-        time.sleep(0.001)
+        time.sleep(0.03)
         resp = SnipeTests.ser.readline().decode()
         end_ns = time.time_ns()
         delta_ms = round((end_ns - start_ns) / 10e5, 0)

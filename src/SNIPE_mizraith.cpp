@@ -376,7 +376,7 @@ void loop() {
         blinky_worker();
         beepy_worker();
 
-        for (uint8_t lightnum=0; lightnum < kNUM_STACKLIGHTS; lightnum++) {
+        for (uint8_t lightnum = 0; lightnum < kNUM_STACKLIGHTS; lightnum++) {
             stack_lights[lightnum].update();
         }
     }
@@ -601,10 +601,9 @@ void serialEvent() {
  ***************************************************
  ***************************************************/
 void handleInputString() {
+    //Note that the ">" has already been removed by this point.
     //checkRAMandExitIfLow(1);
     //long time_start = millis();
-
-    //Note that the ">" has already been removed by this point.
     processing_is_ok = true;  // leave as true....only set false if we encounter an error
 
     //Serial.print(F("# RECEIVED_INPUT->"));
