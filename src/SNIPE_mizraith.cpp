@@ -473,10 +473,12 @@ void analog_read_worker() {
 
 
 
-#pragma mark Serial Interrupt Function
+#pragma mark Serial EVENT Function
 /***************************************************
  ***************************************************
-//  SERIAL INPUT FUNCTION
+//  SERIAL INPUT FUNCTION  (Arduino Library..this is NOT an interrupt)
+//  serialEvent() is called at the end of every loop........
+//
 //     ACTS IMMEDIATELY ONE CHAR AT A TIME TO
 //     BUILD UP THE INPUT STRING
 //     UNTIL IT SEES A CARRIAGE RETURN OR LINE FEED
@@ -503,95 +505,56 @@ volatile uint8_t cindex = 0;
 //const char NONE = -1;
 volatile bool accumulating_serial_string = false;
 
-// New version -- do less and do it faster, don't make a copy of string in here
+// New version -- do less, do it faster and don't get interrupted!
 void serialEvent() {
-    c = Serial.read();
+    noInterrupts();
+    while (Serial.available() > 0) {
+        c = Serial.read();
 
-    if (accumulating_serial_string) {
-        if ( c == char_CMD ) {
-            // We will strip out (ignore) additional command chars:  ">SLM1:1 >SLM2:1"  -->  "SLM1:1  SLM2:2"
-            // as this is probably what the user intended in the first place.
-            return;
-        } else if (  (c == char_CR ) ||
-                     (c == char_LF ) ||
-                     (cindex > (MAX_INPUT_LENGTH - 2) ))  {
-            // end of string condition handling
-            input_buffer[cindex] = '\0';   // null terminator
-            input_string_ready = true;
-            accumulating_serial_string = false;
-            cindex = 0;
-//            if (cindex > (MAX_INPUT_LENGTH - 2) ){
-//                Serial.println(F("!INPUT_IS_TOO_LONG!"));
-//            }
-            return;
-        } else {
-            input_buffer[cindex] = c;
-            cindex++;
+        if (accumulating_serial_string) {
+            if (c == char_CMD) {
+                // We will strip out (ignore) additional command chars:  ">SLM1:1 >SLM2:1"  -->  "SLM1:1  SLM2:2"
+                // as this is probably what the user intended in the first place.
+                // THEREFORE, DO NOTHING
+            } else if ((c == char_CR) ||
+                       (c == char_LF) ||
+                       (cindex > (MAX_INPUT_LENGTH - 2))) {
+                // end of string condition handling
+                input_buffer[cindex] = '\0';   // null terminator
+                input_string_ready = true;
+                accumulating_serial_string = false;
+                cindex = 0;
+                //            if (cindex > (MAX_INPUT_LENGTH - 2) ){
+                //                Serial.println(F("!INPUT_IS_TOO_LONG!"));
+                //            }
+                interrupts();
+                return;         // end of command...return to handle and come back later
+            } else {
+                input_buffer[cindex] = c;
+                cindex++;
+            }
+
+        } else {  // NOT ACCUMULATING
+            if (c == char_CMD) {
+                accumulating_serial_string = true;
+                cindex = 0;    // reset to 0 position
+                //strcpy(input_buffer, "");  //blank it to accumulate
+            } else if ((c == char_CR) ||
+                       (c == char_LF)) {
+                accumulating_serial_string = false;
+                cindex = 0;
+                //return;  // spurious newlines during non accumulation
+            } else {  // not a command or newline
+                // we're not accumulating and are getting characters...yuck!
+                Serial.print(F("!Invalid_input:"));
+                Serial.print(c);
+                Serial.println(F(":Commands_start_with_>"));
+            }
         }
-    } else {  // NOT ACCUMULATING
-        if ( c == char_CMD ) {
-            accumulating_serial_string = true;
-            cindex = 0;    // reset to 0 position
-            //strcpy(input_buffer, "");  //blank it to accumulate
-            return;
-        } else if (  (c == char_CR ) ||
-                     (c == char_LF ) )  {
-            accumulating_serial_string = false;
-            cindex = 0;
-            return;  // spurious newlines during non accumulation
-        }
-        // we're not accumulating and are getting characters...yuck!
-        Serial.print(F("!Invalid_input:"));Serial.print(c);Serial.println(F(":Commands_start_with_>"));
+        //c = NONE;       //reset
     }
-    //c = NONE;       //reset
+    interrupts();
 }
-
-// OLD VERSION WAS GETTING CLOBBERED.   Worked at 9600 and for most cases but not with
-// active neopixels being updated-- I THINK WE WERE DOING TOO MUCH
-//void serialEvent() {
-//    c = Serial.read();
-//
-//    if ( c == char_CMD ) {
-//        accumulating_serial_string = true;
-//        strcpy(input_buffer, "");  //blank it to accumulate
-//        return;
-//    }
-//
-//    if (accumulating_serial_string) {
-//        if ( c == char_CMD ) {
-//            return;  //don't accumulate any start character
-//        } else if (  (c == char_CR ) ||
-//                     (c == char_LF ) )  {
-//            c = NONE;
-//            strcpy(input_string, "");  // blank it
-//            strcpy(input_string, input_buffer);  // back it up, then send to process
-//            input_string_ready = true;
-////            Serial.println(input_buffer);     //  TODO:  THIS LINE FOR TESTING
-//            Serial.println(input_string);     //  TODO:  THIS LINE FOR TESTING
-//            accumulating_serial_string = false;
-//            return;
-//        } else {
-//            if (strlen(input_buffer) > (MAX_INPUT_LENGTH - 2) ) {
-//                Serial.println("TOOOOOO LLOOOOOOOONG BABY");
-//                return;               //too long, don't append anymore
-//            } else {
-//                char cbuff[2] = " ";  //char plus null0
-//                cbuff[0] = c;
-//                strcat(input_buffer,  cbuff);
-//            }
-//        }
-//    } else {
-//        if (  (c == char_CR ) ||
-//                (c == char_LF ) )  {
-//            accumulating_serial_string = false;
-//            return;  // spurious newlines during non accumulation
-//        }
-//        // we're not accumulating but getting characters...yuck!
-//        Serial.print(F("!Invalid_input:"));Serial.print(c);Serial.println(F(":Commands_start_with_>"));
-//    }
-//    c = NONE;       //reset
-//}
-
 
 
 #pragma mark Input String Processing
@@ -611,29 +574,29 @@ void handleInputString() {
 
     char* token;
     char* tempstring;
-    char* stringtofree;
+    char* tempstringptr;
 
     output_string = "";                 // clear it
 
-    //tempstring = strdup(input_string); // < old code
+    //char cpystring[MAX_INPUT_LENGTH];
+    //strcpy(cpystring, input_buffer);
+
     tempstring = strdup(input_buffer);
+    tempstringptr = tempstring;    //store copy for later release
 
     //Serial.print("input_buffer: ");Serial.println(tempstring);
 
     if (tempstring != NULL) {
-        stringtofree = tempstring;    //store copy for later release
-
-        char space[2];
+        char space[3];
         strcpy_P(space, str_SPACE);
         // *** SPLIT INTO MAIN TOKENS ****
-        while ((token = strsep(&tempstring, space)) != NULL)  {
+        while ((token = strsep(&tempstringptr, space)) != NULL)  {
             //if we get 2 spaces together we get a 0-length token and we should ignore it
             if ( ( token != NULL ) && (strlen(token) != 0 )  ) {
                 //Serial.println(token);
                 handleToken(token);
             }
         }  // end main token handling
-        free(stringtofree);   // GETTING RID OF THIS LINE SIGNIFICANTLY INCREASES FAILURES
     }
 
     // SEND OUT OUR RESULT
@@ -646,6 +609,7 @@ void handleInputString() {
 
     // clean up
     output_string = "";
+    free(tempstringptr);   // GETTING RID OF THIS LINE SIGNIFICANTLY INCREASES FAILURES   !?
     free(tempstring);
 
     //long time_end = millis();
