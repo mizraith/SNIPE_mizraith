@@ -35,6 +35,8 @@
 const char char_CMD = '>';              // expected at start of command, we compare to character
 const char char_CR  = '\r';
 const char char_LF  = '\n';
+const char char_SP  = ' ';
+const char char_TB  = '\t';
 
 // CONSTANT STRINGS
 // 1 character commands & identifiers
@@ -115,6 +117,7 @@ const char str_BYTE_SETTING_ERR [] PROGMEM =    "BYTE_SETTING_ERR";      //16 ch
 const char str_NONE_FOUND       [] PROGMEM =    "NONE_FOUND";
 const char str_DATA_LENGTH_ERR  [] PROGMEM =    "DATA_LENGTH_ERR";
 const char str_UNKNOWN_CMD_ERR  [] PROGMEM =    "UNKNOWN_CMD_ERR";
+const char str_INVALID          [] PROGMEM =    "!INVALID_INPUT:";
 //const char str_SIDFUN           [] PROGMEM =    "SID";
 //char * const str_SIDFUN PROGMEM = "SID";                // this format does NOT work!
 

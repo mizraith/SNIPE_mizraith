@@ -26,6 +26,9 @@ from datetime import datetime, timedelta
 import serial
 from optparse import OptionParser
 
+DEBUG_RESPONSES = True
+
+
 DATA_STRING = "#####DATA#####"
 VALUE_MISSING = "VALUE_MISSING"
 VALUE_ERROR = "VALUE_ERROR"
@@ -55,8 +58,9 @@ class SnipeTests(unittest.TestCase):
     #        pass
 
     port = ""
-    baudrate = 115200
-    timeout = 1
+    #  115200 / 57600 / 38400 / 19200  /  9600was 57600  but this may be too fast for the nano's interrupts
+    baudrate = 115200  # 115200
+    timeout = .25
     ser = serial.Serial()
 
     @classmethod
@@ -105,10 +109,25 @@ class SnipeTests(unittest.TestCase):
         """
         print("cmd:\t%s" % cmd)
         tx = cmd + "\r\n"
-        time.sleep(0.005)
+        time.sleep(0.01)
         start_ns = time.time_ns()
         SnipeTests.ser.write(tx.encode())
-        resp = SnipeTests.ser.readline().decode()
+        next_resp = ""
+        resp = ""
+        if DEBUG_RESPONSES:   # NEW FEATURE - accepts debug respones, but only uses the last response to test against
+            while(True):
+                # if resp:
+                #     print(f"Debug response:\t{resp}")  # print the last one
+                next_resp = SnipeTests.ser.readline().decode().strip()
+                if not next_resp:
+                    break
+                else:
+                    if resp:
+                        print(f"\tdebug resp:\t{resp}")  # print the last one
+                    resp = next_resp
+        else:  # normal behavior
+            resp = SnipeTests.ser.readline().decode().strip()
+
         end_ns = time.time_ns()
         delta_ms = round((end_ns - start_ns) / 10e5, 0)
 
@@ -122,7 +141,8 @@ class SnipeTests(unittest.TestCase):
         print(f"resp:\t{resp.strip()}")
         print(f"(ms):\t{delta_ms}")
         try:
-            self.assertTrue(exp in resp, f"\nexpected: {exp}   but got: {resp}\n\n\t\t\t\t!!!FAIL!!!")
+            msg = f"\nexpected: {exp}   but got: {resp}\n\n\t\t\t\t!!!FAIL!!!"
+            self.assertTrue(exp in resp, msg=msg)
             print("\t\t\t\t===PASS===")
         except AssertionError as a:
             print("\t\t\t\t!!!FAIL!!!")
@@ -155,7 +175,7 @@ class SnipeTests(unittest.TestCase):
     def test_improper_command(self):
         # test poor formatted command
         cmd = "?"
-        exp = "!Invalid_input:"
+        exp = "!INVALID_INPUT:"
         self._handle_cmd_exp(cmd, exp)
 
     def test_A0_thru_A3(self):
@@ -227,11 +247,11 @@ class SnipeTests(unittest.TestCase):
         tx = cmd + '\r\n'
         SnipeTests.ser.write(tx.encode())
         time.sleep(0.05)
-        resp = SnipeTests.ser.readline().decode()
+        resp = SnipeTests.ser.readline().decode().strip()
         while resp:
             if resp.startswith("#"):
                 print("#:\t%s" % resp.strip())
-                resp = SnipeTests.ser.readline().decode()
+                resp = SnipeTests.ser.readline().decode().strip()
             else:
                 break
         print("resp:\t%s" % resp.strip())
@@ -240,7 +260,7 @@ class SnipeTests(unittest.TestCase):
             print("\t\t\t\t===PASS===")
         except AssertionError as a:
             raise a
-        oldsid = resp.split(":")[1]
+        oldsid = resp.split(":")[1].strip()
 
         # set it to a test string
         cmd = ">SID:TEST"
