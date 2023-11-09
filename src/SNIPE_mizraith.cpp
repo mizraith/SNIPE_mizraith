@@ -1077,7 +1077,8 @@ void stacklight_startup_sequence() {
  */
 void prioritize_serial(uint8_t ref) {
     if (Serial.available()) {
-        delay(kSerialWaitLimit_ms);
+        Serial.print("#>>>>>>>>>>>>>>>>>>>> Potential Collision on ");Serial.println(ref, DEC);
+        delay(kSerialWaitLimit_ms);  // all it takes to let 24 bits through at 115200 baud
         return;
     }
 //

@@ -50,6 +50,8 @@ colors = {"RED": "0xFF0000",
           "WHITE": "0xFFFFFF",
           "BLACK": "0x000000"}
 
+global NUM_TX
+NUM_TX = 0
 
 class SnipeTests(unittest.TestCase):
     #    def setUp(self):
@@ -60,7 +62,7 @@ class SnipeTests(unittest.TestCase):
     port = ""
     #  115200 / 57600 / 38400 / 19200  /  9600was 57600  but this may be too fast for the nano's interrupts
     baudrate = 115200  # 115200
-    timeout = .25
+    timeout = .1
     ser = serial.Serial()
 
     @classmethod
@@ -109,9 +111,11 @@ class SnipeTests(unittest.TestCase):
         """
         print("cmd:\t%s" % cmd)
         tx = cmd + "\r\n"
-        time.sleep(0.01)
+        time.sleep(0.001)     # time between commands
         start_ns = time.time_ns()
         SnipeTests.ser.write(tx.encode())
+        global NUM_TX
+        NUM_TX += 1
         next_resp = ""
         resp = ""
         if DEBUG_RESPONSES:   # NEW FEATURE - accepts debug respones, but only uses the last response to test against
@@ -656,10 +660,11 @@ if __name__ == '__main__':
     else:
         SnipeTests.port = "/dev/tty.usbserial-A92517JR"
 
-    print("----- RUNNING SNIPE TEST SUITE  v20160211 -------")
+    print("---------- RUNNING SNIPE TEST SUITE  v20160211 ------------")
     print("port: " + SnipeTests.port + "\tbaudrate: " + str(SnipeTests.baudrate))
     print("-------------------------------------------------")
     try:
         unittest.main()
     except:
         pass
+    print(f"TESTS COMPLETED WITH A TOTAL NUMBER OF TX: {NUM_TX}")

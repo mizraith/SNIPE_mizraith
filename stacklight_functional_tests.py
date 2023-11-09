@@ -65,6 +65,10 @@ def send_command(cmd):
         rx = sl.readline().decode().rstrip()
         if rx == "":
             not_complete = False
+        elif rx.startswith("#"):
+            # it's a debug response or comment
+            print(f"\t\tdebug resp:\t{rx}")
+            continue
         elif  rx.startswith("@"):
             not_complete = False
         print(f"\t\tretry#:{retries}\t\t  response:\t{rx:<20}")
