@@ -845,24 +845,6 @@ void handle_A_worker(uint8_t numA) {
 
     copy_subtoken0colon_into(resp);
 
-//    switch (numA) {
-//        case 0 ... (kNUM_ANALOG_PINS - 1):
-//            resp += subtokens[0];    // copy over "A0"
-//            strcpy_P(buff, str_A);
-//            resp += buff;
-//            resp += numA;  // "A0" make use of that Arduino String += operation
-//            val = A_values[numA];   // 0 index lines up nice
-//            break;
-//        default:
-//            char err[MAX_ERROR_STRING_LENGTH];
-//            strcpy_P(err, str_VALUE_ERROR);
-//            port = err;
-//            val = 0;  // so we don't break external parsing
-//            break;
-//    }
-//    strcpy_P(buff, str_COLON);  //   resp --> "Ax:"
-//    resp += buff;
-
     if ( (subtokens[1] == NULL ) || (strlen(subtokens[1]) == 0)) {
         processing_is_ok = false;
         char err[MAX_ERROR_STRING_LENGTH];
@@ -896,19 +878,22 @@ void handle_A_worker(uint8_t numA) {
 void handle_D_worker(uint8_t numpin) {
     char buff[10];
     String resp("");
-    switch(numpin) {
-        case 2 ... 6:
-            strcpy_P(buff, str_D);
-            resp += buff;
-            resp += numpin;   // "D4"
-            break;
-        default:
-            char err[MAX_ERROR_STRING_LENGTH];
-            strcpy_P(err, str_VALUE_ERROR);
-            break;
-    }
-    strcpy_P(buff, str_COLON);
-    resp += buff;                // "Dx:"
+
+    copy_subtoken0colon_into(resp);
+
+//    switch(numpin) {
+//        case 2 ... 6:
+//            strcpy_P(buff, str_D);
+//            resp += buff;
+//            resp += numpin;   // "D4"
+//            break;
+//        default:
+//            char err[MAX_ERROR_STRING_LENGTH];
+//            strcpy_P(err, str_VALUE_ERROR);
+//            break;
+//    }
+//    strcpy_P(buff, str_COLON);
+//    resp += buff;                // "Dx:"
 
     boolean append_cb = false;
     if ( (subtokens[1] == NULL ) || (strlen(subtokens[1]) == 0)) {  // didn't give us a long enough token, e.g. "D2:" or "D2"
@@ -954,10 +939,14 @@ void handle_D_worker(uint8_t numpin) {
 void handle_SID() {
     char buff[10];
     String resp("");
-    strcpy_P(buff, (char *)str_SID);
-    resp = buff;
-    strcpy_P(buff, (char *)str_COLON);
-    resp += buff;
+
+    copy_subtoken0colon_into(resp);
+
+//    strcpy_P(buff, (char *)str_SID);
+//    resp = buff;
+//    strcpy_P(buff, (char *)str_COLON);
+//    resp += buff;
+
     if ( (subtokens[1] == NULL ) || (strlen(subtokens[1]) == 0)) {  // didn't give us a long enough token, e.g. "D2:" or "D2"
         processing_is_ok = false;
         char err[MAX_ERROR_STRING_LENGTH];
@@ -1000,10 +989,15 @@ void handle_SID() {
 void handle_VER() {
     char buff[10];
     String resp("");
-    strcpy_P(buff, str_VER);
-    resp = buff;
-    strcpy_P(buff, str_COLON);
-    resp += buff;
+
+    copy_subtoken0colon_into(resp);
+
+//    strcpy_P(buff, str_VER);
+//    resp = buff;
+//    strcpy_P(buff, str_COLON);
+//    resp += buff;
+
+
     if ( (subtokens[1] == NULL ) || (strlen(subtokens[1]) == 0)) {  // didn't give us a long enough token
         processing_is_ok = false;
         char err[MAX_ERROR_STRING_LENGTH];
@@ -1029,10 +1023,14 @@ void handle_VER() {
 void handle_DESC() {
     char buff[10];
     String resp("");
-    strcpy_P(buff, str_DESC);
-    resp = buff;
-    strcpy_P(buff, str_COLON);
-    resp += buff;
+
+    copy_subtoken0colon_into(resp);
+
+//    strcpy_P(buff, str_DESC);
+//    resp = buff;
+//    strcpy_P(buff, str_COLON);
+//    resp += buff;
+
     if ( (subtokens[1] == NULL ) || (strlen(subtokens[1]) == 0)) {  // didn't give us a long enough token
         processing_is_ok = false;
         char err[MAX_ERROR_STRING_LENGTH];
@@ -1120,20 +1118,24 @@ void handle_SLP_worker(uint8_t sl_num) {
     char buff[8];
     char err[MAX_ERROR_STRING_LENGTH];
     String resp("");
-    // Step 1:  Add "SLCx" to response
-    switch (sl_num) {
-        case 1 ... kNUM_STACKLIGHTS:   // Double check, but at this point, sl_num has already been limited.
-            strcpy_P(buff, str_SLP);
-            resp = buff;
-            resp += sl_num;      // leveraging that String class.
-            break;
-        default:
-            strcpy_P(err, str_VALUE_ERROR);
-            resp += err;
-            break;
-    }
-    strcpy_P(buff, str_COLON);   // "SLCx"  --> "SLCx:"
-    resp += buff;
+    processing_is_ok = true;
+
+    copy_subtoken0colon_into(resp);
+
+//    // Step 1:  Add "SLCx" to response
+//    switch (sl_num) {
+//        case 1 ... kNUM_STACKLIGHTS:   // Double check, but at this point, sl_num has already been limited.
+//            strcpy_P(buff, str_SLP);
+//            resp = buff;
+//            resp += sl_num;      // leveraging that String class.
+//            break;
+//        default:
+//            strcpy_P(err, str_VALUE_ERROR);
+//            resp += err;
+//            break;
+//    }
+//    strcpy_P(buff, str_COLON);   // "SLCx"  --> "SLCx:"
+//    resp += buff;
 
     // STEP 2:  DO WE HAVE SUBTOKENS
     if ((subtokens[1] == NULL) ||
@@ -1198,25 +1200,28 @@ void handle_SLC_worker(uint8_t sl_num) {
     char buff[kCOLORLENGTH];
     char err[MAX_ERROR_STRING_LENGTH];
     bool handled = false;
-    char blank[MAX_OUTPUT_LENGTH];  // may not be necessary - make string long enough
-    String resp(blank);
+    String resp("");
     processing_is_ok = true;
-    // Step 1:  Add "SLCx" to response
-    switch (sl_num) {
-        case 1 ... kNUM_STACKLIGHTS:   // Double check, but at this point, sl_num has already been limited.
-            strcpy_P(buff, str_SLC);
-            resp = buff;
-            resp += sl_num;      // leveraging that String class.
-            break;
-        default:
-            strcpy_P(err, str_VALUE_ERROR);
-            resp += err;
-            handled = true;
-            break;
-    }
 
-    strcpy_P(buff, str_COLON);   // "SLCx"  --> "SLCx:"
-    resp += buff;
+    copy_subtoken0colon_into(resp);
+
+//    processing_is_ok = true;
+//    // Step 1:  Add "SLCx" to response
+//    switch (sl_num) {
+//        case 1 ... kNUM_STACKLIGHTS:   // Double check, but at this point, sl_num has already been limited.
+//            strcpy_P(buff, str_SLC);
+//            resp = buff;
+//            resp += sl_num;      // leveraging that String class.
+//            break;
+//        default:
+//            strcpy_P(err, str_VALUE_ERROR);
+//            resp += err;
+//            handled = true;
+//            break;
+//    }
+//
+//    strcpy_P(buff, str_COLON);   // "SLCx"  --> "SLCx:"
+//    resp += buff;
 
     //  valid string lengths:   1: ?     8 hex:  "0x123456"     8 deci for 0xFFFFFF <=:  "16777215"
     // STEP 2:  DO WE HAVE SUBTOKENS
@@ -1435,22 +1440,24 @@ void handle_SLM_worker(uint8_t sl_num) {
     char err[MAX_ERROR_STRING_LENGTH];
     String resp("");
 
-    // Step 1:  Add "SLMx" to response
-    switch (sl_num) {
-        case 1 ... kNUM_STACKLIGHTS:   // double check
-            strcpy_P(buff, str_SLM);
-            resp = buff;
-            resp += sl_num;   // leverage the Arduino String class
-            break;
-        default:
-            strcpy_P(err, str_VALUE_ERROR);
-            resp += err;
-            handled = true;
-            break;
-    }
+    copy_subtoken0colon_into(resp);
 
-    strcpy_P(buff, str_COLON);    // "SLMx"  --> "SLMx:"
-    resp += buff;
+//    // Step 1:  Add "SLMx" to response
+//    switch (sl_num) {
+//        case 1 ... kNUM_STACKLIGHTS:   // double check
+//            strcpy_P(buff, str_SLM);
+//            resp = buff;
+//            resp += sl_num;   // leverage the Arduino String class
+//            break;
+//        default:
+//            strcpy_P(err, str_VALUE_ERROR);
+//            resp += err;
+//            handled = true;
+//            break;
+//    }
+//
+//    strcpy_P(buff, str_COLON);    // "SLMx"  --> "SLMx:"
+//    resp += buff;
 
     // STEP 2:  DO WE HAVE SUBTOKENS
     if ((subtokens[1] == NULL) ||
@@ -1487,22 +1494,24 @@ void handle_SLX_worker(uint8_t sl_num) {
     char err[MAX_ERROR_STRING_LENGTH];
     String resp("");
 
-    // Step 1:  Add "SLMx" to response
-    switch (sl_num) {
-        case 1 ... kNUM_STACKLIGHTS:   // double check
-            strcpy_P(buff, str_SLX);
-            resp = buff;
-            resp += sl_num;   // leverage the Arduino String class
-            break;
-        default:
-            strcpy_P(err, str_VALUE_ERROR);
-            resp += err;
-            handled = true;
-            break;
-    }
+    copy_subtoken0colon_into(resp);
 
-    strcpy_P(buff, str_COLON);    // "SLMx"  --> "SLMx:"
-    resp += buff;
+//    // Step 1:  Add "SLMx" to response
+//    switch (sl_num) {
+//        case 1 ... kNUM_STACKLIGHTS:   // double check
+//            strcpy_P(buff, str_SLX);
+//            resp = buff;
+//            resp += sl_num;   // leverage the Arduino String class
+//            break;
+//        default:
+//            strcpy_P(err, str_VALUE_ERROR);
+//            resp += err;
+//            handled = true;
+//            break;
+//    }
+//
+//    strcpy_P(buff, str_COLON);    // "SLMx"  --> "SLMx:"
+//    resp += buff;
 
     // STEP 2:  DO WE HAVE SUBTOKENS
     if ((subtokens[1] == NULL) ||
@@ -1656,8 +1665,11 @@ void handle_SLINFO_worker() {
         stack_lights[lightnum].print_info();
     }
     processing_is_ok = true;
-    strcpy_P(buff, str_SLINFO);
-    resp += buff;
+
+    copy_subtoken0colon_into(resp);
+
+//    strcpy_P(buff, str_SLINFO);
+//    resp += buff;
     output_string.concat(resp);
 }
 
@@ -1670,10 +1682,15 @@ void handle_SLINFO_worker() {
 void handle_I2A() {
     char buff[10];
     String resp("");
-    strcpy_P(buff, str_I2A);
-    resp = buff;
-    strcpy_P(buff, str_COLON);
-    resp += buff;
+
+    copy_subtoken0colon_into(resp);
+
+//    strcpy_P(buff, str_I2A);
+//    resp = buff;
+//    strcpy_P(buff, str_COLON);
+//    resp += buff;
+
+
     if ( (subtokens[1] == NULL ) || (strlen(subtokens[1]) == 0)) {  // didn't give us a long enough token
         processing_is_ok = false;
         char err[MAX_ERROR_STRING_LENGTH];
@@ -1706,10 +1723,15 @@ void handle_I2A() {
 void handle_I2B() {
     char buff[10];
     String resp("");
-    strcpy_P(buff, str_I2B);
-    resp = buff;
-    strcpy_P(buff, str_COLON);
-    resp += buff;
+
+    copy_subtoken0colon_into(resp);
+
+//    strcpy_P(buff, str_I2B);
+//    resp = buff;
+//    strcpy_P(buff, str_COLON);
+//    resp += buff;
+
+
     if ( (subtokens[1] == NULL ) || (strlen(subtokens[1]) == 0)) {  // didn't give us a long enough token
         processing_is_ok = false;
         char err[MAX_ERROR_STRING_LENGTH];
@@ -1744,10 +1766,13 @@ void handle_I2W() {
     char buff[10];
     //checkRAMandExitIfLow(5);
     String resp("");
-    strcpy_P(buff, str_I2W);
-    resp = buff;
-    strcpy_P(buff, str_COLON);
-    resp += buff;
+
+    copy_subtoken0colon_into(resp);
+
+//    strcpy_P(buff, str_I2W);
+//    resp = buff;
+//    strcpy_P(buff, str_COLON);
+//    resp += buff;
 
     char hexprefix[3];             // should be: '0x'
     hexprefix[0] = subtokens[1][0];
@@ -1816,12 +1841,14 @@ void handle_I2W() {
  */
 void handle_I2R() {
     char buff[10];
-
     String resp("");
-    strcpy_P(buff, str_I2R);
-    resp = buff;
-    strcpy_P(buff, str_COLON);
-    resp += buff;
+
+    copy_subtoken0colon_into(resp);
+
+//    strcpy_P(buff, str_I2R);
+//    resp = buff;
+//    strcpy_P(buff, str_COLON);
+//    resp += buff;
 
 //    char hexprefix[3];             // should be: '0x'
 //    hexprefix[0] = subtokens[1][0];
@@ -1862,10 +1889,15 @@ void handle_I2R() {
 void handle_I2S() {
     char buff[10];
     String resp("");
-    strcpy_P(buff, str_I2S);
-    resp = buff;
-    strcpy_P(buff, str_COLON);
-    resp += buff;
+
+    copy_subtoken0colon_into(resp);
+
+//    strcpy_P(buff, str_I2S);
+//    resp = buff;
+//    strcpy_P(buff, str_COLON);
+//    resp += buff;
+
+
     if ( (subtokens[1] == NULL ) || (strlen(subtokens[1]) == 0)) {  // didn't give us a long enough token
         processing_is_ok = false;
         char err[MAX_ERROR_STRING_LENGTH];
@@ -1898,10 +1930,15 @@ void handle_I2S() {
 void handle_I2F() {
     char buff[10];
     String resp("");
-    strcpy_P(buff, str_I2F);
-    resp = buff;
-    strcpy_P(buff, str_COLON);
-    resp += buff;
+
+    copy_subtoken0colon_into(resp);
+
+//    strcpy_P(buff, str_I2F);
+//    resp = buff;
+//    strcpy_P(buff, str_COLON);
+//    resp += buff;
+
+
     if ( (subtokens[1] == NULL ) || (strlen(subtokens[1]) == 0)) {  // didn't give us a long enough token
         processing_is_ok = false;
         char err[MAX_ERROR_STRING_LENGTH];
@@ -1966,10 +2003,16 @@ void handle_I2F() {
 void handle_BLINK() {
     char buff[10];
     String resp("");
-    strcpy_P(buff, str_BLINK);
-    resp = buff;
-    strcpy_P(buff, str_COLON);
-    resp += buff;
+
+    copy_subtoken0colon_into(resp);
+
+//    strcpy_P(buff, str_BLINK);
+//    resp = buff;
+//    strcpy_P(buff, str_COLON);
+//    resp += buff;
+//
+
+
     if ( (subtokens[1] == NULL ) || (strlen(subtokens[1]) == 0)) {  // didn't give us a long enough token
         processing_is_ok = false;
         char err[MAX_ERROR_STRING_LENGTH];
@@ -1995,10 +2038,13 @@ void handle_BLINK() {
 void handle_BEEP() {
     char buff[10];
     String resp("");
-    strcpy_P(buff, str_BEEP);
-    resp = buff;
-    strcpy_P(buff, str_COLON);       // "SLA:"
-    resp += buff;
+
+    copy_subtoken0colon_into(resp);
+
+//    strcpy_P(buff, str_BEEP);
+//    resp = buff;
+//    strcpy_P(buff, str_COLON);       // "SLA:"
+//    resp += buff;
 
     boolean append_cb = false;
     if ( (subtokens[1] == NULL ) || (strlen(subtokens[1]) == 0)) {  // didn't give us a long enough token, e.g. "BEEP:" or "BEEP"
