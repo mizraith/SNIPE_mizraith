@@ -108,7 +108,11 @@ void serialEvent();
 void handleInputString();
 void handleToken(char *);
 void printSubTokenArray();
+// SUBTOKEN AND RESPONSE HELPER HANDLERS
 void copy_subtoken0colon_into(String &);
+bool resp_err_VALUE_MISSING(String &);
+void resp_2_output_string(String &);
+void resp_err_QUERY_REQUIRED(String &);
 // COMMAND HANDLING
 void handle_A_worker(uint8_t);
 void handle_D_worker(uint8_t);
@@ -808,12 +812,54 @@ void printSubTokenArray() {
     }
 }
 
+/**
+ * Simple..add the first subtoken back onto the response string
+ * @param resp
+ */
 void copy_subtoken0colon_into(String & resp) {
     char buff[2];
     resp += subtokens[0];    // copy over "A0"
     strcpy_P(buff, str_COLON);  //   resp --> "Ax:"
     resp += buff;
 //    resp += ":";
+}
+
+/**
+ * Simple -- check if the second subtoken is null or 0.
+ * @param resp  The string to append error messages to
+ * @return true if value is null or missing.  false if there is a value
+ */
+bool resp_err_VALUE_MISSING(String & resp) {
+    if ( (subtokens[1] == NULL ) || (strlen(subtokens[1]) == 0)) {
+        char err[MAX_ERROR_STRING_LENGTH];
+        strcpy_P(err, str_VALUE_MISSING);
+        resp += err;
+        return true;
+    } else {
+        return false;
+    }
+}
+
+/**
+ * Copy the response into our output string for transmission back over serial.
+ * Every function does this at the end.
+ * @param resp The response we have built up so far.
+ */
+void resp_2_output_string(String & resp) {
+    char buff[4];
+    strcpy_P(buff, str_SPACE);   // forgot why we do this...there's some reason
+    resp += buff;
+    output_string.concat(resp);
+}
+
+/**
+ * Add ERROR required to our response
+ * @param resp
+ */
+void resp_err_QUERY_REQUIRED(String & resp) {
+    char err[MAX_ERROR_STRING_LENGTH];
+    strcpy_P(err , str_Q_REQUIRED);
+    resp +=  err;
 }
 
 
@@ -845,11 +891,9 @@ void handle_A_worker(uint8_t numA) {
 
     copy_subtoken0colon_into(resp);
 
-    if ( (subtokens[1] == NULL ) || (strlen(subtokens[1]) == 0)) {
+    if (resp_err_VALUE_MISSING(resp)) {
         processing_is_ok = false;
-        char err[MAX_ERROR_STRING_LENGTH];
-        strcpy_P(err, str_VALUE_MISSING);
-        resp += err;
+
     } else if (strcmp_P(subtokens[1], str_QUERY) == 0) {
         val = A_values[numA];
         resp += String(val);                  // Arduino String allows concat of an int, but must be on its own line
@@ -882,11 +926,9 @@ void handle_D_worker(uint8_t numpin) {
     copy_subtoken0colon_into(resp);
 
     boolean append_cb = false;
-    if ( (subtokens[1] == NULL ) || (strlen(subtokens[1]) == 0)) {  // didn't give us a long enough token, e.g. "D2:" or "D2"
+    if (resp_err_VALUE_MISSING(resp)) {
         processing_is_ok = false;
-        char err[MAX_ERROR_STRING_LENGTH];
-        strcpy_P(err, str_VALUE_MISSING);
-        resp += err;
+
     } else if (strcmp_P(subtokens[1], str_QUERY) == 0) {
         resp += digitalRead(numpin);
         append_cb = true;
@@ -928,11 +970,9 @@ void handle_SID() {
 
     copy_subtoken0colon_into(resp);
 
-    if ( (subtokens[1] == NULL ) || (strlen(subtokens[1]) == 0)) {  // didn't give us a long enough token, e.g. "D2:" or "D2"
+    if (resp_err_VALUE_MISSING(resp)) {
         processing_is_ok = false;
-        char err[MAX_ERROR_STRING_LENGTH];
-        strcpy_P(err, str_VALUE_MISSING);
-        resp += err;
+
     } else if (strcmp_P(subtokens[1], str_QUERY) == 0) {
         resp += SID;
     } else {
@@ -973,11 +1013,9 @@ void handle_VER() {
 
     copy_subtoken0colon_into(resp);
 
-    if ( (subtokens[1] == NULL ) || (strlen(subtokens[1]) == 0)) {  // didn't give us a long enough token
+    if (resp_err_VALUE_MISSING(resp)) {
         processing_is_ok = false;
-        char err[MAX_ERROR_STRING_LENGTH];
-        strcpy_P(err, str_VALUE_MISSING);
-        resp += err;
+
     } else if (strcmp_P(subtokens[1], str_QUERY) == 0) {
         resp += CURRENT_VERSION;
     } else {
@@ -1001,11 +1039,9 @@ void handle_DESC() {
 
     copy_subtoken0colon_into(resp);
 
-    if ( (subtokens[1] == NULL ) || (strlen(subtokens[1]) == 0)) {  // didn't give us a long enough token
+    if (resp_err_VALUE_MISSING(resp)) {
         processing_is_ok = false;
-        char err[MAX_ERROR_STRING_LENGTH];
-        strcpy_P(err, str_VALUE_MISSING);
-        resp += err;
+
     } else if (strcmp_P(subtokens[1], str_QUERY) == 0)  {
         resp += DESCRIPTION;
     } else {
@@ -1080,12 +1116,10 @@ void handle_SLP_worker(uint8_t sl_num) {
     copy_subtoken0colon_into(resp);
 
     // STEP 2:  DO WE HAVE SUBTOKENS
-    if ((subtokens[1] == NULL) ||
-        (strlen(subtokens[1]) == 0)) {  // didn't give us a long enough token, e.g. "SLC:" or "SLC"
+    if (resp_err_VALUE_MISSING(resp)) {
         processing_is_ok = false;
-        strcpy_P(err, str_VALUE_MISSING);
-        resp += err;   // then we will skip the other processing.
         handled = true;
+
         // STEP 2A:   WE GOT SUBTOKENS
     } else if ((sl_num >= 1) && (sl_num <= kNUM_STACKLIGHTS + 1)) {  // this is a triple check actually
 
@@ -1149,14 +1183,11 @@ void handle_SLC_worker(uint8_t sl_num) {
 
     //  valid string lengths:   1: ?     8 hex:  "0x123456"     8 deci for 0xFFFFFF <=:  "16777215"
     // STEP 2:  DO WE HAVE SUBTOKENS
-    if ((subtokens[1] == NULL) ||
-        (strlen(subtokens[1]) == 0)) {  // didn't give us a long enough token, e.g. "SLC:" or "SLC"
+    if (resp_err_VALUE_MISSING(resp)) {
         processing_is_ok = false;
-        strcpy_P(err, str_VALUE_MISSING);
-        resp += err;   // then we will skip the other processing.
         handled = true;
-        // STEP 2A:   WE GOT SUBTOKENS
 
+        // STEP 2A:   WE GOT SUBTOKENS
     } else if ((sl_num >= 1) && (sl_num <= kNUM_STACKLIGHTS + 1)) {  // this is a triple check actually
 
         handled = try_handle_stacklight_query(sl_num, resp);
@@ -1366,12 +1397,8 @@ void handle_SLM_worker(uint8_t sl_num) {
 
     copy_subtoken0colon_into(resp);
 
-    // STEP 2:  DO WE HAVE SUBTOKENS
-    if ((subtokens[1] == NULL) ||
-        (strlen(subtokens[1]) == 0)) {  // didn't give us a long enough token, e.g. "SLM:" or "SLM"
+    if (resp_err_VALUE_MISSING(resp)) {
         processing_is_ok = false;
-        strcpy_P(err, str_VALUE_MISSING);
-        resp += err;   // then we will skip the other processing.
         handled = true;
 
         // WE GOT SUBTOKENS
@@ -1404,11 +1431,8 @@ void handle_SLX_worker(uint8_t sl_num) {
     copy_subtoken0colon_into(resp);
 
     // STEP 2:  DO WE HAVE SUBTOKENS
-    if ((subtokens[1] == NULL) ||
-        (strlen(subtokens[1]) == 0)) {  // didn't give us a long enough token, e.g. "SLM:" or "SLM"
+    if (resp_err_VALUE_MISSING(resp)) {
         processing_is_ok = false;
-        strcpy_P(err, str_VALUE_MISSING);
-        resp += err;   // then we will skip the other processing.
         handled = true;
 
         // WE GOT SUBTOKENS
@@ -1573,11 +1597,9 @@ void handle_I2A() {
 
     copy_subtoken0colon_into(resp);
 
-    if ( (subtokens[1] == NULL ) || (strlen(subtokens[1]) == 0)) {  // didn't give us a long enough token
+    if (resp_err_VALUE_MISSING(resp)) {
         processing_is_ok = false;
-        char err[MAX_ERROR_STRING_LENGTH];
-        strcpy_P(err, str_VALUE_MISSING);
-        resp += err;
+
     } else if (strcmp_P(subtokens[1], str_QUERY) == 0)  {
         resp += I2C_Address;
     } else  {
@@ -1608,11 +1630,9 @@ void handle_I2B() {
 
     copy_subtoken0colon_into(resp);
 
-    if ( (subtokens[1] == NULL ) || (strlen(subtokens[1]) == 0)) {  // didn't give us a long enough token
+    if (resp_err_VALUE_MISSING(resp)) {
         processing_is_ok = false;
-        char err[MAX_ERROR_STRING_LENGTH];
-        strcpy_P(err, str_VALUE_MISSING);
-        resp += err;
+
     } else if (strcmp_P(subtokens[1], str_QUERY) == 0)  {
         resp += I2C_Bytes;
     } else  {
@@ -1650,11 +1670,9 @@ void handle_I2W() {
     hexprefix[1] = subtokens[1][1];
     hexprefix[2] = '\0';
 
-    if ( (subtokens[1] == NULL ) || (strlen(subtokens[1]) == 0)) {  // didn't give us a long enough token
+    if (resp_err_VALUE_MISSING(resp)) {
         processing_is_ok = false;
-        char err[MAX_ERROR_STRING_LENGTH];
-        strcpy_P(err, str_VALUE_MISSING);
-        resp += err;
+
     } else if (strcmp_P(subtokens[1], str_QUERY) == 0)  {
         char datastr[1 + (2 * I2C_Bytes)];
         //Serial.print(F("# I2C Bytes: "));
@@ -1716,11 +1734,9 @@ void handle_I2R() {
 
     copy_subtoken0colon_into(resp);
 
-    if ( (subtokens[1] == NULL ) || (strlen(subtokens[1]) == 0)) {  // didn't give us a long enough token
+    if (resp_err_VALUE_MISSING(resp)) {
         processing_is_ok = false;
-        char err[MAX_ERROR_STRING_LENGTH];
-        strcpy_P(err, str_VALUE_MISSING);
-        resp += err;
+
     } else if (strcmp_P(subtokens[1], str_QUERY) == 0)  {
         perform_I2C_read();   // this loads the data into I2C_Data
         char datastr[1 + (2 * I2C_Bytes)];
@@ -1753,11 +1769,9 @@ void handle_I2S() {
 
     copy_subtoken0colon_into(resp);
 
-    if ( (subtokens[1] == NULL ) || (strlen(subtokens[1]) == 0)) {  // didn't give us a long enough token
+    if (resp_err_VALUE_MISSING(resp)) {
         processing_is_ok = false;
-        char err[MAX_ERROR_STRING_LENGTH];
-        strcpy_P(err, str_VALUE_MISSING);
-        resp += err;
+
     } else if (strcmp_P(subtokens[1], str_QUERY) == 0)  {
         resp += I2C_Register;
     } else  {
@@ -1788,11 +1802,9 @@ void handle_I2F() {
 
     copy_subtoken0colon_into(resp);
 
-    if ( (subtokens[1] == NULL ) || (strlen(subtokens[1]) == 0)) {  // didn't give us a long enough token
+    if (resp_err_VALUE_MISSING(resp)) {
         processing_is_ok = false;
-        char err[MAX_ERROR_STRING_LENGTH];
-        strcpy_P(err, str_VALUE_MISSING);
-        resp += err;
+
     } else if (strcmp_P(subtokens[1], str_QUERY) == 0)  {
         uint8_t address = 1;
         uint8_t error = 0;
@@ -1853,11 +1865,9 @@ void handle_BLINK() {
 
     copy_subtoken0colon_into(resp);
 
-    if ( (subtokens[1] == NULL ) || (strlen(subtokens[1]) == 0)) {  // didn't give us a long enough token
+    if (resp_err_VALUE_MISSING(resp)) {
         processing_is_ok = false;
-        char err[MAX_ERROR_STRING_LENGTH];
-        strcpy_P(err, str_VALUE_MISSING);
-        resp += err;
+
     } else  {
         blink_time = atoi(subtokens[1]);
         is_blinking = true;
@@ -1882,11 +1892,9 @@ void handle_BEEP() {
     copy_subtoken0colon_into(resp);
 
     boolean append_cb = false;
-    if ( (subtokens[1] == NULL ) || (strlen(subtokens[1]) == 0)) {  // didn't give us a long enough token, e.g. "BEEP:" or "BEEP"
+    if (resp_err_VALUE_MISSING(resp)) {
         processing_is_ok = false;
-        char err[MAX_ERROR_STRING_LENGTH];
-        strcpy_P(err, str_VALUE_MISSING);
-        resp += err;
+
     } else if (strcmp_P(subtokens[1], str_QUERY) == 0) {
         if (beep_enabled) {
             strcpy_P(buff, str_ON);
