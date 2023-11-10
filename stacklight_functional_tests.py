@@ -8,8 +8,8 @@ import time
 
 #sl = serial.Serial("COM7", 57600)         # 115200 / 57600 / 38400 / 19200  /  9600
 #  PASSES TESTING AT 115200   If you change baud rate, re-test to make sure wait timing is not impacted.
-#sl = serial.Serial("/dev/cu.usbserial-A92517JR", 115200, timeout=0.25)
-sl = serial.Serial("/dev/cu.usbserial-A702Y4T1", 115200, timeout=0.25)
+sl = serial.Serial("/dev/cu.usbserial-A92517JR", 115200, timeout=0.25)
+#sl = serial.Serial("/dev/cu.usbserial-A702Y4T1", 115200, timeout=0.25)
 
 
 # DELAY BETWEEN TX AND RX --- impacts failure rate and retries if you send messages too quick.

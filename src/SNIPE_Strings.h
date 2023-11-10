@@ -107,7 +107,7 @@ const char str_DESC     [] PROGMEM =    "DESC";     // Description identifier/co
 const char str_BLINK    [] PROGMEM =    "BLINK";    //blink command
 
 // ERROR STRINGS
-const int  MAX_ERROR_STRING_LENGTH         =    20;
+const int  MAX_ERROR_STRING_LENGTH         =    24;
 const char str_VALUE_MISSING    [] PROGMEM =    "VALUE_MISSING";
 const char str_VALUE_ERROR      [] PROGMEM =    "VALUE_ERROR";
 const char str_Q_REQUIRED       [] PROGMEM =    "?_MISSING";

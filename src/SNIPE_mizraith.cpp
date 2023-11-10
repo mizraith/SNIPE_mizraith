@@ -103,10 +103,12 @@ void beepy_worker();
 void analog_read_worker();
 // SERIAL INTERRUPT FUNCTION
 void serialEvent();
+
 // INPUT STRING PROCESSING
 void handleInputString();
 void handleToken(char *);
 void printSubTokenArray();
+void copy_subtoken0colon_into(String &);
 // COMMAND HANDLING
 void handle_A_worker(uint8_t);
 void handle_D_worker(uint8_t);
@@ -232,15 +234,15 @@ SNIPE_StackLight stack_lights[kNUM_STACKLIGHTS] =  {
 };
 
 //unsigned long SL_loop_time = 0;
-unsigned long SL_next_heartbeat = 0;        //  Timer for our next refresh
-unsigned long AIN_next_heartbeat = 0;       //  Timer for analog input reads
+unsigned long SL_next_heartbeat = 25;        //  Timer for our next refresh
+unsigned long AIN_next_heartbeat = 25;       //  Timer for analog input reads
 uint8_t analog_to_read = 0;
 // THIS NEXT impacts serial performance.  Too fast an update speed and too likely to clobber incoming messages.
 // @ 25ms  30ms transmissions delay result in 0% failure.   However a 20ms transmission delay yields 4-6% failures.
 // @ 50ms  30ms transmissions resulted in 3% failure rate.  Counter-intuitive
 // @ 10ms  20ms trasnmissions resulted in 1% failure rate,  30ms resulted in 0%
 // @ 1ms   1ms transmission delay = 0% failure......
-#define kSL_HEARTBEAT_INTVL_ms 1           // set this low low low. less clobber, less wait for serial
+#define kSL_HEARTBEAT_INTVL_ms 5           // set this low low low. less clobber, less wait for serial
 
 #pragma mark I2C Variables
 // Variables for I2C
@@ -806,7 +808,13 @@ void printSubTokenArray() {
     }
 }
 
-
+void copy_subtoken0colon_into(String & resp) {
+    char buff[2];
+    resp += subtokens[0];    // copy over "A0"
+    strcpy_P(buff, str_COLON);  //   resp --> "Ax:"
+    resp += buff;
+//    resp += ":";
+}
 
 
 #pragma mark COMMAND HANDLER EXPLANATION
@@ -835,9 +843,11 @@ void handle_A_worker(uint8_t numA) {
     String port("");
     uint16_t val = 0;
 
+    copy_subtoken0colon_into(resp);
+
 //    switch (numA) {
 //        case 0 ... (kNUM_ANALOG_PINS - 1):
-            resp += subtokens[0];    // copy over "A0"
+//            resp += subtokens[0];    // copy over "A0"
 //            strcpy_P(buff, str_A);
 //            resp += buff;
 //            resp += numA;  // "A0" make use of that Arduino String += operation
@@ -850,8 +860,8 @@ void handle_A_worker(uint8_t numA) {
 //            val = 0;  // so we don't break external parsing
 //            break;
 //    }
-    strcpy_P(buff, str_COLON);  //   resp --> "Ax:"
-    resp += buff;
+//    strcpy_P(buff, str_COLON);  //   resp --> "Ax:"
+//    resp += buff;
 
     if ( (subtokens[1] == NULL ) || (strlen(subtokens[1]) == 0)) {
         processing_is_ok = false;

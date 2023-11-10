@@ -111,7 +111,7 @@ class SnipeTests(unittest.TestCase):
         """
         print("cmd:\t%s" % cmd)
         tx = cmd + "\r\n"
-        time.sleep(0.001)     # time between commands
+        time.sleep(0.005)     # time between commands
         start_ns = time.time_ns()
         SnipeTests.ser.write(tx.encode())
         global NUM_TX
