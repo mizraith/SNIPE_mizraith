@@ -103,7 +103,6 @@ void beepy_worker();
 void analog_read_worker();
 // SERIAL INTERRUPT FUNCTION
 void serialEvent();
-
 // INPUT STRING PROCESSING
 void handleInputString();
 void handleToken(char *);
@@ -846,7 +845,7 @@ bool resp_err_VALUE_MISSING(String & resp) {
  * @param resp The response we have built up so far.
  */
 void resp_2_output_string(String & resp) {
-    char buff[4];
+    char buff[3];
     strcpy_P(buff, str_SPACE);   // forgot why we do this...there's some reason
     resp += buff;
     output_string.concat(resp);
@@ -908,9 +907,7 @@ void handle_A_worker(uint8_t numA) {
         strcpy_P(err , str_Q_REQUIRED);
         resp +=  err;
     }
-    strcpy_P(buff, str_SPACE);
-    resp += buff;
-    output_string.concat(resp);
+    resp_2_output_string(resp);
 }
 
 
@@ -954,9 +951,7 @@ void handle_D_worker(uint8_t numpin) {
         resp += buff;
     }
 
-    strcpy_P(buff, str_SPACE);
-    resp += buff;
-    output_string.concat(resp);
+    resp_2_output_string(resp);
 }
 
 /**
@@ -996,10 +991,8 @@ void handle_SID() {
             resp += err;
         }
     }
-    strcpy_P(buff, str_SPACE);
-    resp += buff;
-    output_string.concat(resp);
-    resp = "";
+
+    resp_2_output_string(resp);
 }
 
 
@@ -1024,9 +1017,8 @@ void handle_VER() {
         strcpy_P(err, str_Q_REQUIRED);
         resp += err;
     }
-    strcpy_P(buff, str_SPACE);
-    resp += buff;
-    output_string.concat(resp);
+
+    resp_2_output_string(resp);
 }
 
 /**
@@ -1050,9 +1042,7 @@ void handle_DESC() {
         strcpy_P(err, str_Q_REQUIRED);
         resp += err;
     }
-    strcpy_P(buff, str_SPACE);
-    resp += buff;
-    output_string.concat(resp);
+    resp_2_output_string(resp);
 }
 
 void stacklight_startup_sequence() {
@@ -1076,7 +1066,7 @@ void stacklight_startup_sequence() {
 
                 prioritize_serial(lightnum + 1);
                 stack_lights[lightnum].strip->show();
-                delay(5);
+                delay(3);
             }
         }
         delay(50);
@@ -1134,9 +1124,7 @@ void handle_SLP_worker(uint8_t sl_num) {
         strcpy_P(err, str_VALUE_ERROR);
         resp += err;
     }
-    strcpy_P(buff, str_SPACE);
-    resp += buff;
-    output_string.concat(resp);
+    resp_2_output_string(resp);
 
 }
 
@@ -1208,9 +1196,7 @@ void handle_SLC_worker(uint8_t sl_num) {
         strcpy_P(err, str_VALUE_ERROR);
         resp += err;
     }
-    strcpy_P(buff, str_SPACE);
-    resp += buff;
-    output_string.concat(resp);
+    resp_2_output_string(resp);
 }
 
 /**
@@ -1417,9 +1403,7 @@ void handle_SLM_worker(uint8_t sl_num) {
         strcpy_P(err, str_VALUE_ERROR);
         resp += err;
     }
-    strcpy_P(buff, str_SPACE);
-    resp += buff;
-    output_string.concat(resp);
+    resp_2_output_string(resp);
 }
 
 void handle_SLX_worker(uint8_t sl_num) {
@@ -1451,9 +1435,7 @@ void handle_SLX_worker(uint8_t sl_num) {
         strcpy_P(err, str_VALUE_ERROR);
         resp += err;
     }
-    strcpy_P(buff, str_SPACE);
-    resp += buff;
-    output_string.concat(resp);
+    resp_2_output_string(resp);
 }
 
 bool try_handle_stacknumled_numeric(uint8_t sl_num, String & resp) {
@@ -1614,9 +1596,7 @@ void handle_I2A() {
             resp += I2C_Address;
         }
     }
-    strcpy_P(buff, str_SPACE);
-    resp += buff;
-    output_string.concat(resp);
+    resp_2_output_string(resp);
 }
 
 /**
@@ -1647,9 +1627,7 @@ void handle_I2B() {
             resp += I2C_Bytes;
         }
     }
-    strcpy_P(buff, str_SPACE);
-    resp += buff;
-    output_string.concat(resp);
+    resp_2_output_string(resp);
 }
 
 /**
@@ -1713,12 +1691,7 @@ void handle_I2W() {
         strcpy_P(err, str_VALUE_ERROR);
         resp += err;
     }
-    strcpy_P(buff, str_SPACE);
-    resp += buff;
-    //Serial.print(F("RESP: "));
-    //Serial.println(resp);
-    output_string.concat(resp);
-    //checkRAMandExitIfLow(6);           //this is possibly the 'deepest' RAM use point in the program.
+    resp_2_output_string(resp);
 }
 
 
@@ -1750,12 +1723,7 @@ void handle_I2R() {
         strcpy_P(err, str_Q_REQUIRED);
         resp += err;
     }
-    strcpy_P(buff, str_SPACE);
-    resp += buff;
-    //Serial.print(F("RESP: "));
-    //Serial.println(resp);
-    output_string.concat(resp);
-    //checkRAMandExitIfLow(6);           //this is possibly the 'deepest' RAM use point in the program.
+    resp_2_output_string(resp);
 }
 
 /**
@@ -1786,9 +1754,7 @@ void handle_I2S() {
             resp += I2C_Register;
         }
     }
-    strcpy_P(buff, str_SPACE);
-    resp += buff;
-    output_string.concat(resp);
+    resp_2_output_string(resp);
 }
 
 /**
@@ -1846,9 +1812,7 @@ void handle_I2F() {
         strcpy_P(err, str_Q_REQUIRED);
         resp += err;
     }
-    strcpy_P(buff, str_SPACE);
-    resp += buff;
-    output_string.concat(resp);
+    resp_2_output_string(resp);
 }
 
 
@@ -1875,9 +1839,7 @@ void handle_BLINK() {
         last_blink_change = blink_start;
         resp += blink_time;
     }
-    strcpy_P(buff, str_SPACE);
-    resp += buff;
-    output_string.concat(resp);
+    resp_2_output_string(resp);
 }
 
 
@@ -1926,10 +1888,7 @@ void handle_BEEP() {
         strcpy_P(buff, str_BIN);
         resp += buff;
     }
-
-    strcpy_P(buff, str_SPACE);
-    resp += buff;
-    output_string.concat(resp);
+    resp_2_output_string(resp);
 }
 
 void handle_REBOOT() {
