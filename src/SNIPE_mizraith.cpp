@@ -112,6 +112,7 @@ void copy_subtoken0colon_into(String &);
 bool resp_err_VALUE_MISSING(String &);
 void resp_2_output_string(String &);
 void resp_err_QUERY_REQUIRED(String &);
+void resp_err_VALUE_ERROR(String &);
 // COMMAND HANDLING
 void handle_A_worker(uint8_t);
 void handle_D_worker(uint8_t);
@@ -861,6 +862,15 @@ void resp_err_QUERY_REQUIRED(String & resp) {
     resp +=  err;
 }
 
+/**
+ * Add MAX LENGTH required to our response
+ * @param resp
+ */
+void resp_err_VALUE_ERROR(String & resp) {
+    char err[MAX_ERROR_STRING_LENGTH];
+    strcpy_P(err , str_VALUE_ERROR);
+    resp +=  err;
+}
 
 #pragma mark COMMAND HANDLER EXPLANATION
 /**
@@ -939,9 +949,7 @@ void handle_D_worker(uint8_t numpin) {
         append_cb = true;
     } else {                                                 // "D2:3"
         processing_is_ok = false;
-        char err[MAX_ERROR_STRING_LENGTH];
-        strcpy_P(err, str_VALUE_ERROR);
-        resp += err;
+        resp_err_VALUE_ERROR(resp);
     }
 
     if (append_cb) {
@@ -1121,8 +1129,7 @@ void handle_SLP_worker(uint8_t sl_num) {
     }    // ...NOT SURE HOW TO PROCESS
     if (!handled) {
         processing_is_ok = false;
-        strcpy_P(err, str_VALUE_ERROR);
-        resp += err;
+        resp_err_VALUE_ERROR(resp);
     }
     resp_2_output_string(resp);
 
@@ -1193,8 +1200,7 @@ void handle_SLC_worker(uint8_t sl_num) {
     // ...NOT SURE HOW TO PROCESS
     if (!handled) {
         processing_is_ok = false;
-        strcpy_P(err, str_VALUE_ERROR);
-        resp += err;
+        resp_err_VALUE_ERROR(resp);
     }
     resp_2_output_string(resp);
 }
@@ -1400,8 +1406,7 @@ void handle_SLM_worker(uint8_t sl_num) {
     // ...NOT SURE HOW TO PROCESS
     if (!handled) {
         processing_is_ok = false;
-        strcpy_P(err, str_VALUE_ERROR);
-        resp += err;
+        resp_err_VALUE_ERROR(resp);
     }
     resp_2_output_string(resp);
 }
@@ -1432,8 +1437,7 @@ void handle_SLX_worker(uint8_t sl_num) {
     // ...NOT SURE HOW TO PROCESS
     if (!handled) {
         processing_is_ok = false;
-        strcpy_P(err, str_VALUE_ERROR);
-        resp += err;
+        resp_err_VALUE_ERROR(resp);
     }
     resp_2_output_string(resp);
 }
@@ -1687,9 +1691,7 @@ void handle_I2W() {
         }
     } else {
         processing_is_ok = false;
-        char err[MAX_ERROR_STRING_LENGTH];
-        strcpy_P(err, str_VALUE_ERROR);
-        resp += err;
+        resp_err_VALUE_ERROR(resp);
     }
     resp_2_output_string(resp);
 }
@@ -1877,9 +1879,7 @@ void handle_BEEP() {
         append_cb = true;
     } else {                              // "SLA:238"  Got some weird second token other than 1 or 0
         processing_is_ok = false;
-        char err[MAX_ERROR_STRING_LENGTH];
-        strcpy_P(err, str_VALUE_ERROR);
-        resp += err;
+        resp_err_VALUE_ERROR(resp);
     }
 
     if (append_cb) {
