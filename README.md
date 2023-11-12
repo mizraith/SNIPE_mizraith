@@ -206,11 +206,15 @@ case -insensitive- but this could change.
 ### Pin Control Commands     
 ##### [A0], A1, A2, A3
 - **description:**     Get the Analog input
-- **input argument:**  ?
+- **input argument:**  IGNORED  can be <none> or ?
 - **value range:**     0 - 1024
 - **units:**           ARB
 - **example:**         
   - command:  `>A0:?`
+  - response: `@A0:254:ARB`
+  - command:  `>A0`    Same as with :?
+  - response: `@A0:254:ARB`
+  - command:  `>A0:1234`  value will be ignored, treated as query
   - response: `@A0:254:ARB`
 - _Note: A0 is the recommended standard analog input._
               
@@ -253,20 +257,26 @@ case -insensitive- but this could change.
               
 ##### DESC  
 - **description:**     Description of our device
-- **input argument:**  ?   <grammatically required>
+- **input argument:**  IGNORED  can be <none> or ?  
 - **value range:**     string, < 32 ASCII chars without spaces
 - **example:**         
   - command:  `>DESC:?`
+  - response: `@DESC:SNIPE_FOR_ARDUINO`
+  - command:  `>DESC`                   same as if ? included
+  - response: `@DESC:SNIPE_FOR_ARDUINO`   
+  - command:  `>DESC:will_ignore_this`
   - response: `@DESC:SNIPE_FOR_ARDUINO`
   - command:  `>DESC:? VER:?`
   - response: `@DESC:SNIPE_FOR_ARDUINO VER:012`
                               
 ##### VER   
 - **description:**     Version
-- **input argument:**  ?
+- **input argument:**  IGNORED  can be <none> or ?
 - **value range:**     integer number as string  0:999
 - **example:**         
   - command:  `>VER:?`
+  - response: `@VER:012`
+  - command:  `>VER`   same as if ? was included
   - response: `@VER:012`
         
 ##### BLINK 
@@ -440,7 +450,7 @@ _I2C commands use SCL and SDA pins.  This is [A4] and [A5] on a nano._
         
 ##### I2R      
 - **description:**     I2C read for currently set address, setting, bytes
-- **input argument:**  ?    <grammatically required>
+- **input argument:**  IGNORED  can be <none> or ?
 - _NOTE:  THIS will be processed after all other items in the message, and after I2W._
 - **example:**         
   - command:  `>I2A:110 I2S:23 I2B:2 I2R:?`
@@ -448,14 +458,18 @@ _I2C commands use SCL and SDA pins.  This is [A4] and [A5] on a nano._
   - command:  `>I2R:?`      (re-read from same chip/addr)
   - response: `@I2R:0xA0F3`        
   - command:  `>I2A:1 I2R:?`
-  - response  `!I2A:1 I2R:0x00`      (inccorrect address?)
-         
+  - response: `!I2A:1 I2R:0x00`      (inccorrect address?)
+  - command:  `>I2R`        query no longer required
+  - response: `@I2R:0xA0F3
+  - `
 ##### I2F     
 - **description:**     Get a listing of chips on the I2C bus
-- **input argument:**  ?      <gramatically required>
+- **input argument:**  IGNORED  can be <none> or ?
 - **example:**         
   - command:  `>I2F:?`
   - response: `@I2F:1,12,23,113`   
+  - command:  `>I2F`     Same as a query
+  - response: `@I2F:1,12,23,113`
     
     
 ## Sending I2C Commands -- More Detail:

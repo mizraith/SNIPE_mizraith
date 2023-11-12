@@ -152,6 +152,58 @@ class SnipeTests(unittest.TestCase):
             print("\t\t\t\t!!!FAIL!!!")
             raise a
 
+    def test_read_only_A0(self):
+        """
+        NEW IN V4 -- Read only command can handle all sorts by basically ignore after the cmd
+        >A1:? ==  >A1:  ==  >A1    --->  @A1:234:ARB
+        :param cmd:
+        :return:
+        """
+        print("\n--------------> ", sys._getframe().f_code.co_name,
+              " <-------------- ")  # cool trick prints current function name
+        self._test_read_only_cmd("A0")
+        return
+
+
+    def test_read_only_DESC(self):
+        """
+        NEW IN V4 -- Read only command can handle all sorts by basically ignore after the cmd
+        """
+        print("\n--------------> ", sys._getframe().f_code.co_name,
+              " <-------------- ")  # cool trick prints current function name
+        self._test_read_only_cmd("DESC")
+
+    def test_read_only_I2R(self):
+        """
+        NEW IN V4 -- Read only command can handle all sorts by basically ignore after the cmd
+        """
+        print("\n--------------> ", sys._getframe().f_code.co_name,
+              " <-------------- ")  # cool trick prints current function name
+        self._test_read_only_cmd("I2R")
+
+    def test_read_only_VER(self):
+        """
+        NEW IN V4 -- Read only command can handle all sorts by basically ignore after the cmd
+        """
+        print("\n--------------> ", sys._getframe().f_code.co_name,
+              " <-------------- ")  # cool trick prints current function name
+        self._test_read_only_cmd("VER")
+
+
+    def _test_read_only_cmd(self, cmd):
+
+        xcmd = ">" + cmd + ":" + "?"
+        exp = "@" + cmd + ":"
+        self._handle_cmd_exp(xcmd, exp)
+
+        xcmd = ">" + cmd + ":"
+        exp = "@" + cmd + ":"
+        self._handle_cmd_exp(xcmd, exp)
+
+        xcmd = ">" + cmd
+        exp = "@" + cmd + ":"
+        self._handle_cmd_exp(xcmd, exp)
+
     def _test_value_missing_conditions(self, cmd):
         """
         For a given command, test improperly formatted
@@ -191,9 +243,6 @@ class SnipeTests(unittest.TestCase):
             exp = "@A%d:" % i
             self._handle_cmd_exp(cmd, exp)
 
-        # poorly formatted command testing
-        self._test_value_missing_conditions("A0")
-        self._test_q_required("A0")
 
     def test_D2_thru_D6(self):
         print("\n--------------> ", sys._getframe().f_code.co_name,
@@ -289,10 +338,6 @@ class SnipeTests(unittest.TestCase):
         exp = "@VER:"
         self._handle_cmd_exp(cmd, exp)
 
-        # poorly formatted
-        self._test_value_missing_conditions("VER")
-        self._test_q_required("VER")
-
     def test_DESC(self):
         print("\n--------------> ", sys._getframe().f_code.co_name,
               " <-------------- ")  # cool trick prints current function name
@@ -300,10 +345,6 @@ class SnipeTests(unittest.TestCase):
         cmd = ">DESC:?"
         exp = "@DESC:"
         self._handle_cmd_exp(cmd, exp)
-
-        # poorly formatted
-        self._test_value_missing_conditions("DESC")
-        self._test_q_required("DESC")
 
     def test_I2A(self):
         print("\n--------------> ", sys._getframe().f_code.co_name,
@@ -393,10 +434,6 @@ class SnipeTests(unittest.TestCase):
         cmd = ">I2R:?"
         exp = "@I2R:"
         self._handle_cmd_exp(cmd, exp)
-
-        # poorly formatted
-        self._test_value_missing_conditions("I2R")
-        self._test_q_required("I2R")
 
     def test_I2F(self):
         print("\n--------------> ", sys._getframe().f_code.co_name,

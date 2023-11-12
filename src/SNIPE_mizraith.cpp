@@ -234,7 +234,7 @@ String output_string = "";                 // might as well use the helper libra
 SNIPE_StackLight stack_lights[kNUM_STACKLIGHTS] =  {
         SNIPE_StackLight(1, SL1_PIN, 16, NEO_GRB + NEO_KHZ800),
         SNIPE_StackLight(2, SL2_PIN, 60, NEO_GRB + NEO_KHZ800),
-        SNIPE_StackLight(3, SL3_PIN, 2, NEO_GRB + NEO_KHZ800),
+        SNIPE_StackLight(3, SL3_PIN, 1, NEO_GRB + NEO_KHZ800),
 };
 
 //unsigned long SL_loop_time = 0;
@@ -891,6 +891,7 @@ void resp_err_VALUE_ERROR(String & resp) {
  * function: handle_A_worker
  * numA:   Arduino analog input
  * appends:  analog read port value to output string
+ * As of v4 this now ignores and does NOT require input value or ?
  */
 void handle_A_worker(uint8_t numA) {
     char buff[10];
@@ -900,23 +901,14 @@ void handle_A_worker(uint8_t numA) {
 
     copy_subtoken0colon_into(resp);
 
-    if (resp_err_VALUE_MISSING(resp)) {
-        processing_is_ok = false;
+    val = A_values[numA];
+    resp += String(val);                  // Arduino String allows concat of an int, but must be on its own line
+    strcpy_P(buff, str_COLON);
+    resp += buff;
+    strcpy_P(buff, str_ARB);
+    resp += buff;
+    processing_is_ok=true;
 
-    } else if (strcmp_P(subtokens[1], str_QUERY) == 0) {
-        val = A_values[numA];
-        resp += String(val);                  // Arduino String allows concat of an int, but must be on its own line
-        strcpy_P(buff, str_COLON);
-        resp += buff;
-        strcpy_P(buff, str_ARB);
-        resp += buff;
-        processing_is_ok=true;
-    } else {
-        processing_is_ok=false;
-        char err[MAX_ERROR_STRING_LENGTH];
-        strcpy_P(err , str_Q_REQUIRED);
-        resp +=  err;
-    }
     resp_2_output_string(resp);
 }
 
@@ -1007,25 +999,15 @@ void handle_SID() {
 /**
  * function: handle_VER
  * appends:  the SNIPE version to output display
+ * As of v4 this now ignores and does NOT require input value or ?
  */
 void handle_VER() {
     char buff[10];
     String resp("");
 
     copy_subtoken0colon_into(resp);
-
-    if (resp_err_VALUE_MISSING(resp)) {
-        processing_is_ok = false;
-
-    } else if (strcmp_P(subtokens[1], str_QUERY) == 0) {
-        resp += CURRENT_VERSION;
-    } else {
-        processing_is_ok=false;
-        char err[MAX_ERROR_STRING_LENGTH];
-        strcpy_P(err, str_Q_REQUIRED);
-        resp += err;
-    }
-
+    resp += CURRENT_VERSION;
+    processing_is_ok = true;
     resp_2_output_string(resp);
 }
 
@@ -1038,18 +1020,8 @@ void handle_DESC() {
     String resp("");
 
     copy_subtoken0colon_into(resp);
-
-    if (resp_err_VALUE_MISSING(resp)) {
-        processing_is_ok = false;
-
-    } else if (strcmp_P(subtokens[1], str_QUERY) == 0)  {
-        resp += DESCRIPTION;
-    } else {
-        processing_is_ok=false;
-        char err[MAX_ERROR_STRING_LENGTH];
-        strcpy_P(err, str_Q_REQUIRED);
-        resp += err;
-    }
+    resp += DESCRIPTION;
+    processing_is_ok = true;
     resp_2_output_string(resp);
 }
 
@@ -1561,14 +1533,14 @@ void handle_SLINFO_worker() {
     char buff[10];
     String resp("");
 
+    copy_subtoken0colon_into(resp);
+
     for (uint8_t lightnum = 0; lightnum < kNUM_STACKLIGHTS; lightnum++) {
         stack_lights[lightnum].print_info();
     }
     processing_is_ok = true;
 
-    copy_subtoken0colon_into(resp);
-
-    output_string.concat(resp);
+    resp_2_output_string(resp);
 }
 
 
@@ -1709,22 +1681,13 @@ void handle_I2R() {
 
     copy_subtoken0colon_into(resp);
 
-    if (resp_err_VALUE_MISSING(resp)) {
-        processing_is_ok = false;
+    perform_I2C_read();   // this loads the data into I2C_Data
+    char datastr[1 + (2 * I2C_Bytes)];
+    convertByteArrayToHexString(I2C_Data, I2C_Bytes, datastr );
+    strcpy_P(buff, str_HEX);
+    resp += buff;
+    resp += datastr;
 
-    } else if (strcmp_P(subtokens[1], str_QUERY) == 0)  {
-        perform_I2C_read();   // this loads the data into I2C_Data
-        char datastr[1 + (2 * I2C_Bytes)];
-        convertByteArrayToHexString(I2C_Data, I2C_Bytes, datastr );
-        strcpy_P(buff, str_HEX);
-        resp += buff;
-        resp += datastr;
-    } else {
-        processing_is_ok = false;
-        char err[MAX_ERROR_STRING_LENGTH];
-        strcpy_P(err, str_Q_REQUIRED);
-        resp += err;
-    }
     resp_2_output_string(resp);
 }
 
