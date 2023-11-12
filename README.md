@@ -231,7 +231,7 @@ case -insensitive- but this could change.
 - _Note:    D2 & D3 are recommended standard digital pins
 - _Note:    The BEEP command is wired to D6
 
-### Macro Commands
+### General Commands
 ##### ECHO
 - **description:**  Turn response echo on/off.  Results in a 2-line response, but is useful for debugging.
 - **input argument:**  0:1  or ?   Default is 0

@@ -716,8 +716,8 @@ void handleToken(char* ctoken) {
         handle_D_worker(4);
     } else if (strcmp_P(subtokens[0], str_D5) == 0) {
         handle_D_worker(5 );
-    } else if (strcmp_P(subtokens[0], str_D6) == 0) {
-        handle_D_worker(6);
+//    } else if (strcmp_P(subtokens[0], str_D6) == 0) {   # TIED TO BEEP PIN for StackLight
+//        handle_D_worker(6);
     } else if (strcmp_P(subtokens[0], str_SLP1) == 0) {
         handle_SLP_worker(1);
     } else if (strcmp_P(subtokens[0], str_SLP2) == 0) {
@@ -1002,7 +1002,6 @@ void handle_SID() {
  * As of v4 this now ignores and does NOT require input value or ?
  */
 void handle_VER() {
-    char buff[10];
     String resp("");
 
     copy_subtoken0colon_into(resp);
@@ -1016,7 +1015,6 @@ void handle_VER() {
  * appends:  the SNIPE description to output display
  */
 void handle_DESC() {
-    char buff[10];
     String resp("");
 
     copy_subtoken0colon_into(resp);
@@ -1078,8 +1076,6 @@ void prioritize_serial(uint8_t ref) {
  */
 void handle_SLP_worker(uint8_t sl_num) {
     bool handled = false;
-    char buff[8];
-    char err[MAX_ERROR_STRING_LENGTH];
     String resp("");
     processing_is_ok = true;
 
@@ -1355,8 +1351,6 @@ bool try_handle_stacklight_colorname(uint8_t sl_num, String &resp){
  */
 void handle_SLM_worker(uint8_t sl_num) {
     bool handled = false;
-    char buff[10];
-    char err[MAX_ERROR_STRING_LENGTH];
     String resp("");
 
     copy_subtoken0colon_into(resp);
@@ -1385,8 +1379,6 @@ void handle_SLM_worker(uint8_t sl_num) {
 
 void handle_SLX_worker(uint8_t sl_num) {
     bool handled = false;
-    char buff[10];
-    char err[MAX_ERROR_STRING_LENGTH];
     String resp("");
 
     copy_subtoken0colon_into(resp);
@@ -1415,7 +1407,6 @@ void handle_SLX_worker(uint8_t sl_num) {
 }
 
 bool try_handle_stacknumled_numeric(uint8_t sl_num, String & resp) {
-    char buff[10];
     String str_val_token = String(subtokens[1]);
     bool handled = false;
     uint8_t num_leds = 0;
@@ -1470,7 +1461,6 @@ bool try_handle_stacknumled_query(uint8_t sl_num, String & resp) {
     if (strcmp_P(subtokens[1], str_QUERY) != 0) {
         return false;
     }
-    char buff[8];
     //  Got  SLP1:?    return   SLP1:99
     resp += stack_lights[sl_num - 1].numpixels;
     return true;
@@ -1530,7 +1520,6 @@ bool try_handle_stackmode_numeric(uint8_t sl_num, String &resp) {
  * DO NOT USE in production as response length may change and formatting may change.
  */
 void handle_SLINFO_worker() {
-    char buff[10];
     String resp("");
 
     copy_subtoken0colon_into(resp);
@@ -1550,7 +1539,6 @@ void handle_SLINFO_worker() {
  * Used to query or set the I2C target address
  */
 void handle_I2A() {
-    char buff[10];
     String resp("");
 
     copy_subtoken0colon_into(resp);
@@ -1581,7 +1569,6 @@ void handle_I2A() {
  * Used to set or query the number of bytes to read/write
  */
 void handle_I2B() {
-    char buff[10];
     String resp("");
 
     copy_subtoken0colon_into(resp);
@@ -1614,7 +1601,6 @@ void handle_I2B() {
  */
 void handle_I2W() {
     char buff[10];
-    //checkRAMandExitIfLow(5);
     String resp("");
 
     copy_subtoken0colon_into(resp);
@@ -1697,7 +1683,6 @@ void handle_I2R() {
  * Used to set or query the setting (or 'register') address
  */
 void handle_I2S() {
-    char buff[10];
     String resp("");
 
     copy_subtoken0colon_into(resp);
@@ -1789,7 +1774,6 @@ void handle_I2F() {
  * Used to blink the Arduino LED for user identification.
  */
 void handle_BLINK() {
-    char buff[10];
     String resp("");
 
     copy_subtoken0colon_into(resp);

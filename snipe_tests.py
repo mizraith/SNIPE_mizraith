@@ -52,6 +52,7 @@ colors = {"RED": "0xFF0000",
 
 global NUM_TX
 NUM_TX = 0
+COMM_RETRIES = 0
 
 class SnipeTests(unittest.TestCase):
     #    def setUp(self):
@@ -64,6 +65,7 @@ class SnipeTests(unittest.TestCase):
     baudrate = 115200  # 115200
     timeout = .1
     ser = serial.Serial()
+    CMD_DELAY = .005
 
     @classmethod
     def setUpClass(cls):
@@ -109,14 +111,16 @@ class SnipeTests(unittest.TestCase):
         :param exp: response we expect, or expect to be part of the response.
         :return:
         """
+        global NUM_TX
+        global COMM_RETRIES
+
         print("cmd:\t%s" % cmd)
         tx = cmd + "\r\n"
-        time.sleep(0.005)     # time between commands
+        time.sleep(SnipeTests.CMD_DELAY)     # time between commands
         start_ns = time.time_ns()
         SnipeTests.ser.write(tx.encode())
-        global NUM_TX
         NUM_TX += 1
-        next_resp = ""
+
         resp = ""
         if DEBUG_RESPONSES:   # NEW FEATURE - accepts debug respones, but only uses the last response to test against
             while(True):
@@ -135,22 +139,41 @@ class SnipeTests(unittest.TestCase):
         end_ns = time.time_ns()
         delta_ms = round((end_ns - start_ns) / 10e5, 0)
 
-        while resp:
-            if resp.startswith("#"):
-                print("#:\t%s" % resp.strip())
-                resp = SnipeTests.ser.readline().decode()
-            else:
+        for retries in range(3):
+            # receive all comments and debug messages
+            while resp:
+                if resp.startswith("#"):
+                    print("#:\t%s" % resp.strip())
+                    resp = SnipeTests.ser.readline().decode()
+                else:
+                    break
+
+            # CHECK OUR REAL RESPONSE
+            print(f"exp:\t{exp}")
+            print(f"resp:\t{resp.strip()}")
+            print(f"(ms):\t{delta_ms}")
+            try:
+                msg = f"\nexpected: {exp}   but got: {resp}\n\n\t\t\t\t!!!FAIL!!!"
+                self.assertTrue(exp in resp, msg=msg)
+                if retries == 0:
+                    print(f"\t\t\t\t===PASS===\t\t\t")
+                else:
+                    print(f"\t\t\t\t===PASS===\t\t\tCOMM RETRIES: {retries}")
                 break
-        print(f"exp:\t{exp}")
-        print(f"resp:\t{resp.strip()}")
-        print(f"(ms):\t{delta_ms}")
-        try:
-            msg = f"\nexpected: {exp}   but got: {resp}\n\n\t\t\t\t!!!FAIL!!!"
-            self.assertTrue(exp in resp, msg=msg)
-            print("\t\t\t\t===PASS===")
-        except AssertionError as a:
-            print("\t\t\t\t!!!FAIL!!!")
-            raise a
+            except AssertionError as a:
+                if "UNKNOWN_CMD_ERR" in resp:     # try again..garbled comm
+                    retries += 1
+                    COMM_RETRIES += 1
+                    print(f">>>COMM ERROR LIKELY<<<\nRETRY:\t{cmd}")
+                    time.sleep(SnipeTests.CMD_DELAY)
+                    SnipeTests.ser.write(tx.encode())
+                    NUM_TX += 1
+                    resp = SnipeTests.ser.readline().decode()
+                    continue
+                else:
+                    print("\t\t\t\t!!!FAIL!!!")
+                    raise a
+
 
     def test_read_only_A0(self):
         """
@@ -244,7 +267,8 @@ class SnipeTests(unittest.TestCase):
             self._handle_cmd_exp(cmd, exp)
 
 
-    def test_D2_thru_D6(self):
+    def test_D2_thru_D5(self):
+        """We only test through D5 now because BEEP takes D6."""
         print("\n--------------> ", sys._getframe().f_code.co_name,
               " <-------------- ")  # cool trick prints current function name
 
@@ -704,4 +728,6 @@ if __name__ == '__main__':
         unittest.main()
     except:
         pass
-    print(f"TESTS COMPLETED WITH A TOTAL NUMBER OF TX: {NUM_TX}")
+    print(f"--------------------------------TESTS COMPLETED----------------------------")
+    print(f"          TOTAL NUMBER OF TX: {NUM_TX}")
+    print(f"          EXTRA RETRIES:      {COMM_RETRIES}")
