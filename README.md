@@ -175,11 +175,11 @@ The order of subtokens is generally agreed to be one of the following:
     
 #### Start Characters:
         '>' is used to **start a normal command** to SNIPE
-        '#' is used to significy a **non-value respone**, like a comment or header string
+        '#' is used to significy a **non-value response**, like a comment or header string
         '@' is used for **value response**
         '!' is used for **error responses**
        
-#### Values (escaping):
+#### I2C Values (escaping):
 Because values headed to the I2C port might contain <CR> or <LF> or 0
 as a byte, the data is **escaped** by sending it as a hex string, e.g.:
         
@@ -202,14 +202,92 @@ Depending on the command/identifier, SNIPE uses the following units.
 The following is a complete listing of **commands** this version of
 SNIPE supports.   Commands are shown in all caps and are currently
 case -insensitive- but this could change.
-   
+
+
+### General Commands
+##### HELP
+- **description:**  Printout the helpful header information.  Because this is a multiline response, all lines start with "#" except the final line, which includes "@"
+- **input argument:** None required. Will be ignored.
+- **examples:**
+  - command:  `>HELP`
+  - response:
+    - `#....many`
+    - `#...lines`
+    - `#...of information`
+    - `@HELP`     Final confirmation
+  - command:  `>ECHO:1`
+
+##### SID
+- **description:**     Station ID
+- **input argument:**  ?   or  stationID string, no spaces allowed
+- **value range:**     string value set by user, can NOT contain spaces
+- **examples:**
+  - command:  `>SID:?`
+  - response: `@SID:None_Set`
+  - command:  `>SID:MyUno_03`
+  - response: `@SID:MyUno_03`
+
+##### DESC
+- **description:**     Description of our device
+- **input argument:**  IGNORED  can be <none> or ?
+- **value range:**     string, < 32 ASCII chars without spaces
+- **examples:**
+  - command:  `>DESC:?`
+  - response: `@DESC:SNIPE_FOR_ARDUINO`
+  - command:  `>DESC`                   same as if ? included
+  - response: `@DESC:SNIPE_FOR_ARDUINO`
+  - command:  `>DESC:will_ignore_this`
+  - response: `@DESC:SNIPE_FOR_ARDUINO`
+  - command:  `>DESC:? VER:?`
+  - response: `@DESC:SNIPE_FOR_ARDUINO VER:012`
+
+##### VER
+- **description:**     Version
+- **input argument:**  IGNORED  can be <none> or ?
+- **value range:**     integer number as string  0:999
+- **examples:**
+  - command:  `>VER:?`
+  - response: `@VER:012`
+  - command:  `>VER`   same as if ? was included
+  - response: `@VER:012`
+
+##### BLINK
+- **description:**     Blinks the Arduino onboard LED (D13 typically)
+- **input argument:**  ? or 0:5000 Number of milliseconds to blink for
+- **examples:**
+  - command:  `>BLINK:5000`
+  - response: `@BLINK:5000`
+  - command:  `>BLINK:?`
+  - response: `@BLINK:3502`
+
+
+#### BEEP
+- **description:**  Alarm.  Enables annoying beeper.  Beeper attempts to match StackLight 1 mode and cycle time. Will pulse at cycle_ms for flash or pulse modes to match their on or going-up state.
+- **input argument:** ? or binary argument.
+- **input values:**  0 : 1. 0 = Alarm Off.  1 = Alarm On.
+- **examples:**
+  - command:  `>BEEP:?`
+  - response: `@BEEP:0:BIN`
+  - command:  `>BEEP:1`
+  - response: `@BEEP:1:BIN`
+- _NOTE:  BEEP will be wired to [D6] as a digital output._
+
+
+#### REBOOT
+- **description:**  Restarts the Arduino...as if on a power cycle.  Can be useful if chaning the SLX (number of stack lights on a strand) programatically.
+- **examples:**
+  - command: `>REBOOT`
+  - response `@REBOOT:GOODBYE`
+- _Note: Be prepared to go through the startup preamble again. Depending on your system you may or may not have to re-establish your serial port again._
+
+ 
 ### Pin Control Commands     
 ##### [A0], A1, A2, A3
 - **description:**     Get the Analog input
 - **input argument:**  IGNORED  can be <none> or ?
 - **value range:**     0 - 1024
 - **units:**           ARB
-- **example:**         
+- **examples:**         
   - command:  `>A0:?`
   - response: `@A0:254:ARB`
   - command:  `>A0`    Same as with :?
@@ -223,7 +301,7 @@ case -insensitive- but this could change.
 - **input argument:**  ?    or   0:1
 - **value range:**     0 : 1
 - **units:**           BIN
-- **example:**         
+- **examples:**         
   - command:  `>D6:?`
   - response: `@D6:0:BIN`
   - command:  `>D6:1`
@@ -231,85 +309,25 @@ case -insensitive- but this could change.
 - _Note:    D2 & D3 are recommended standard digital pins
 - _Note:    The BEEP command is wired to D6
 
-### General Commands
-##### ECHO
-- **description:**  Turn response echo on/off.  Results in a 2-line response, but is useful for debugging.
-- **input argument:**  0:1  or ?   Default is 0
-- **units:**        BIN
-- **example:**
-  - command:  `>ECHO:?`
-  - response: `@ECHO:0:BIN`
-  - command:  `>ECHO:1`
-  - response: `@ECHO:1:BIN`  (echoing applies for next command)
-  - command:  `>ECHO:?`
-  - response: `# RECEIVED_INPUT->ECHO:?`
-  - response: `@ECHO:1:BIN`
-
-##### SID   
-- **description:**     Station ID  
-- **input argument:**  ?   or  stationID string, no spaces allowed
-- **value range:**     string value set by user, can NOT contain spaces
-- **example:**         
-  - command:  `>SID:?`
-  - response: `@SID:None_Set`
-  - command:  `>SID:MyUno_03`
-  - response: `@SID:MyUno_03`
-              
-##### DESC  
-- **description:**     Description of our device
-- **input argument:**  IGNORED  can be <none> or ?  
-- **value range:**     string, < 32 ASCII chars without spaces
-- **example:**         
-  - command:  `>DESC:?`
-  - response: `@DESC:SNIPE_FOR_ARDUINO`
-  - command:  `>DESC`                   same as if ? included
-  - response: `@DESC:SNIPE_FOR_ARDUINO`   
-  - command:  `>DESC:will_ignore_this`
-  - response: `@DESC:SNIPE_FOR_ARDUINO`
-  - command:  `>DESC:? VER:?`
-  - response: `@DESC:SNIPE_FOR_ARDUINO VER:012`
-                              
-##### VER   
-- **description:**     Version
-- **input argument:**  IGNORED  can be <none> or ?
-- **value range:**     integer number as string  0:999
-- **example:**         
-  - command:  `>VER:?`
-  - response: `@VER:012`
-  - command:  `>VER`   same as if ? was included
-  - response: `@VER:012`
-        
-##### BLINK 
-- **description:**     Blinks the Arduino onboard LED (D13 typically)
-- **input argument:**  ? or 0:5000 Number of milliseconds to blink for
-- **example:**         
-  - command:  `>BLINK:5000`
-  - response: `@BLINK:5000`
-  - command:  `>BLINK:?`
-  - response: `@BLINK:3502`
-
-  
-#### BEEP
-- **description:**  Alarm.  Enables annoying beeper.  Beeper attempts to match StackLight 1 mode and cycle time. Will pulse at cycle_ms for flash or pulse modes to match their on or going-up state.
-- **input argument:** ? or binary argument.
-- **input values:**  0 : 1. 0 = Alarm Off.  1 = Alarm On.
-- **example:**
-  - command:  `>BEEP:?`
-  - response: `@BEEP:0:BIN`
-  - command:  `>BEEP:1`
-  - response: `@BEEP:1:BIN`
-- _NOTE:  BEEP will be wired to [D6] as a digital output._
-
-
-#### REBOOT
-- **description:**  Restarts the Arduino...as if on a power cycle.  Can be useful if chaning the SLX (number of stack lights on a strand) programatically.
-- **example:**
-  - command: `>REBOOT`
-  - response `@REBOOT:GOODBYE`
-- _Note: Be prepared to go through the startup preamble again. Depending on your system you may or may not have to re-establish your serial port again._
-
-
 ### Stack Light Commands
+#### SLB1, SLB2, SLB3
+- **description:** Stack Light Brightness.  Sets the stack light linear brightness value.
+- **input argument:** ? or uint8_t brightness.  0=off.  255=full bright.
+- **default:** value is full bright, or 255
+- **input values:**
+  - As hex string: '0xFF'  Leading 0x required.
+  - As decimal:  '255'    No leading zero.  Max value <= 0xFFFFFF
+  - If not properly formatted, will return a value error.  Setting to 0x0 will turn the color "black", or off. Case insensitive.
+- **examples:**
+  - command: `>SLB1:0xFF`
+  - response:`@SLB1:0xFF`   The LEDs on #1 are full bright.
+  - command: `>SLB1:0x0`     
+  - response: `@SLB1:0`    The LEDs are now off.
+  - command: `>SLCB:128`   About half brightness
+  - response: `@SLB1:128`  
+  - command: `>SLB1:?`        Standard query
+  - response: `@SLB1:?`
+
 _SLC commands use [D7] and [D8] and [D9] by default on a nano._
 #### SLC1, SLC2, SLC3
 - **description:** Stack Light Color.  Sets the stack light color.
@@ -320,7 +338,7 @@ _SLC commands use [D7] and [D8] and [D9] by default on a nano._
   - As text: "RED" "red"  case insensitive.  Matching one of the defined colors.
   - If not properly formatted, will return a value error.  Setting to 0x0 will turn the color "black", or off. Case insensitive.
   - If a color is defined, will append that name to the response string
-  **example:** 
+- **examples:** 
   - command: `>SLC1:0xFF0000`
   - response:`@SLC1:0xFF0000`   The LED on STack Light 1 is now RED.
   - command: `>SLC1:0x0`
@@ -346,7 +364,7 @@ _SLC commands use [D7] and [D8] and [D9] by default on a nano._
   - default: 1000
   - MIN: 100   (setting below this -> 100)
   - MAX: 10000  (setting above this -> 5000)
-- **example:**
+- **examples:**
   - command: `>SLM1:1`
   - response:`@SLM1:1`   The mode for #1 is ON, Steady State.
   - command: `>SLM1:3:500`  The mode for #3 is now flashing every 500ms
@@ -363,10 +381,10 @@ _SLC commands use [D7] and [D8] and [D9] by default on a nano._
   - response:  `@SLM1:1:VALUE_ERROR`   The mode is accepted (so "@", not "!" but VALUE_ERROR for cycle subtoken)
   
 #### SLP1, SLP2, SLP3
-- **description** Stack Light Percentage   Set how many of the lights are on
-- **input argument** ? or int percentage of pixels on.
-- **input values** 0:100  0=all off  100=all on.  50=first half closest to controller are illuminated.
-- **example:**
+- **description:** Stack Light Percentage   Set how many of the lights are on
+- **input argument:** ? or int percentage of pixels on.
+- **input values:** 0:100  0=all off  100=all on.  50=first half closest to controller are illuminated.
+- **examples:**
   - command: `>SLP1:100`
   - response: `@SLP1:100`   All lights are on
   - command: `>SLP1:25`
@@ -380,11 +398,36 @@ _SLC commands use [D7] and [D8] and [D9] by default on a nano._
   - command: `>SLP1:?`         standard query syntax
   - response: `@SLP1:40`
 
+#### SLT1, SLT2, SLT3
+- **description:** Stack Light cycle Time.  What cycle are pulse/flash/rainbow in.
+- **input argument:** ? or full cycle time in milliseconds full cycle time.
+- **input values:**
+    - default: 1000    (1 second)
+    - MIN: 100    (setting below this -> 100)
+    - MAX: 10000  (setting above this -> 1000)
+- **input values:** 0:100  0=all off  100=all on.  50=first half closest to controller are illuminated.
+- **examples:**
+  - command: `>SLT1:1000`
+  - response: `@SLT1:1000`   1 second full cycle time
+  - command: `>SLT1:2000`
+  - response: `@SLT1:2000`   2 second full cycle time.
+  - command: `>SLT1:10001`   Greater than the max
+  - response: `>SLT1:10000`   Results in a round down to the max (or round up to min)
+  - command:  `>SLT1:0xFF`  Hex is accepted
+  - response: `@SLT1:255`
+  - command: `>SLT1:500.3`    But floats are NOT
+  - response: `SLT1:VALUE_ERROR`
+  - command: `>SLT1:?`         standard query syntax
+  - response: `@SLT1:255`
+
 #### SLX1, SLX2, SLX3
-- **description** Stack Light Num Pixels   Set how many pixels are on a stacklight.  REQUIRES A REBOOT TO TAKE
-- **input argument** ? or uint8_t number of pixels.
-- **input values** 1:255
-- **example:**
+- **description:** Stack Light Num Pixels   Set how many pixels are on a stacklight.  REQUIRES A REBOOT TO TAKE
+- **input argument:** ? or uint8_t number of pixels.
+- **input values:** 1:255
+    - As hex string: '0xFF'  Leading 0x required.
+    - As decimal:  '255'    No leading zero.  Max value <= 0xFFFFFF
+    - If not properly formatted, will return a value error. Case insensitive.
+- **examples:**
   - command: `>SLX1:100`
   - response: `@SLX1:100:REBOOT_NOW`   StackLight #1 has 100 pixels...that's a lot
   - command: `>SLX2:10`
@@ -400,7 +443,7 @@ _I2C commands use SCL and SDA pins.  This is [A4] and [A5] on a nano._
 - **description:**     I2C target chip address
 - **input argument:**  ?  for last setting
                        0:127   (8 bit value as a decimal string)
-- **example:**         
+- **examples:**         
   - command:  `>I2A:125`
   - response: `@I2A:125`
   - command:  `>I2A:?`
@@ -410,7 +453,7 @@ _I2C commands use SCL and SDA pins.  This is [A4] and [A5] on a nano._
 - **description:**     I2C target setting (byte or register address)
 - **input argument:**  ?  for last setting
                        0:255 (8 bit value as a decimal string)
-- **example:**         
+- **examples:**         
   - command:  `>I2S:17`
   - response: `@I2S:17`
   - command:  `>I2S:?`
@@ -420,7 +463,7 @@ _I2C commands use SCL and SDA pins.  This is [A4] and [A5] on a nano._
 - **description:**     I2C number of bytes to send or receive
 - **input argument:**  ? for last setting
                        0:16  (number of bytes as a decimal string)
-- **example:**         
+- **examples:**         
   - command:  `>I2B:2`
   - response: `@I2B:2`
   - command:  `>I2B:?`
@@ -434,7 +477,7 @@ _I2C commands use SCL and SDA pins.  This is [A4] and [A5] on a nano._
                        then the write will fail.   Similarly, if
                        too may bytes are provided, the write will fail.
 - _NOTE:         THIS will be processed after all other items in the message, but before an I2R._
-- **example:**         
+- **examples:**         
   - command:  `>I2A:110 I2S:23 I2B:2 I2W:0xA0F3`
   - response: `@I2A:110 I2S:23 I2B:2 I2W:0xA0F3`
   - command:  `>I2W:0xA1F4`    (resend to same chip/addr)
@@ -452,7 +495,7 @@ _I2C commands use SCL and SDA pins.  This is [A4] and [A5] on a nano._
 - **description:**     I2C read for currently set address, setting, bytes
 - **input argument:**  IGNORED  can be <none> or ?
 - _NOTE:  THIS will be processed after all other items in the message, and after I2W._
-- **example:**         
+- **examples:**         
   - command:  `>I2A:110 I2S:23 I2B:2 I2R:?`
   - response: `@I2A:110 I2S:23 I2B:2 I2R:0xA0F3`
   - command:  `>I2R:?`      (re-read from same chip/addr)
@@ -465,7 +508,7 @@ _I2C commands use SCL and SDA pins.  This is [A4] and [A5] on a nano._
 ##### I2F     
 - **description:**     Get a listing of chips on the I2C bus
 - **input argument:**  IGNORED  can be <none> or ?
-- **example:**         
+- **examples:**         
   - command:  `>I2F:?`
   - response: `@I2F:1,12,23,113`   
   - command:  `>I2F`     Same as a query
