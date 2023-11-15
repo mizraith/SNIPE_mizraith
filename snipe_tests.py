@@ -759,6 +759,61 @@ class SnipeTests(unittest.TestCase):
         self._handle_cmd_exp(cmd, exp)
 
 
+
+    def test_SLT_good_values(self):
+        print("\n--------------> ", sys._getframe().f_code.co_name,
+              " <-------------- ")  # cool trick prints current function name
+        minval = 100
+        maxval = 10000
+        for light in range(1, 4):
+            for cycle in range(minval, maxval, 2000):
+                cmd = f">SLT{light}:{cycle}"
+                exp = f"@SLT{light}:{cycle}"
+                self._handle_cmd_exp(cmd, exp)
+
+        # test out of range trimming
+        cmd = f">SLT1:50"
+        exp = f"@SLT1:100"
+        self._handle_cmd_exp(cmd, exp)
+        cmd = f">SLT1:20000"
+        exp = f"@SLT1:10000"
+        self._handle_cmd_exp(cmd, exp)
+
+    def test_SLT_bad_values(self):
+        print("\n--------------> ", sys._getframe().f_code.co_name,
+              " <-------------- ")  # cool trick prints current function name
+        # test misformatted as float
+        cmd = f">SLT1:50.3"
+        exp = f"!SLT1:" + VALUE_ERROR
+        self._handle_cmd_exp(cmd, exp)
+
+        # test misformatted as text
+        cmd = f">SLT1:FAST"
+        exp = f"!SLT1:" + VALUE_ERROR
+        self._handle_cmd_exp(cmd, exp)
+
+    def test_SLT_query(self):
+        print("\n--------------> ", sys._getframe().f_code.co_name,
+              " <-------------- ")  # cool trick prints current function name
+        for i in range(1, 4):
+            cmd = f">SLT{i}:1020"
+            exp = f"@SLT{i}:1020"
+            self._handle_cmd_exp(cmd, exp)
+
+        for i in range(1, 4):
+            cmd = f">SLT{i}:?"
+            exp = f"@SLT{i}:1020"
+            self._handle_cmd_exp(cmd, exp)
+
+    def test_SLT_missing_value(self):
+        # poorly formatted command testing
+        self._test_value_missing_conditions("SLT1")
+
+
+
+
+
+
 # SLC1, SLC2, SLC3
 # SLM1, SLM2, SLM3
 # SLA
