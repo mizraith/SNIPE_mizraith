@@ -134,6 +134,14 @@ tokens and subtokens.  Optional elements are kept to a minimum.
 For ease of flow control, a start character is used for both
 commands and responses.
     
+### Header Mode:
+SNIPE comes up in a header mode as it boots up and does its thing.
+When complete it will put out the READY string (v4) on its own line.  You can
+wait for this or set a timeout.  
+> #####READY#####
+
+At this point, the SNIPE is ready to receive serial commands.
+
 ### Messages:
 **Messages** take on the basic form of (up to length 96 chars):
 

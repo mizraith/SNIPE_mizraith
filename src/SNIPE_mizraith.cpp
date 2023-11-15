@@ -29,8 +29,19 @@ _Changes in 4.0:  Added Stack light commands_.
 - 5/2019       Stability Edits
 - 6/2023       UPDATE 4.0  includes StackLight commands for Neopixel RGB LED control.
 - 8/2023       4.0 still in progress and debugging.
+- 11/2023      4.0 rc3  Language grammar overhaul.  New stack light features.
 
 *************************************************************************** */
+
+/* ***************************************************************************
+ * SET TO TRUE TO LET DEBUG MESSAGES THROUGH
+ * The first enables/dsiables DEBUG_PRINT and DEBUG_PRINTLN() calls in the code.
+ * The second makes the messages verbose with timing, etc.
+ * Uses  SNIPE_DebugUtils.h   and DEBUG_PRINT()  or DEBUG_PRINTLN() calls
+ **************************************************************************** */
+#define DEBUG
+#define DETAIL_DEBUG_ENABLED
+/* ***************************************************************************** */
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunknown-attributes"
@@ -46,6 +57,7 @@ _Changes in 4.0:  Added Stack light commands_.
 #include"mizraith_DateTime.h"   
 
 // PROJECT LIBRARIES
+#include "SNIPE_DebugUtils.h"
 #include "SNIPE_EEPROM.h"
 #include "SNIPE_StackLight.h"
 #include "SNIPE_Strings.h"
@@ -302,6 +314,9 @@ void setup() {                 // AT 9600 we don't see any missed serial chars. 
     Serial.setTimeout(kSERIAL_TIMEOUT_ms);
     Wire.begin();
     bool is_virgin_eeprom;
+
+
+    DEBUG_PRINT(" Hello with ending, ms: ");DEBUG_PRINTLN(kSerialWaitLimit_ms);
 
     serialPrintHeaderString();   // print this early to send out ######HEADER######
 
@@ -643,7 +658,7 @@ void handleInputString() {
         while ((token = strsep(&tempstringptr, space)) != NULL)  {
             //if we get 2 spaces together we get a 0-length token and we should ignore it
             if ( ( token != NULL ) && (strlen(token) != 0 )  ) {
-                Serial.print("#token------------>");Serial.println(token);
+                DEBUG_PRINT(F("# token------------>"));DEBUG_PRINT(token);DEBUG_PRINTLN();
                 handleToken(token);
             }
         }  // end main token handling
@@ -664,8 +679,8 @@ void handleInputString() {
 
     //long time_end = millis();
     //long totaltime = time_end - time_start;
-    //Serial.print(F("# Total execution (ms): "));
-    //Serial.println(totaltime, DEC);
+    //DEBUG_PRINT(F("# Total execution (ms): "));
+    //DEBUG_PRINTLN(totaltime, DEC);
     //checkRAMandExitIfLow(11);
     input_string_ready = false;  // now that we have a copy, we can prep to accum more.
 }
@@ -689,15 +704,15 @@ void handleToken(char* ctoken) {
     uint8_t i = 0;
     while ((subtoken = strsep(&tokentofree, colon)) != NULL) {
         if (subtoken != NULL) {    // a 0-length subtoken _is_ acceptable...maybe there is no value.
-            //Serial.print("#subtoken--------->");Serial.println(subtoken);
+            //DEBUG_PRINT(F("#subtoken--------->"));DEBUG_PRINTLN(subtoken);
             subtokens[i] = subtoken;
         }
         i++;
     }  // end subtoken split
     subtokens[i] = NULL;  // End list with NULL flag
     // Debug
-    Serial.print("#subtokens0------->");Serial.println(subtokens[0]);
-    Serial.print("#subtokens1------->");Serial.println(subtokens[1]);
+    DEBUG_PRINT(F("#subtokens0------->"));DEBUG_PRINT(subtokens[0]);DEBUG_PRINTLN();
+    DEBUG_PRINT(F("#subtokens1------->"));DEBUG_PRINT(subtokens[1]);DEBUG_PRINTLN();
 
 
     //checkRAMandExitIfLow(22);
@@ -832,7 +847,7 @@ void handleToken(char* ctoken) {
 
 void printSubTokenArray() {
     int i = 0;
-    Serial.println(F("# SubTokens: "));
+    DEBUG_PRINTLN(F("# SubTokens: "));
     while (subtokens[i] != NULL) {
         if(i == 0) {
             Serial.print(F("..CMD: "));
@@ -1181,7 +1196,7 @@ void stacklight_startup_sequence() {
  */
 void prioritize_serial(uint8_t ref) {
     if (Serial.available()) {
-        Serial.print("#>>>>>>>>>>>>>>>>>>>> Potential Collision on ");Serial.println(ref, DEC);
+        DEBUG_PRINT(F("#>>>>>>>>>>>>>>>>>>>> Potential Collision on "));DEBUG_PRINTLN(ref, DEC);
         delay(kSerialWaitLimit_ms);  // all it takes to let 24 bits through at 115200 baud
         return;
     }
@@ -1866,11 +1881,11 @@ void handle_I2W() {
     } else if (strcmp_P(hexprefix, str_HEX) == 0) {                      // verify we start with 0x
         // process the command value
         char * hexstring = &subtokens[1][2];
-        //Serial.print(F("# sub st1: ")); Serial.print(hexstring); Serial.print(F("   length: ")); Serial.println(strlen(subtokens[1])) - 2);
+        //DEBUG_PRINT(F("# sub st1: ")); DEBUG_PRINT(hexstring); DEBUG_PRINT(F("   length: ")); DEBUG_PRINTLN(strlen(subtokens[1])) - 2);
         if ( (strlen(hexstring) == I2C_Bytes * 2)) {                 // st1 contains '0x', so -2 is what we want
             //uint8_t bytearraylen = (I2C_Bytes * 2) + 1;                         // +1 NULL
             //char bytechars[bytearraylen];
-            //Serial.print(F("# bytearraylen: ")); Serial.println(bytearraylen, DEC);
+            //DEBUG_PRINT(F("# bytearraylen: ")); DEBUG_PRINTLN(bytearraylen, DEC);
             //st1.toCharArray(bytechars, arraylen, 2);  // get a standard C-string array
             convertHexStringToByteArray(hexstring, I2C_Data);
             // printBytesAsDec(I2C_Data, I2C_Bytes);
@@ -1980,7 +1995,7 @@ void handle_I2F() {
             //Serial.println(F("end"));
             if (error == 0) {
                 // FOUND one
-                //Serial.println(F("#found one"));
+                //DEBUG_PRINTLN(F("#found one"));
                 resp += address;
                 strcpy_P(buff, str_COMMA);
                 resp += buff;
@@ -2073,15 +2088,15 @@ void printSerialInputInstructions( ) {
     Serial.println(SID_MAX_LENGTH, DEC);
     Serial.print  F(("#   Max Output Length: "));
     Serial.println(MAX_OUTPUT_LENGTH, DEC);
-    Serial.println(F("#--------------------------------------------------"));
-}
-
-void printSerialDataStart() {
     Serial.println(F("#"));
     Serial.print(F("# Current Station ID (SID): "));
     Serial.println(SID);
     Serial.println(F("#"));
-    Serial.println(F("#####DATA#####"));
+    Serial.println(F("#--------------------------------------------------"));
+}
+
+void printSerialDataStart() {
+    Serial.println(F("#####READY#####"));
 }
 
 
@@ -2120,14 +2135,6 @@ void writeSIDToEEPROM( ) {
 }
 
 
-
-
-
-
-
-
-
-
 #pragma mark Low Level Helpers
 /***************************************************
  ***************************************************
@@ -2136,7 +2143,7 @@ void writeSIDToEEPROM( ) {
  ***************************************************/
 
 void printBytesAsDec(uint8_t *data, uint8_t len) {
-    //Serial.print(F("# ByteArrayAsDec: "));
+    //DEBUG_PRINT(F("# ByteArrayAsDec: "));
     for(uint8_t i=0; i<len; i++) {
         Serial.print(data[i], DEC);
         Serial.print(F("  "));
@@ -2221,8 +2228,7 @@ void checkRAM() {
     }
     strcpy_P(buff, str_SPACE);
     resp += buff;
-    //Serial.print(F("RESP: "));
-    //Serial.println(resp);
+    //DEBUG_PRINT(F("# RESP: "));DEBUG_PRINTLN(resp);
     output_string.concat(resp);
 }
 

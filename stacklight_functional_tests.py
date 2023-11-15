@@ -24,6 +24,8 @@ sl = serial.Serial("/dev/cu.usbserial-A92517JR", 115200, timeout=0.25)
 # results at  0    -- <0.25% retry rate    4-20ms turnarounds   <<<<<<<<<<<<<<<<<<<<<<<<  WINNER WINNER CHICKEN DINNER
 DELAY_BETWEEN = 0.001
 
+READY_STRING = "#####READY#####"    # NEW IN V4
+
 lead = ">"
 crlf = '\r\n'
 query = '?'
@@ -104,7 +106,7 @@ def send_command(cmd):
 while True:
     rx_line = sl.readline().decode().rstrip()
     print(rx_line)
-    if "###DATA###" in rx_line:
+    if READY_STRING in rx_line:
         break
 #  Done with our header
 

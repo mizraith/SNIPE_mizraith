@@ -28,8 +28,7 @@ from optparse import OptionParser
 
 DEBUG_RESPONSES = True
 
-
-DATA_STRING = "#####DATA#####"
+READY_STRING = "#####READY#####"    # NEW IN V4
 VALUE_MISSING = "VALUE_MISSING"
 VALUE_ERROR = "VALUE_ERROR"
 Q_REQUIRED = "?_MISSING"
@@ -83,7 +82,7 @@ class SnipeTests(unittest.TestCase):
             while in_header_mode:
                 resp = SnipeTests.ser.readline().decode()
                 print("resp:\t" + resp.strip())
-                if DATA_STRING in resp:
+                if READY_STRING in resp:
                     in_header_mode = False
 
         except Exception as e:
