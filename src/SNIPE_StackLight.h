@@ -47,6 +47,8 @@ public:                         // Access specifier
 
     void set_mode(uint8_t new_mode);
     uint8_t get_mode();
+    void set_brightness(uint8_t brightness);
+    uint8_t get_brightness();
     void set_color(uint32_t new_color);
     uint32_t get_color();
     void set_percentage(uint8_t percent);
@@ -65,6 +67,7 @@ private:
     // colors and percentages are private so that we can monitor and set flag on updates
     uint8_t mode {MODE_DEFAULT};    // solid state
     bool mode_did_change {false};
+    uint8_t brightness {255};
     uint32_t color {BLACK};         // our base color...what we would flash or pulse
     uint32_t current_color {BLACK}; // currently working color
     uint32_t last_color {BLACK}; // currently working color

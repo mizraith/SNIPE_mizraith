@@ -68,16 +68,23 @@ const char str_D6   [] PROGMEM = "D6";
 //const char str_D9   [] PROGMEM = "D9";
 const char str_HEX  [] PROGMEM = "0x";   // when hex...
 
-// 3 character commands & identifiers
+const char str_ARB  [] PROGMEM = "ARB";     // ARB units
+const char str_BIN  [] PROGMEM = "BIN";     // BIN units
+
+// Commands & identifiers
 const char str_SID  [] PROGMEM = "SID";     // Station ID
 const char str_TID  [] PROGMEM = "TID";     // Transaction ID
 const char str_VER  [] PROGMEM = "VER";     // Version
-const char str_ARB  [] PROGMEM = "ARB";     // ARB units
-const char str_BIN  [] PROGMEM = "BIN";     // BIN units
-const char str_SLP  [] PROGMEM = "SLP";      // Stack Light Percentage
-const char str_SLP1  [] PROGMEM = "SLP1";      // Stack Light Percentage
-const char str_SLP2  [] PROGMEM = "SLP2";      // Stack Light Percentage
-const char str_SLP3  [] PROGMEM = "SLP3";      // Stack Light Percentage
+const char str_BEEP  [] PROGMEM = "BEEP";     // Annoying Beeper
+const char str_DESC     [] PROGMEM =    "DESC";     // Description identifier/command
+const char str_BLINK    [] PROGMEM =    "BLINK";    //blink command
+const char str_RAM  [] PROGMEM = "RAM";     // Checks free RAM
+const char str_REBOOT [] PROGMEM = "REBOOT";  // REBOOT COMMAND
+const char str_HELP [] PROGMEM = "HELP";    // Send out HELP
+const char str_SLB  [] PROGMEM = "SLB";     // Stack Light Brightness
+const char str_SLB1 [] PROGMEM = "SLB1";
+const char str_SLB2 [] PROGMEM = "SLB2";
+const char str_SLB3 [] PROGMEM = "SLB3";
 const char str_SLC  [] PROGMEM = "SLC";     // Stack Light Color
 const char str_SLC1  [] PROGMEM = "SLC1";     // Stack Light Color
 const char str_SLC2  [] PROGMEM = "SLC2";     // Stack Light Color
@@ -86,25 +93,26 @@ const char str_SLM  [] PROGMEM = "SLM";     // Stack Light Mode
 const char str_SLM1  [] PROGMEM = "SLM1";     // Stack Light Mode
 const char str_SLM2  [] PROGMEM = "SLM2";     // Stack Light Mode
 const char str_SLM3  [] PROGMEM = "SLM3";     // Stack Light Mode
+const char str_SLP  [] PROGMEM = "SLP";      // Stack Light Percentage
+const char str_SLP1  [] PROGMEM = "SLP1";      // Stack Light Percentage
+const char str_SLP2  [] PROGMEM = "SLP2";      // Stack Light Percentage
+const char str_SLP3  [] PROGMEM = "SLP3";      // Stack Light Percentage
+const char str_SLT  [] PROGMEM = "SLT";      // Stack Light cycle Time
+const char str_SLT1  [] PROGMEM = "SLT1";
+const char str_SLT2  [] PROGMEM = "SLT2";
+const char str_SLT3  [] PROGMEM = "SLT3";
 const char str_SLX   [] PROGMEM = "SLX";      // Stack Light X  (num LEDs)
 const char str_SLX1  [] PROGMEM = "SLX1";     // Stack Light num LEDs
 const char str_SLX2  [] PROGMEM = "SLX2";     // Stack Light num LEDs
 const char str_SLX3  [] PROGMEM = "SLX3";     // Stack Light num LEDs
 const char str_SLINFO[] PROGMEM = "SLINFO";   // Stack Light Info...debugging use only
-const char str_BEEP  [] PROGMEM = "BEEP";     // Annoying Beeper
+
 const char str_I2A  [] PROGMEM = "I2A";     // I2C target chip address
 const char str_I2S  [] PROGMEM = "I2S";     // I2C target setting
 const char str_I2B  [] PROGMEM = "I2B";     // I2C target byte count
 const char str_I2W  [] PROGMEM = "I2W";     // I2C Write command
 const char str_I2R  [] PROGMEM = "I2R";     // I2C Read command
 const char str_I2F  [] PROGMEM = "I2F";     // I2C Find devices on the bus
-const char str_RAM  [] PROGMEM = "RAM";     // Checks free RAM
-const char str_REBOOT [] PROGMEM = "REBOOT";  // REBOOT COMMAND
-const char str_HELP [] PROGMEM = "HELP";    // Send out HELP
-// 4 character commands & identifiers
-const char str_DESC     [] PROGMEM =    "DESC";     // Description identifier/command
-// 5 character commands & identifiers
-const char str_BLINK    [] PROGMEM =    "BLINK";    //blink command
 
 // ERROR STRINGS
 const int  MAX_ERROR_STRING_LENGTH         =    24;

@@ -111,39 +111,49 @@ void printSubTokenArray();
 void copy_subtoken0colon_into(String &);
 bool resp_err_VALUE_MISSING(String &);
 void resp_2_output_string(String &);
-void resp_err_QUERY_REQUIRED(String &);
 void resp_err_VALUE_ERROR(String &);
 // COMMAND HANDLING
-void handle_A_worker(uint8_t);
-void handle_D_worker(uint8_t);
+// General
 void handle_SID();
 void handle_VER();
 void handle_DESC();
+void handle_BLINK();
+void handle_BEEP();
+void handle_HELP();
+void handle_REBOOT();
+// Pins
+void handle_A_worker(uint8_t);
+void handle_D_worker(uint8_t);
+// StackLight
 void stacklight_startup_sequence();
-void handle_SLP_worker(uint8_t);
-bool try_handle_stackpercent_query(uint8_t, String &);
-bool try_handle_stackpercent_numeric(uint8_t, String &);
+void handle_SLB_worker(uint8_t);
+bool try_handle_stackbright_query(uint8_t, String &);
+bool try_handle_stackbright_numeric(uint8_t, String &);
 void handle_SLC_worker(uint8_t);
 bool try_handle_stacklight_query(uint8_t, String &);
 bool try_handle_stacklight_numeric(uint8_t, String &);
 bool try_handle_stacklight_colorname(uint8_t, String &);
 void handle_SLM_worker(uint8_t);
+void handle_SLP_worker(uint8_t);
+bool try_handle_stackpercent_query(uint8_t, String &);
+bool try_handle_stackpercent_numeric(uint8_t, String &);
+void handle_SLT_worker(uint8_t);
+bool try_handle_stacktiming_query(uint8_t, String &);
+bool try_handle_stacktiming_numeric(uint8_t, String &);
 void handle_SLX_worker(uint8_t);
 bool try_handle_stackmode_query(uint8_t, String &);
 bool try_handle_stacknumled_query(uint8_t, String &);
 bool try_handle_stackmode_numeric(uint8_t, String &);
 bool try_handle_stacknumled_numeric(uint8_t, String &);
 void handle_SLINFO_worker();
+// I2C
 void handle_I2A();
 void handle_I2B();
 void handle_I2W();
 void handle_I2R();
 void handle_I2S();
 void handle_I2F();
-void handle_BLINK();
-void handle_BEEP();
-void handle_HELP();
-void handle_REBOOT();
+
 
 // SETUP HELPERS
 void serialPrintHeaderString();
@@ -601,7 +611,8 @@ void handleInputString() {
     //Note that the ">" has already been removed by this point.
     //checkRAMandExitIfLow(1);
     //long time_start = millis();
-    processing_is_ok = true;  // leave as true....only set false if we encounter an error
+
+    processing_is_ok = true;  // ALWAYS STARTS AS TRUE....only set false if we encounter an error
 
     //Serial.print(F("# RECEIVED_INPUT->"));
     //Serial.println(input_string);
@@ -699,8 +710,26 @@ void handleToken(char* ctoken) {
         subtokens[0][i] = toupper(c);
         i++;
     }
+
     // MATCH OUR TOKEN WITH OUR HANDLE-ABLE STRINGS
-    if        (strcmp_P(subtokens[0], str_A0) == 0) {
+    if        (strcmp_P(subtokens[0], str_SID) == 0) {     // could use (0 == strcmp(subtokens[0], "SID")) (strcmp_P(subtokens[0], PSTR("SID")) == 0 ) (cmd.equalsIgnoreCase(str_SID))
+        handle_SID();
+    } else if (strcmp_P(subtokens[0], str_VER) == 0) {
+        handle_VER();
+    } else if (strcmp_P(subtokens[0], str_DESC) == 0) {
+        handle_DESC();
+    } else if (strcmp_P(subtokens[0], str_BLINK) == 0) {
+        handle_BLINK();
+    } else if (strcmp_P(subtokens[0], str_BEEP) == 0) {
+        handle_BEEP();
+    } else if (strcmp_P(subtokens[0], str_HELP) == 0) {
+        handle_HELP();
+    } else if (strcmp_P(subtokens[0], str_REBOOT) == 0) {
+        handle_REBOOT();
+    } else if (strcmp_P(subtokens[0], str_RAM) == 0) {
+        checkRAM();
+        // ----------- PIN COMMANDS
+    }  else if (strcmp_P(subtokens[0], str_A0) == 0) {
         handle_A_worker(0);
     } else if (strcmp_P(subtokens[0], str_A1) == 0)  {
         handle_A_worker(1);
@@ -718,12 +747,13 @@ void handleToken(char* ctoken) {
         handle_D_worker(5 );
 //    } else if (strcmp_P(subtokens[0], str_D6) == 0) {   # TIED TO BEEP PIN for StackLight
 //        handle_D_worker(6);
-    } else if (strcmp_P(subtokens[0], str_SLP1) == 0) {
-        handle_SLP_worker(1);
-    } else if (strcmp_P(subtokens[0], str_SLP2) == 0) {
-        handle_SLP_worker(2);
-    } else if (strcmp_P(subtokens[0], str_SLP3) == 0) {
-        handle_SLP_worker(3);
+    // ----------------STACK LIGHT COMMANDS
+    } else if (strcmp_P(subtokens[0], str_SLB1) == 0) {
+        handle_SLB_worker(1);
+    } else if (strcmp_P(subtokens[0], str_SLB2) == 0) {
+        handle_SLB_worker(2);
+    } else if (strcmp_P(subtokens[0], str_SLB3) == 0) {
+        handle_SLB_worker(3);
     } else if (strcmp_P(subtokens[0], str_SLC1) == 0) {
         handle_SLC_worker(1);
     } else if (strcmp_P(subtokens[0], str_SLC2) == 0) {
@@ -736,12 +766,27 @@ void handleToken(char* ctoken) {
         handle_SLM_worker(2);
     } else if (strcmp_P(subtokens[0], str_SLM3) == 0) {
         handle_SLM_worker(3);
+    } else if (strcmp_P(subtokens[0], str_SLP1) == 0) {
+        handle_SLP_worker(1);
+    } else if (strcmp_P(subtokens[0], str_SLP2) == 0) {
+        handle_SLP_worker(2);
+    } else if (strcmp_P(subtokens[0], str_SLP3) == 0) {
+        handle_SLP_worker(3);
+    } else if (strcmp_P(subtokens[0], str_SLT1) == 0) {
+        handle_SLT_worker(1);
+    } else if (strcmp_P(subtokens[0], str_SLT2) == 0) {
+        handle_SLT_worker(2);
+    } else if (strcmp_P(subtokens[0], str_SLT3) == 0) {
+        handle_SLT_worker(3);
+    } else if (strcmp_P(subtokens[0], str_SLX1) == 0) {
+        handle_SLX_worker(1);
+    } else if (strcmp_P(subtokens[0], str_SLX2) == 0) {
+        handle_SLX_worker(2);
+    } else if (strcmp_P(subtokens[0], str_SLX3) == 0) {
+        handle_SLX_worker(3);
     } else if (strcmp_P(subtokens[0], str_SLINFO) == 0) {
         handle_SLINFO_worker();
-    } else if (strcmp_P(subtokens[0], str_SID) == 0) {     // could use (0 == strcmp(subtokens[0], "SID")) (strcmp_P(subtokens[0], PSTR("SID")) == 0 ) (cmd.equalsIgnoreCase(str_SID))
-        handle_SID();
-    } else if (strcmp_P(subtokens[0], str_VER) == 0) {
-        handle_VER();
+        // ----------------I2C COMMANDS
     } else if (strcmp_P(subtokens[0], str_I2A) == 0) {
         handle_I2A();
     } else if (strcmp_P(subtokens[0], str_I2S) == 0) {
@@ -754,16 +799,6 @@ void handleToken(char* ctoken) {
         gotRead = true;
     } else if (strcmp_P(subtokens[0], str_I2F) == 0) {
         handle_I2F();
-    } else if (strcmp_P(subtokens[0], str_DESC) == 0) {
-        handle_DESC();
-    } else if (strcmp_P(subtokens[0], str_BLINK) == 0) {
-        handle_BLINK();
-    } else if (strcmp_P(subtokens[0], str_BEEP) == 0) {
-        handle_BEEP();
-    } else if (strcmp_P(subtokens[0], str_RAM) == 0) {
-        checkRAM();
-    } else if (strcmp_P(subtokens[0], str_REBOOT) == 0) {
-        handle_REBOOT();
     } else {
         processing_is_ok = false;
         String resp("");
@@ -885,8 +920,164 @@ void resp_err_VALUE_ERROR(String & resp) {
 //  COMMAND HANDLING FUNCTIONS
  ***************************************************
  ***************************************************/
-#pragma mark Command Handling
+#pragma mark General Commands
 
+/**
+ * function: handle_SID
+ * appends:  the Station ID (SID) to output display
+ * Used for setting the SID or reading current SID
+ */
+void handle_SID() {
+    String resp("");
+
+    copy_subtoken0colon_into(resp);
+
+    if (resp_err_VALUE_MISSING(resp)) {
+        processing_is_ok = false;
+
+    } else if (strcmp_P(subtokens[1], str_QUERY) == 0) {
+        resp += SID;
+    } else {
+        if (strlen(subtokens[1]) < SID_MAX_LENGTH) {
+            char * newsid = subtokens[1];        // point to it
+            char SIDbuff[SID_MAX_LENGTH];
+            for (int i=0; i< SID_MAX_LENGTH - 1 ; i++) {
+                SIDbuff[i] = newsid[i];
+                if ( SIDbuff[i] == '\0' ) {
+                    break;
+                }
+            }
+            strncpy(SID, SIDbuff, SID_MAX_LENGTH);   // copy SIDbuff into SID
+            writeSIDToEEPROM();
+            resp += SID;
+        } else {
+            // provided SID was too long
+            processing_is_ok = false;
+            char err[MAX_ERROR_STRING_LENGTH];
+            strcpy_P(err, str_ERR_SID_TOO_LONG);
+            resp += err;
+        }
+    }
+    resp_2_output_string(resp);
+}
+
+
+/**
+ * function: handle_VER
+ * appends:  the SNIPE version to output display
+ * As of v4 this now ignores and does NOT require input value or ?
+ */
+void handle_VER() {
+    String resp("");
+
+    copy_subtoken0colon_into(resp);
+    resp += CURRENT_VERSION;
+    resp_2_output_string(resp);
+}
+
+/**
+ * function: handle_DESC
+ * appends:  the SNIPE description to output display
+ */
+void handle_DESC() {
+    String resp("");
+
+    copy_subtoken0colon_into(resp);
+    resp += DESCRIPTION;
+    resp_2_output_string(resp);
+}
+
+
+/**
+ * function: handle_BLINK
+ * appends:  the LED BLINK time to output display
+ * Used to blink the Arduino LED for user identification.
+ */
+void handle_BLINK() {
+    String resp("");
+
+    copy_subtoken0colon_into(resp);
+
+    if (resp_err_VALUE_MISSING(resp)) {
+        processing_is_ok = false;
+
+    } else  {
+        blink_time = atoi(subtokens[1]);
+        is_blinking = true;
+        blink_start = millis();
+        last_blink_change = blink_start;
+        resp += blink_time;
+    }
+    resp_2_output_string(resp);
+}
+
+
+/**
+ * function:  handle_BEEP
+ * Used to set the alarm state.  Operates Independantly of Stack Light 1, but will pulse if SL is pulsing/flashing.
+ */
+void handle_BEEP() {
+    char buff[10];
+    String resp("");
+
+    copy_subtoken0colon_into(resp);
+
+    boolean append_cb = false;
+    if (resp_err_VALUE_MISSING(resp)) {
+        processing_is_ok = false;
+    } else if (strcmp_P(subtokens[1], str_QUERY) == 0) {
+        if (beep_enabled) {
+            strcpy_P(buff, str_ON);
+        } else {
+            strcpy_P(buff, str_OFF);
+        }
+        resp += buff;
+        append_cb = true;
+    } else if (strcmp_P(subtokens[1], str_ON) == 0) {
+        beep_enabled = true;
+        strcpy_P(buff, str_ON);
+        resp += buff;
+        append_cb = true;
+    } else if (strcmp_P(subtokens[1], str_OFF) == 0) {
+        beep_enabled = false;
+        strcpy_P(buff, str_OFF);
+        resp += buff;
+        append_cb = true;
+    } else {                              // "SLA:238"  Got some weird second token other than 1 or 0
+        processing_is_ok = false;
+        resp_err_VALUE_ERROR(resp);
+    }
+
+    if (append_cb) {
+        strcpy_P(buff, str_COLON);
+        resp += buff;
+        strcpy_P(buff, str_BIN);
+        resp += buff;
+    }
+    resp_2_output_string(resp);
+}
+
+/**
+ * Prints out all sorts of useful information.
+ */
+void handle_HELP() {
+    String resp("");
+
+    // DO WORK HERE
+
+    copy_subtoken0colon_into(resp);
+    resp_2_output_string(resp);
+}
+
+
+void handle_REBOOT() {
+    // this is a hard off, jump to 0, and this works
+    asm volatile ("jmp 0");
+    // NOTE:  the wdt_disable() method just plain didn't work.
+}
+
+
+#pragma mark Pin Commands
 /**
  * function: handle_A_worker
  * numA:   Arduino analog input
@@ -907,7 +1098,6 @@ void handle_A_worker(uint8_t numA) {
     resp += buff;
     strcpy_P(buff, str_ARB);
     resp += buff;
-    processing_is_ok=true;
 
     resp_2_output_string(resp);
 }
@@ -950,79 +1140,12 @@ void handle_D_worker(uint8_t numpin) {
         strcpy_P(buff, str_BIN);
         resp += buff;
     }
-
-    resp_2_output_string(resp);
-}
-
-/**
- * function: handle_SID
- * appends:  the Station ID (SID) to output display
- * Used for setting the SID or reading current SID
- */
-void handle_SID() {
-    char buff[10];
-    String resp("");
-
-    copy_subtoken0colon_into(resp);
-
-    if (resp_err_VALUE_MISSING(resp)) {
-        processing_is_ok = false;
-
-    } else if (strcmp_P(subtokens[1], str_QUERY) == 0) {
-        resp += SID;
-    } else {
-        if (strlen(subtokens[1]) < SID_MAX_LENGTH) {
-            char * newsid = subtokens[1];        // point to it
-            char SIDbuff[SID_MAX_LENGTH];
-            for (int i=0; i< SID_MAX_LENGTH - 1 ; i++) {
-                SIDbuff[i] = newsid[i];
-                if ( SIDbuff[i] == '\0' ) {
-                    break;
-                }
-            }
-            strncpy(SID, SIDbuff, SID_MAX_LENGTH);   // copy SIDbuff into SID
-            writeSIDToEEPROM();
-            resp += SID;
-        } else {
-            // provided SID was too long
-            processing_is_ok = false;
-            char err[MAX_ERROR_STRING_LENGTH];
-            strcpy_P(err, str_ERR_SID_TOO_LONG);
-            resp += err;
-        }
-    }
-
     resp_2_output_string(resp);
 }
 
 
-/**
- * function: handle_VER
- * appends:  the SNIPE version to output display
- * As of v4 this now ignores and does NOT require input value or ?
- */
-void handle_VER() {
-    String resp("");
 
-    copy_subtoken0colon_into(resp);
-    resp += CURRENT_VERSION;
-    processing_is_ok = true;
-    resp_2_output_string(resp);
-}
-
-/**
- * function: handle_DESC
- * appends:  the SNIPE description to output display
- */
-void handle_DESC() {
-    String resp("");
-
-    copy_subtoken0colon_into(resp);
-    resp += DESCRIPTION;
-    processing_is_ok = true;
-    resp_2_output_string(resp);
-}
-
+#pragma mark StackLight Commands
 void stacklight_startup_sequence() {
     Serial.println(F("# Doing Stack Light Startup Sequence"));
     const uint8_t numwashclrs = 5;
@@ -1051,7 +1174,6 @@ void stacklight_startup_sequence() {
     }
 }
 
-
 /**
  * We've learned that we need to run this BEFORE calling show() for neopixels.
  * Delay until our serial is done doing its thing.
@@ -1067,17 +1189,15 @@ void prioritize_serial(uint8_t ref) {
 }
 
 
-
 /**
- * function: handle_SLP_worker
+ * function: handle_SLB_worker
  * sl_num:  which stack light are you controlling?  1, 2, or 3
- * Handle Stack Light Percentage worker
- * Expects values to be an int between 0 and 100 notation (e.g. "0x0AFF") or a color in all caps ("RED")
+ * Handle Stack Light Brightness worker
+ * Expects values to be an int between 0 and 255 (int or hex notation)
  */
-void handle_SLP_worker(uint8_t sl_num) {
+void handle_SLB_worker(uint8_t sl_num) {
     bool handled = false;
     String resp("");
-    processing_is_ok = true;
 
     copy_subtoken0colon_into(resp);
 
@@ -1087,12 +1207,12 @@ void handle_SLP_worker(uint8_t sl_num) {
         handled = true;
 
         // STEP 2A:   WE GOT SUBTOKENS
-    } else if ((sl_num >= 1) && (sl_num <= kNUM_STACKLIGHTS + 1)) {  // this is a triple check actually
+    } else  {
 
-        handled = try_handle_stackpercent_query(sl_num, resp);
+        handled = try_handle_stackbright_query(sl_num, resp);
 
         if (!handled) {
-            handled = try_handle_stackpercent_numeric(sl_num, resp);
+            handled = try_handle_stackbright_numeric(sl_num, resp);
         }
     }    // ...NOT SURE HOW TO PROCESS
     if (!handled) {
@@ -1103,30 +1223,33 @@ void handle_SLP_worker(uint8_t sl_num) {
 
 }
 
-bool try_handle_stackpercent_query(uint8_t sl_num, String & resp) {
+bool try_handle_stackbright_query(uint8_t sl_num, String & resp) {
     if (strcmp_P(subtokens[1], str_QUERY) != 0) {
         return false;
     }
     //  Got  SLP1:?    return   SLP1:99
-    resp += stack_lights[sl_num - 1].get_percentage();
+    resp += stack_lights[sl_num - 1].get_brightness();
     return true;
 }
 
-bool try_handle_stackpercent_numeric(uint8_t sl_num, String & resp) {
+bool try_handle_stackbright_numeric(uint8_t sl_num, String & resp) {
     String str_val_token = String(subtokens[1]);
     bool handled = false;
     char *__endptr;
     // strtoul handles  '0x' or decimilar if we give it base==0
-    long percentage = strtoul(str_val_token.c_str(), &__endptr, 0);
+    long inputval = strtoul(str_val_token.c_str(), &__endptr, 0);
     if (__endptr[0] == '\0') {  // strtoul sets endptr to last part of #, so /0 means we did the entire string
-        if (percentage <= 100) {
-            resp += percentage;
-            stack_lights[sl_num - 1].set_percentage(percentage);
-            handled = true;
+        if (inputval > 255) {
+            inputval = 255;
         }
+        resp += inputval;
+        stack_lights[sl_num - 1].set_brightness((uint8_t)inputval);
+        handled = true;
     }
     return handled;
 }
+
+
 
 /**
  * function: handle_SL_worker
@@ -1136,11 +1259,8 @@ bool try_handle_stackpercent_numeric(uint8_t sl_num, String & resp) {
  * Expects values to be in hexadecimal notation (e.g. "0x0AFF") or a color in all caps ("RED")
  */
 void handle_SLC_worker(uint8_t sl_num) {
-    char buff[kCOLORLENGTH];
-    char err[MAX_ERROR_STRING_LENGTH];
     bool handled = false;
     String resp("");
-    processing_is_ok = true;
 
     copy_subtoken0colon_into(resp);
 
@@ -1331,11 +1451,9 @@ bool try_handle_stacklight_colorname(uint8_t sl_num, String &resp){
 }
 
 
-
 /**
  * Stack light mode workers handlers.
  */
-
 /**
  * function:  handle_SLM_worker
  * Handle Stack Light Mode worker.    Given input "SLMx:1"  handle the mode set ("1" in this case).
@@ -1377,6 +1495,129 @@ void handle_SLM_worker(uint8_t sl_num) {
     resp_2_output_string(resp);
 }
 
+/**
+ * function: handle_SLP_worker
+ * sl_num:  which stack light are you controlling?  1, 2, or 3
+ * Handle Stack Light Percentage worker
+ * Expects values to be an int between 0 and 100 notation
+ */
+void handle_SLP_worker(uint8_t sl_num) {
+    bool handled = false;
+    String resp("");
+
+    copy_subtoken0colon_into(resp);
+
+    // STEP 2:  DO WE HAVE SUBTOKENS
+    if (resp_err_VALUE_MISSING(resp)) {
+        processing_is_ok = false;
+        handled = true;
+
+        // STEP 2A:   WE GOT SUBTOKENS
+    } else if ((sl_num >= 1) && (sl_num <= kNUM_STACKLIGHTS + 1)) {  // this is a triple check actually
+
+        handled = try_handle_stackpercent_query(sl_num, resp);
+
+        if (!handled) {
+            handled = try_handle_stackpercent_numeric(sl_num, resp);
+        }
+    }    // ...NOT SURE HOW TO PROCESS
+    if (!handled) {
+        processing_is_ok = false;
+        resp_err_VALUE_ERROR(resp);
+    }
+    resp_2_output_string(resp);
+
+}
+
+bool try_handle_stackpercent_query(uint8_t sl_num, String & resp) {
+    if (strcmp_P(subtokens[1], str_QUERY) != 0) {
+        return false;
+    }
+    //  Got  SLP1:?    return   SLP1:99
+    resp += stack_lights[sl_num - 1].get_percentage();
+    return true;
+}
+
+bool try_handle_stackpercent_numeric(uint8_t sl_num, String & resp) {
+    String str_val_token = String(subtokens[1]);
+    bool handled = false;
+    char *__endptr;
+    // strtoul handles  '0x' or decimilar if we give it base==0
+    long percentage = strtoul(str_val_token.c_str(), &__endptr, 0);
+    if (__endptr[0] == '\0') {  // strtoul sets endptr to last part of #, so /0 means we did the entire string
+        if (percentage <= 100) {
+            resp += percentage;
+            stack_lights[sl_num - 1].set_percentage(percentage);
+            handled = true;
+        }
+    }
+    return handled;
+}
+
+
+/**
+ * function: handle_SLT_worker    Stack Light cycle Timing
+ * sl_num:  which stack light are you controlling?  1, 2, or 3
+ * Handle Stack Light Brightness worker
+ * Expects values to be an int between 0 and 255 (int or hex notation)
+ */
+void handle_SLT_worker(uint8_t sl_num) {
+    bool handled = false;
+    String resp("");
+
+    copy_subtoken0colon_into(resp);
+
+    // STEP 2:  DO WE HAVE SUBTOKENS
+    if (resp_err_VALUE_MISSING(resp)) {
+        processing_is_ok = false;
+        handled = true;
+
+        // STEP 2A:   WE GOT SUBTOKENS
+    } else  {
+
+        handled = try_handle_stacktiming_query(sl_num, resp);
+
+        if (!handled) {
+            handled = try_handle_stacktiming_numeric(sl_num, resp);
+        }
+    }    // ...NOT SURE HOW TO PROCESS
+    if (!handled) {
+        processing_is_ok = false;
+        resp_err_VALUE_ERROR(resp);
+    }
+    resp_2_output_string(resp);
+}
+
+bool try_handle_stacktiming_query(uint8_t sl_num, String & resp) {
+    if (strcmp_P(subtokens[1], str_QUERY) != 0) {
+        return false;
+    }
+    //  Got  SLP1:?    return   SLP1:99
+    resp += stack_lights[sl_num - 1].get_cycle_ms();
+    return true;
+}
+
+bool try_handle_stacktiming_numeric(uint8_t sl_num, String & resp) {
+    String str_val_token = String(subtokens[1]);
+    bool handled = false;
+    char *__endptr;
+    // strtoul handles  '0x' or decimilar if we give it base==0
+    long inputval = strtoul(str_val_token.c_str(), &__endptr, 0);
+    if (__endptr[0] == '\0') {  // strtoul sets endptr to last part of #, so /0 means we did the entire string
+        if (inputval < kMIN_CYCLE_TIME) {
+            inputval = kMIN_CYCLE_TIME;
+        }
+        if (inputval > kMAX_CYCLE_TIME) {
+            inputval = kMAX_CYCLE_TIME;
+        }
+        resp += inputval;
+        stack_lights[sl_num - 1].set_cycle_ms((uint16_t)inputval);
+        handled = true;
+    }
+    return handled;
+}
+
+
 void handle_SLX_worker(uint8_t sl_num) {
     bool handled = false;
     String resp("");
@@ -1408,7 +1649,6 @@ void handle_SLX_worker(uint8_t sl_num) {
 
 bool try_handle_stacknumled_numeric(uint8_t sl_num, String & resp) {
     String str_val_token = String(subtokens[1]);
-    bool handled = false;
     uint8_t num_leds = 0;
     char *__endptr;
     // strtoul handles  '0x' or decimal if we give it base==0
@@ -1527,12 +1767,11 @@ void handle_SLINFO_worker() {
     for (uint8_t lightnum = 0; lightnum < kNUM_STACKLIGHTS; lightnum++) {
         stack_lights[lightnum].print_info();
     }
-    processing_is_ok = true;
-
     resp_2_output_string(resp);
 }
 
 
+#pragma mark I2C Commands
 /**
  * function: handle_I2A
  * appends:  the I2C Address to output display
@@ -1767,82 +2006,6 @@ void handle_I2F() {
 
 
 
-
-/**
- * function: handle_BLINK
- * appends:  the LED BLINK time to output display
- * Used to blink the Arduino LED for user identification.
- */
-void handle_BLINK() {
-    String resp("");
-
-    copy_subtoken0colon_into(resp);
-
-    if (resp_err_VALUE_MISSING(resp)) {
-        processing_is_ok = false;
-
-    } else  {
-        blink_time = atoi(subtokens[1]);
-        is_blinking = true;
-        blink_start = millis();
-        last_blink_change = blink_start;
-        resp += blink_time;
-    }
-    resp_2_output_string(resp);
-}
-
-
-/**
- * function:  handle_BEEP
- * Used to set the alarm state.  Operates Independantly of Stack Light 1, but will pulse if SL is pulsing/flashing.
- */
-void handle_BEEP() {
-    char buff[10];
-    String resp("");
-
-    copy_subtoken0colon_into(resp);
-
-    boolean append_cb = false;
-    if (resp_err_VALUE_MISSING(resp)) {
-        processing_is_ok = false;
-
-    } else if (strcmp_P(subtokens[1], str_QUERY) == 0) {
-        if (beep_enabled) {
-            strcpy_P(buff, str_ON);
-        } else {
-            strcpy_P(buff, str_OFF);
-        }
-        resp += buff;
-        append_cb = true;
-    } else if (strcmp_P(subtokens[1], str_ON) == 0) {
-        beep_enabled = true;
-        strcpy_P(buff, str_ON);
-        resp += buff;
-        append_cb = true;
-    } else if (strcmp_P(subtokens[1], str_OFF) == 0) {
-        beep_enabled = false;
-        strcpy_P(buff, str_OFF);
-        resp += buff;
-        append_cb = true;
-    } else {                              // "SLA:238"  Got some weird second token other than 1 or 0
-        processing_is_ok = false;
-        resp_err_VALUE_ERROR(resp);
-    }
-
-    if (append_cb) {
-        strcpy_P(buff, str_COLON);
-        resp += buff;
-        strcpy_P(buff, str_BIN);
-        resp += buff;
-    }
-    resp_2_output_string(resp);
-}
-
-void handle_REBOOT() {
-    // this is a hard off, jump to 0, and this works
-    asm volatile ("jmp 0");
-    // NOTE:  the wdt_disable() method just plain didn't work.
-}
 
 
 #pragma mark Setup Helpers

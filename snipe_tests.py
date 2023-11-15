@@ -511,6 +511,66 @@ class SnipeTests(unittest.TestCase):
 
     # NEW 4.0 Stack Light Commands
 
+
+    def test_SLB_good_values(self):
+        print("\n--------------> ", sys._getframe().f_code.co_name,
+              " <-------------- ")  # cool trick prints current function name
+
+        values = ['0', '50', '100', '150', '255']
+        hexvals = ['0x0', '0x32', '0x64', '0x96', '0xFF']
+        # test good values
+        for value in values:
+            cmd = f">SLB1:{value}"
+            exp = f"@SLB1:{value}"
+            self._handle_cmd_exp(cmd, exp)
+            time.sleep(.1)
+
+        # test hex values
+        for i in range(len(values)):
+            cmd = f">SLB1:{hexvals[i]}"
+            exp = f"@SLB1:{values[i]}"  # it converts to decimal for us
+            self._handle_cmd_exp(cmd, exp)
+            time.sleep(.1)
+
+        # test out of range trimming
+        cmd = f">SLB1:256"
+        exp = f"@SLB1:255"
+        self._handle_cmd_exp(cmd, exp)
+        cmd = f">SLB1:10000"
+        exp = f"@SLB1:255"
+        self._handle_cmd_exp(cmd, exp)
+
+    def test_SLB_bad_values(self):
+        print("\n--------------> ", sys._getframe().f_code.co_name,
+              " <-------------- ")  # cool trick prints current function name
+        # test misformatted as float
+        cmd = f">SLB1:50.3"
+        exp = f"!SLB1:" + VALUE_ERROR
+        self._handle_cmd_exp(cmd, exp)
+
+        # test misformatted as text
+        cmd = f">SLB1:BRIGHT"
+        exp = f"!SLB1:" + VALUE_ERROR
+        self._handle_cmd_exp(cmd, exp)
+
+    def test_SLB_query(self):
+        print("\n--------------> ", sys._getframe().f_code.co_name,
+              " <-------------- ")  # cool trick prints current function name
+        for i in range(1, 4):
+            cmd = f">SLB{i}:200"
+            exp = f"@SLB{i}:200"
+            self._handle_cmd_exp(cmd, exp)
+
+        for i in range(1, 4):
+            cmd = f">SLB{i}:?"
+            exp = f"@SLB{i}:200"
+            self._handle_cmd_exp(cmd, exp)
+
+    def test_SLB_missing_value(self):
+        # poorly formatted command testing
+        self._test_value_missing_conditions("SLB1")
+
+
     def test_SLC1_thru_SLC3_basic(self):
         print("\n--------------> ", sys._getframe().f_code.co_name,
               " <-------------- ")  # cool trick prints current function name

@@ -22,6 +22,14 @@ uint8_t SNIPE_StackLight::get_mode() {
     return mode;
 }
 
+void SNIPE_StackLight::set_brightness(uint8_t brightness) {
+    this->brightness = brightness;
+    this->strip->setBrightness(brightness);
+}
+
+uint8_t SNIPE_StackLight::get_brightness() {
+    return this->strip->getBrightness();
+}
 
 void SNIPE_StackLight::set_color(uint32_t new_color) {
     this->color = new_color;
