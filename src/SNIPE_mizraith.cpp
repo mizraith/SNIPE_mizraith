@@ -170,7 +170,7 @@ void handle_I2F();
 // SETUP HELPERS
 void serialPrintHeaderString();
 void printSerialInputInstructions();
-void printSerialDataStart();
+void printSerialSNIPE_READY();
 // EEPROM HELPERS
 void readSIDFromEEPROM();
 void writeSIDToEEPROM();
@@ -315,18 +315,16 @@ void setup() {                 // AT 9600 we don't see any missed serial chars. 
     Wire.begin();
     bool is_virgin_eeprom;
 
-
-    DEBUG_PRINT(" Hello with ending, ms: ");DEBUG_PRINTLN(kSerialWaitLimit_ms);
-
-    serialPrintHeaderString();   // print this early to send out ######HEADER######
+    #ifdef DEBUG
+        serialPrintHeaderString();   // print this early to send out ######HEADER######
+    #endif
 
     is_virgin_eeprom = isVirginEEPROM();
 
     if (is_virgin_eeprom) {
-        Serial.println(F("# __Setup: Init'ing virgin EEPROM."));
+        DEBUG_PRINTLN(F("# __Setup: Init'ing virgin EEPROM."));
         initEEPROM(1024, 0x00);
-        Serial.print("# __Setup: Will init SID to: " );
-        Serial.println(SID);
+        DEBUG_PRINT("# __Setup: Will init SID to: " );DEBUG_PRINT(SID);DEBUG_PRINTLN();
         writeSIDToEEPROM();      // write out the default SID
         //TODO:  init_default_settings
     }
@@ -379,15 +377,15 @@ void setup() {                 // AT 9600 we don't see any missed serial chars. 
 
     checkRAMandExitIfLow(0);
 
-    printSerialInputInstructions();
+    #ifdef DEBUG
+        printSerialInputInstructions();
+        handle_SLINFO_worker();
+    #endif
     // PRINT OUT STACKLIGHT INFO -- should comment out
-    handle_SLINFO_worker();
-
     stacklight_startup_sequence();
-    printSerialDataStart();
+
     SL_next_heartbeat = millis();    // Set to now
-
-
+    printSerialSNIPE_READY();
 }
 
 
@@ -711,8 +709,8 @@ void handleToken(char* ctoken) {
     }  // end subtoken split
     subtokens[i] = NULL;  // End list with NULL flag
     // Debug
-    DEBUG_PRINT(F("#subtokens0------->"));DEBUG_PRINT(subtokens[0]);DEBUG_PRINTLN();
-    DEBUG_PRINT(F("#subtokens1------->"));DEBUG_PRINT(subtokens[1]);DEBUG_PRINTLN();
+    DEBUG_PRINT(F("# subtokens0------->"));DEBUG_PRINT(subtokens[0]);DEBUG_PRINTLN();
+    DEBUG_PRINT(F("# subtokens1------->"));DEBUG_PRINT(subtokens[1]);DEBUG_PRINTLN();
 
 
     //checkRAMandExitIfLow(22);
@@ -737,7 +735,7 @@ void handleToken(char* ctoken) {
         handle_BLINK();
     } else if (strcmp_P(subtokens[0], str_BEEP) == 0) {
         handle_BEEP();
-    } else if (strcmp_P(subtokens[0], str_HELP) == 0) {
+    } else if ( (strcmp_P(subtokens[0], str_HELP) == 0) or (strcmp_P(subtokens[0], str_QUERY) == 0) ) {
         handle_HELP();
     } else if (strcmp_P(subtokens[0], str_REBOOT) == 0) {
         handle_REBOOT();
@@ -1076,11 +1074,16 @@ void handle_BEEP() {
  * Prints out all sorts of useful information.
  */
 void handle_HELP() {
-    String resp("");
 
-    // DO WORK HERE
-
-    copy_subtoken0colon_into(resp);
+    serialPrintHeaderString();
+    printSerialInputInstructions();
+    // SLINFO
+    for (uint8_t lightnum = 0; lightnum < kNUM_STACKLIGHTS; lightnum++) {
+        stack_lights[lightnum].print_info();
+    }
+    char buff[6];
+    strcpy_P(buff, str_HELP);
+    String resp("HELP");
     resp_2_output_string(resp);
 }
 
@@ -2095,7 +2098,7 @@ void printSerialInputInstructions( ) {
     Serial.println(F("#--------------------------------------------------"));
 }
 
-void printSerialDataStart() {
+void printSerialSNIPE_READY() {
     Serial.println(F("#####READY#####"));
 }
 

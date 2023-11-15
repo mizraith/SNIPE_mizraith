@@ -368,6 +368,27 @@ class SnipeTests(unittest.TestCase):
         cmd = ">DESC:?"
         exp = "@DESC:"
         self._handle_cmd_exp(cmd, exp)
+        # test without ?...new in V4
+        cmd = ">DESC"
+        exp = "@DESC"
+        self._handle_cmd_exp(cmd, exp)
+
+    def test_HELP(self):
+        print("\n--------------> ", sys._getframe().f_code.co_name,
+              " <-------------- ")  # cool trick prints current function name
+
+        cmd = ">HELP"
+        exp = "@HELP"
+        self._handle_cmd_exp(cmd, exp)
+
+        cmd = ">HELP:?"
+        exp = "@HELP"
+        self._handle_cmd_exp(cmd, exp)
+
+        cmd = ">?"
+        exp = "@HELP"
+        self._handle_cmd_exp(cmd, exp)
+
 
     def test_I2A(self):
         print("\n--------------> ", sys._getframe().f_code.co_name,

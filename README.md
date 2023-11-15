@@ -211,9 +211,11 @@ The following is a complete listing of **commands** this version of
 SNIPE supports.   Commands are shown in all caps and are currently
 case -insensitive- but this could change.
 
+*Remember, all commands preceded by command char: '>'*
+
 
 ### General Commands
-##### HELP
+##### HELP  or   ?   
 - **description:**  Printout the helpful header information.  Because this is a multiline response, all lines start with "#" except the final line, which includes "@"
 - **input argument:** None required. Will be ignored.
 - **examples:**
@@ -223,7 +225,10 @@ case -insensitive- but this could change.
     - `#...lines`
     - `#...of information`
     - `@HELP`     Final confirmation
-  - command:  `>ECHO:1`
+  - command:  `>?`
+  - response: 
+    - `same as above....`
+    -  `@HELP`
 
 ##### SID
 - **description:**     Station ID
