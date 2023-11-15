@@ -125,7 +125,12 @@ void SNIPE_StackLight::update() {
         last_color = current_color;
     }
 
-    //  Has it been a LONG time since we've updated?
+    if (brightness != last_brightness) {
+        strip_changed = true;
+        last_brightness = brightness;
+    }
+
+    //  Has it been a LONG time since we've updated?   FORCE THE UPDATE
     if ((millis() - last_updated) > 5000) {
         //Serial.print(F("Force_updating_strip "));Serial.println(id, DEC);
         strip_changed = true;

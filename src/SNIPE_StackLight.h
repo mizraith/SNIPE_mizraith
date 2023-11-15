@@ -68,6 +68,7 @@ private:
     uint8_t mode {MODE_DEFAULT};    // solid state
     bool mode_did_change {false};
     uint8_t brightness {255};
+    uint8_t last_brightness {255};
     uint32_t color {BLACK};         // our base color...what we would flash or pulse
     uint32_t current_color {BLACK}; // currently working color
     uint32_t last_color {BLACK}; // currently working color
