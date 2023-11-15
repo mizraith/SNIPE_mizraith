@@ -7,6 +7,17 @@
 
 extern void prioritize_serial(uint8_t);
 
+void SNIPE_StackLight::set_numpixels(uint8_t numpixels) {
+    if (this->numpixels != numpixels) {
+        // we need to free and re-create
+        delete (this->strip);
+        this->numpixels = numpixels;
+        this->setup_strip();
+        Serial.println("#----------new numpixel strip created created");
+    }
+}
+
+
 void SNIPE_StackLight::set_mode(uint8_t new_mode) {
     // At this point, new_mode is already vetted against the appropriate values.
     // handle mode switches.  Where we want to keep the color on even when flash/pulse has changed

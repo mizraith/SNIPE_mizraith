@@ -42,6 +42,11 @@ void initEEPROM(int numbytes, uint8_t initvalue) {
 }
 
 
+void writeSettingsToEEPROM(struct user_settings *settings) {
+    EEPROM_writeAnything((uint16_t)kSETTINGS_START_ADDRESS, *settings);
+}
+
+
 void loadSettingsFromEEPROM(user_settings * SETTINGS) {
     boolean settings_changed = false;
     uint16_t settings_addr = kSETTINGS_START_ADDRESS;
@@ -52,41 +57,49 @@ void loadSettingsFromEEPROM(user_settings * SETTINGS) {
 
     // verify SNIPE version:
     if ((SETTINGS->snipe_version < 4) || (SETTINGS->snipe_version == 255) ) {
+        DEBUG_PRINTLN(F("Resettig SNIPE_VERSION"));
         SETTINGS->snipe_version = 4;
         settings_changed = true;
     }
 
     // verify SL1, SL2, SL3
     if (SETTINGS->sl1_id != 1) {
+        DEBUG_PRINTLN(F("Resettig SL1 numleds."));
         SETTINGS->sl1_id = 1;           // required
         SETTINGS->sl1_numpixels = 11;   // default
         settings_changed = true;
     }
 
     if (SETTINGS->sl2_id != 2) {
+        DEBUG_PRINTLN(F("Resettig SL2 numleds."));
         SETTINGS->sl2_id = 2;           // required
         SETTINGS->sl2_numpixels = 12;   // default
         settings_changed = true;
     }
 
     if (SETTINGS->sl3_id != 3) {
+        DEBUG_PRINTLN(F("Resettig SL2 numleds."));
         SETTINGS->sl3_id = 3;           // required
         SETTINGS->sl3_numpixels = 13;   // default
         settings_changed = true;
     }
 
     if( settings_changed ) {
-        DEBUG_PRINTLN(F("# __Saving Changed Settings"));
+        #ifdef DEBUG
+            Serial.println(F("# __Saving Changed Settings"));
+        #endif
         EEPROM_writeAnything(settings_addr, *SETTINGS);
     }
 
-    printUserSettings(SETTINGS);
-
+    #ifdef DEBUG
+        Serial.println("# LOADED SETTINGS FROM EEPROM:");
+        printUserSettings(SETTINGS);
+    #endif
 }
 
 
 void printUserSettings(struct user_settings * SETTINGS) {
-    Serial.println(F("# __STORED SETTINGS__"));
+    Serial.println(F("# _______SETTINGS______"));
     Serial.print(F("#     Snipe_Version : "));Serial.println(SETTINGS->snipe_version, DEC);
     Serial.print(F("#     SL1 # pixels  : ")), Serial.println(SETTINGS->sl1_numpixels, DEC);
     Serial.print(F("#     SL2 # pixels  : ")), Serial.println(SETTINGS->sl2_numpixels, DEC);

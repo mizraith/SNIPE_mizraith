@@ -110,6 +110,8 @@ _Changes in 4.0:  Added Stack light commands_.
 //extern void setup();
 //extern void loop();
 // SETUP
+void loadDefaultSettings(struct user_settings *);
+// LOOP
 void blinky_worker();
 void beepy_worker();
 void analog_read_worker();
@@ -184,13 +186,14 @@ void perform_I2C_read();
 // Local RAM HELPER
 void checkRAM();
 
-#pragma mark Application Globals
+#pragma mark Application Globals & Defaults
 const DateTime COMPILED_ON = DateTime(__DATE__, __TIME__);
 #define SNIPE_VERSION 4
 const String CURRENT_VERSION = "040";
 const String DESCRIPTION = "SNIPE_for_Arduino";
-
-
+#define kDEFAULT_SL1_NUMPIXELS  16
+#define kDEFAULT_SL2_NUMPIXELS  60
+#define kDEFAULT_SL3_NUMPIXELS  1
 
 #pragma mark Pinouts
 // PIN OUTS
@@ -259,6 +262,7 @@ SNIPE_StackLight stack_lights[kNUM_STACKLIGHTS] =  {
         SNIPE_StackLight(3, SL3_PIN, 1, NEO_GRB + NEO_KHZ800),
 };
 
+
 //unsigned long SL_loop_time = 0;
 unsigned long SL_next_heartbeat = 25;        //  Timer for our next refresh
 unsigned long AIN_next_heartbeat = 25;       //  Timer for analog input reads
@@ -319,19 +323,32 @@ void setup() {                 // AT 9600 we don't see any missed serial chars. 
         serialPrintHeaderString();   // print this early to send out ######HEADER######
     #endif
 
+    auto SETTINGS = new struct user_settings;
+
     is_virgin_eeprom = isVirginEEPROM();
+    loadSettingsFromEEPROM(SETTINGS);  // handles eeprom defaults
+    if (SETTINGS->snipe_version != SNIPE_VERSION) {
+        is_virgin_eeprom = true;
+    }
+
+    loadDefaultSettings(SETTINGS);
+    Serial.println("# LIST OF DEFAULTS FOLLOWS");
+    printUserSettings(SETTINGS);
 
     if (is_virgin_eeprom) {
-        DEBUG_PRINTLN(F("# __Setup: Init'ing virgin EEPROM."));
+        DEBUG_PRINTLN(F("# Init'ing virgin EEPROM."));
         initEEPROM(1024, 0x00);
-        DEBUG_PRINT("# __Setup: Will init SID to: " );DEBUG_PRINT(SID);DEBUG_PRINTLN();
+        DEBUG_PRINT("# Will init SID to: " );DEBUG_PRINT(SID);DEBUG_PRINTLN();
         writeSIDToEEPROM();      // write out the default SID
+        writeSettingsToEEPROM(SETTINGS);
         //TODO:  init_default_settings
+
     }
     readSIDFromEEPROM();
-
-    struct user_settings * SETTINGS = new struct user_settings;
     loadSettingsFromEEPROM(SETTINGS);  // handles eeprom defaults
+
+    Serial.println("# LOADING SETTINGS");
+    printUserSettings(SETTINGS);
 
     pinMode(ANALOG_INPUT, INPUT);
     pinMode(A1, INPUT);
@@ -357,10 +374,6 @@ void setup() {                 // AT 9600 we don't see any missed serial chars. 
     digitalWrite(BEEP_PIN, LOW);
     digitalWrite(LED_PIN, LOW);
 
-//    digitalWrite(BEEP_PIN, HIGH);
-//    delay(3000);
-//    digitalWrite(BEEP_PIN, LOW);
-
     for (uint8_t lightnum=0; lightnum < kNUM_STACKLIGHTS; lightnum++) {
         stack_lights[lightnum].setup_strip();
     }
@@ -369,6 +382,11 @@ void setup() {                 // AT 9600 we don't see any missed serial chars. 
 //    Serial.println("+++++++++++++++++++++++++++++++");
 //   // stack_lights[0] = SNIPE_StackLight(1, SL1_PIN, SETTINGS->sl1_numpixels, NEO_GRB + NEO_KHZ800);
 
+    Serial.println("SETTING UP strip 1 for 4 pixels");
+    delay(3000);
+    stack_lights[0].set_numpixels(4);
+    delay(3000);
+    Serial.println("NUMPIXELS set to 4");
 
     // Developer note: This next line is key to prevent our output_string (String class)
     // from growing in size over time and fragmenting the heap.  By calling this now
@@ -420,6 +438,16 @@ void loop() {
     //delay(15);   // really slows things up, unnecessary
 }
 
+
+void loadDefaultSettings(struct user_settings * settings) {
+    settings->snipe_version = (uint8_t)SNIPE_VERSION;
+    settings->sl1_id = (uint8_t) 1;
+    settings->sl1_numpixels = (uint8_t)kDEFAULT_SL1_NUMPIXELS;
+    settings->sl2_id = (uint8_t) 2;
+    settings->sl2_numpixels = (uint8_t)kDEFAULT_SL2_NUMPIXELS;
+    settings->sl3_id = (uint8_t) 3;
+    settings->sl3_numpixels = (uint8_t)kDEFAULT_SL3_NUMPIXELS;
+}
 
 void blinky_worker() {
     if (!is_blinking) {
@@ -2040,7 +2068,7 @@ void serialPrintHeaderString() {
     Serial.println(F("# SNIPE v4 for Arduino"));
     Serial.println(F("#--------------------------------------------------"));
     Serial.println(F("# Red Byer    github.com/mizraith"));
-    Serial.println(F("# VERSION DATE: 7/2/2023"));
+    Serial.println(F("# VERSION DATE: 11/15/2023"));
     Serial.print(F("# COMPILED ON: "));
     Serial.print(COMPILED_ON.month());
     Serial.print(F("/"));

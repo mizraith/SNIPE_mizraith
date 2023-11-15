@@ -9,6 +9,8 @@
 #include <EEPROM.h>
 #include "SNIPE_DebugUtils.h"
 
+#define DEBUG
+
 // MUST come after the SID, which starts typically @0 and goes for 30 bytes...
 #define kSETTINGS_START_ADDRESS  100
 
@@ -51,6 +53,7 @@ void initEEPROM(int, uint8_t);
 
 void loadSettingsFromEEPROM(struct user_settings *);
 void printUserSettings(struct user_settings *);
+void writeSettingsToEEPROM(struct user_settings *);
 
 
 #endif //SNIPE_MIZRATIH_SNIPE_EEPROM_H

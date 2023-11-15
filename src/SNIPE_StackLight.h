@@ -28,7 +28,7 @@ public:                         // Access specifier
     const uint8_t id;
     const uint8_t lightpin {5};  // PIN to use D5 default... I think it's a uint.
     const uint8_t neopixel_type {NEO_GRB + NEO_KHZ800};     //  e.g.  NEO_GRB + NEO_KHZ800
-    const uint8_t numpixels {24};         // how many pixels in this stack light
+    uint8_t numpixels {24};         // how many pixels in this stack light
     Adafruit_NeoPixel *strip;
     char * colorname_p;   // pointer to string in progmem
     bool strip_changed {true};
@@ -36,7 +36,7 @@ public:                         // Access specifier
     SNIPE_StackLight(): id(1) {
     }
     // paramaterized constructor for direct creation
-    SNIPE_StackLight(uint8_t id, uint8_t lightpin, const uint8_t numpixels, uint8_t neopixel_mask):
+    SNIPE_StackLight(uint8_t id, uint8_t lightpin, uint8_t numpixels, uint8_t neopixel_mask):
     id(id),
     lightpin(lightpin),
     neopixel_type(neopixel_mask),
@@ -45,6 +45,7 @@ public:                         // Access specifier
         this->colorname_p = (char *) str_EMPTY;
     }
 
+    void set_numpixels(uint8_t nupixels);
     void set_mode(uint8_t new_mode);
     uint8_t get_mode();
     void set_brightness(uint8_t brightness);
@@ -62,6 +63,7 @@ public:                         // Access specifier
     void update_rainbow_color();
     void setup_strip();
     void print_info();
+
 
 private:
     // colors and percentages are private so that we can monitor and set flag on updates
