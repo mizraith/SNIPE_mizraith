@@ -351,6 +351,28 @@ _SLC commands use [D7] and [D8] and [D9] by default on a nano._
   - As text: "RED" "red"  case insensitive.  Matching one of the defined colors.
   - If not properly formatted, will return a value error.  Setting to 0x0 will turn the color "black", or off. Case insensitive.
   - If a color is defined, will append that name to the response string
+- **defined colors:**
+  - You can use any of the following (case insensitive) color names:
+    - `RED`    
+      - equiv: `0xFF0000`
+    - `ORANGE`
+      - equiv: `0xFF5500`
+    - `YELLOW`
+      - equiv: `0xFFFF00`
+    - `GREEN`
+      - equiv: `0x00FF00`
+    - `AQUA`
+      - equiv: `0x00FFFF`
+    - `BLUE`
+      - equiv: `0x0000FF`
+    - `INDIGO`
+      - equiv: `0x3300FF`
+    - `VIOLET`
+      - equiv: `0xFF00FF`
+    - `WHITE`
+      - equiv: `0xFFFFFF`
+    - `BLACK`
+      - equiv: `0x000000`
 - **examples:** 
   - command: `>SLC1:0xFF0000`
   - response:`@SLC1:0xFF0000`   The LED on STack Light 1 is now RED.
