@@ -372,7 +372,7 @@ _SLC commands use [D7] and [D8] and [D9] by default on a nano._
   - 2:  On, Pulsing.  Option subtoken for full-cycle blink rate in ms.
   - 3:  On, Flashing.  Optional subtoken for full-cycle blink rate in ms.
   - 4:  On, Rainbow.  Wash through colors over cycle_ms time.
-- **cycle rate argument:** <optional>
+- **Deprecated: cycle rate argument:** <optional> DEPRECATED -- use SLT instead -- DO NOT USE
   - in milliseconds full cycle time.
   - default: 1000
   - MIN: 100   (setting below this -> 100)
@@ -380,15 +380,15 @@ _SLC commands use [D7] and [D8] and [D9] by default on a nano._
 - **examples:**
   - command: `>SLM1:1`
   - response:`@SLM1:1`   The mode for #1 is ON, Steady State.
-  - command: `>SLM1:3:500`  The mode for #3 is now flashing every 500ms
+  - command: `>SLM1:3:500`  deprecated The mode for #3 is now flashing every 500ms
   - response: `@SLM1:3:500`  This would round up to 100ms pulse rate.
-  - command: `>SLM1:3:55`  The mode for #3 is no flashing every 100ms
+  - command: `>SLM1:3:55`  deprecated The mode for #3 is no flashing every 100ms
   - repsonse: `@SLM1:3:100`  Returns the value it rounded up to.
   - command: `>SLM1:0`
   - response: `@SLM1:0`  The light for stack light #1 is off
-  - command: `>SLM1:0:1000`   You can even set the cycle time in steady mode (to carry forward)
+  - command: `>SLM1:0:1000`   deprecated You can even set the cycle time in steady mode (to carry forward)
   - response: `@SLM1:0:1000`
-  - command:  `>SLM1:1:1000.8`  You *can* send a float, but everything after the "." is ignored.
+  - command:  `>SLM1:1:1000.8`  deprecated You *can* send a float, but everything after the "." is ignored.
   - response: `@SLM1:1:1000`
   - command:  `>SLM1:1:abcd`   Alpha's won't get parsed as values
   - response:  `@SLM1:1:VALUE_ERROR`   The mode is accepted (so "@", not "!" but VALUE_ERROR for cycle subtoken)
