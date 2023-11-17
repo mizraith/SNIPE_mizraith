@@ -4,16 +4,36 @@
 
 #include "SNIPE_StackLight.h"
 #include "SNIPE_ColorUtilities.h"
+#include "SNIPE_EEPROM.h"
 
 extern void prioritize_serial(uint8_t);
+extern bool SETTINGS_CHANGED;
+extern unsigned long SETTINGS_LAST_CHANGED;
+extern struct user_settings *SETTINGS;
+
+uint8_t SNIPE_StackLight::get_numpixels() {
+    return this->numpixels;
+}
 
 void SNIPE_StackLight::set_numpixels(uint8_t numpixels) {
     if (this->numpixels != numpixels) {
-        // we need to free and re-create
-        delete (this->strip);
+        this->strip->clear();  // clear old strip in case we go from more to less
+        prioritize_serial(this->id);
+        this->strip->show();
+        delete this->strip;
         this->numpixels = numpixels;
+        //other ways to do this, but this uses less RAM
+        if (this->id == 1) {
+            Serial.println("CHANGING SETTINGS FOR STRIP 1");
+            SETTINGS->sl1_numpixels = numpixels;
+        } else if (this->id == 2) {
+            SETTINGS->sl2_numpixels = numpixels;
+        } else if (this->id == 3) {
+            SETTINGS->sl3_numpixels = numpixels;
+        }
         this->setup_strip();
-        Serial.println("#----------new numpixel strip created created");
+        SETTINGS_CHANGED = true;
+        SETTINGS_LAST_CHANGED = millis();
     }
 }
 
@@ -234,11 +254,11 @@ void SNIPE_StackLight::update_rainbow_color() {
 
 
 void SNIPE_StackLight::setup_strip() {
-    strip = new Adafruit_NeoPixel(numpixels, lightpin, neopixel_type);
+    this->strip = new Adafruit_NeoPixel(numpixels, lightpin, neopixel_type);
     //Adafruit_NeoPixel strip(numpixels, lightpin, neopixel_type);
-    strip->begin();
-    strip->clear();
-    strip->setBrightness(255);
+    this->strip->begin();
+    this->strip->clear();
+    this->strip->setBrightness(255);
     prioritize_serial(id);  // ALWAYS CALL BEFORE CALLING SHOW...MAKE SURE WE GET OUR MESSAGE FIRST
     strip->show();
 }

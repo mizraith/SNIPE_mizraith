@@ -4,7 +4,7 @@
 
 #include "SNIPE_EEPROM.h"
 #include <Arduino.h>
-
+#include "SNIPE_DebugUtils.h"
 
 #pragma mark EEPROM helpers
 /***************************************************
@@ -25,11 +25,11 @@ uint8_t isVirginEEPROM() {
     for( int i=0; i < 10; i++) {
         val = EEPROM.read(i);
         if (val != 0xFF) {
-            DEBUG_PRINTLN(F(" NOT a virgin EEPROM"));
+            DEBUG_PRINTLN(F("# NOT a virgin EEPROM"));
             return 0;
         }
     }
-    DEBUG_PRINTLN(F(" IS a virgin EEPROM"));
+    DEBUG_PRINTLN(F("# IS a virgin EEPROM"));
     return 1;
 }
 
@@ -57,42 +57,40 @@ void loadSettingsFromEEPROM(user_settings * SETTINGS) {
 
     // verify SNIPE version:
     if ((SETTINGS->snipe_version < 4) || (SETTINGS->snipe_version == 255) ) {
-        DEBUG_PRINTLN(F("Resettig SNIPE_VERSION"));
+        DEBUG_PRINTLN(F("# Resetting SNIPE_VERSION"));
         SETTINGS->snipe_version = 4;
         settings_changed = true;
     }
 
     // verify SL1, SL2, SL3
     if (SETTINGS->sl1_id != 1) {
-        DEBUG_PRINTLN(F("Resettig SL1 numleds."));
+        DEBUG_PRINTLN(F("# Resetting SL1 numleds."));
         SETTINGS->sl1_id = 1;           // required
-        SETTINGS->sl1_numpixels = 11;   // default
+        SETTINGS->sl1_numpixels = 16;   // default
         settings_changed = true;
     }
 
     if (SETTINGS->sl2_id != 2) {
-        DEBUG_PRINTLN(F("Resettig SL2 numleds."));
+        DEBUG_PRINTLN(F("# Resetting SL2 numleds."));
         SETTINGS->sl2_id = 2;           // required
-        SETTINGS->sl2_numpixels = 12;   // default
+        SETTINGS->sl2_numpixels = 30;   // default
         settings_changed = true;
     }
 
     if (SETTINGS->sl3_id != 3) {
-        DEBUG_PRINTLN(F("Resettig SL2 numleds."));
+        DEBUG_PRINTLN(F("# Resetting SL2 numleds."));
         SETTINGS->sl3_id = 3;           // required
-        SETTINGS->sl3_numpixels = 13;   // default
+        SETTINGS->sl3_numpixels = 1;   // default
         settings_changed = true;
     }
 
     if( settings_changed ) {
-        #ifdef DEBUG
-            Serial.println(F("# __Saving Changed Settings"));
-        #endif
+        DEBUG_PRINTLN(F("# Saving Changed Settings"));
         EEPROM_writeAnything(settings_addr, *SETTINGS);
     }
 
+    DEBUG_PRINTLN("# LOADED SETTINGS FROM EEPROM:");
     #ifdef DEBUG
-        Serial.println("# LOADED SETTINGS FROM EEPROM:");
         printUserSettings(SETTINGS);
     #endif
 }

@@ -45,7 +45,8 @@ public:                         // Access specifier
         this->colorname_p = (char *) str_EMPTY;
     }
 
-    void set_numpixels(uint8_t nupixels);
+    uint8_t get_numpixels();
+    void set_numpixels(uint8_t);
     void set_mode(uint8_t new_mode);
     uint8_t get_mode();
     void set_brightness(uint8_t brightness);

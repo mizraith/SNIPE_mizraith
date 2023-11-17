@@ -114,6 +114,7 @@ void loadDefaultSettings(struct user_settings *);
 // LOOP
 void blinky_worker();
 void beepy_worker();
+void settings_change_worker();
 void analog_read_worker();
 // SERIAL INTERRUPT FUNCTION
 void serialEvent();
@@ -148,6 +149,8 @@ bool try_handle_stacklight_query(uint8_t, String &);
 bool try_handle_stacklight_numeric(uint8_t, String &);
 bool try_handle_stacklight_colorname(uint8_t, String &);
 void handle_SLM_worker(uint8_t);
+bool try_handle_stackmode_numeric(uint8_t, String &);
+bool try_handle_stackmode_query(uint8_t, String &);
 void handle_SLP_worker(uint8_t);
 bool try_handle_stackpercent_query(uint8_t, String &);
 bool try_handle_stackpercent_numeric(uint8_t, String &);
@@ -155,9 +158,7 @@ void handle_SLT_worker(uint8_t);
 bool try_handle_stacktiming_query(uint8_t, String &);
 bool try_handle_stacktiming_numeric(uint8_t, String &);
 void handle_SLX_worker(uint8_t);
-bool try_handle_stackmode_query(uint8_t, String &);
 bool try_handle_stacknumled_query(uint8_t, String &);
-bool try_handle_stackmode_numeric(uint8_t, String &);
 bool try_handle_stacknumled_numeric(uint8_t, String &);
 void handle_SLINFO_worker();
 // I2C
@@ -219,6 +220,13 @@ const uint8_t kSerialWaitLimit_ms = 5;  //  roughly your 64char input time.
 #define kMIN_CYCLE_TIME 100
 #define kMAX_CYCLE_TIME 10000
 
+#pragma mark Settings Globals
+struct user_settings * SETTINGS;   // global pointer to our settings for later compare
+bool SETTINGS_CHANGED = false;
+unsigned long SETTINGS_LAST_CHANGED;
+// how long after a settings change do we accept and write to EEPROM.
+#define kSETTINGS_CHANGE_TIME 10000
+
 
 #pragma mark String Lengths
 // STRING LENGTH & EEPROM LOCATION CONSTANTS
@@ -227,7 +235,6 @@ const int MAX_OUTPUT_LENGTH = 96;
 const int SID_MAX_LENGTH    = 30;   //24 + null
 const int SID_EEPROM_START_ADDRESS = 0;
 const int MAX_NUMBER_TOKENS = 10;
-
 
 
 #pragma mark Variable Strings
@@ -252,7 +259,6 @@ String output_string = "";                 // might as well use the helper libra
 //Adafruit_NeoPixel SL2_strip = Adafruit_NeoPixel(8, SL2_PIN, NEO_GRB + NEO_KHZ800);
 //Adafruit_NeoPixel SL3_strip = Adafruit_NeoPixel(8, SL3_PIN, NEO_GRB + NEO_KHZ800);
 //# endif //USE_NEOPIXEL_LEDS
-
 
 // STACK LIGHT CONTROLLER supporting variables
 #define kNUM_STACKLIGHTS 3
@@ -323,32 +329,34 @@ void setup() {                 // AT 9600 we don't see any missed serial chars. 
         serialPrintHeaderString();   // print this early to send out ######HEADER######
     #endif
 
-    auto SETTINGS = new struct user_settings;
+    SETTINGS = new struct user_settings;
+    SETTINGS_LAST_CHANGED = millis();
 
     is_virgin_eeprom = isVirginEEPROM();
     loadSettingsFromEEPROM(SETTINGS);  // handles eeprom defaults
     if (SETTINGS->snipe_version != SNIPE_VERSION) {
-        is_virgin_eeprom = true;
+        is_virgin_eeprom = true;        // re-init for change in snipe version
     }
 
-    loadDefaultSettings(SETTINGS);
-    Serial.println("# LIST OF DEFAULTS FOLLOWS");
-    printUserSettings(SETTINGS);
 
     if (is_virgin_eeprom) {
         DEBUG_PRINTLN(F("# Init'ing virgin EEPROM."));
+        loadDefaultSettings(SETTINGS);
+        #ifdef DEBUG
+            printUserSettings(SETTINGS);
+        #endif
+        DEBUG_PRINTLN("# LIST OF DEFAULTS FOLLOWS");
         initEEPROM(1024, 0x00);
         DEBUG_PRINT("# Will init SID to: " );DEBUG_PRINT(SID);DEBUG_PRINTLN();
         writeSIDToEEPROM();      // write out the default SID
         writeSettingsToEEPROM(SETTINGS);
-        //TODO:  init_default_settings
-
     }
     readSIDFromEEPROM();
-    loadSettingsFromEEPROM(SETTINGS);  // handles eeprom defaults
 
-    Serial.println("# LOADING SETTINGS");
-    printUserSettings(SETTINGS);
+    DEBUG_PRINTLN("# FINISHED LOADING SETTINGS");
+    #ifdef DEBUG
+        printUserSettings(SETTINGS);
+    #endif
 
     pinMode(ANALOG_INPUT, INPUT);
     pinMode(A1, INPUT);
@@ -374,19 +382,22 @@ void setup() {                 // AT 9600 we don't see any missed serial chars. 
     digitalWrite(BEEP_PIN, LOW);
     digitalWrite(LED_PIN, LOW);
 
+    // Set our strips to be our setting value.
+    DEBUG_PRINTLN(F("LOADING NUMPIXELS INTO STRIPS"));
+    stack_lights[0].set_numpixels(SETTINGS->sl1_numpixels);
+    stack_lights[1].set_numpixels(SETTINGS->sl2_numpixels);
+    stack_lights[2].set_numpixels(SETTINGS->sl3_numpixels);
+
+    //  THIS FIRST TIME THROUGH, WE NEED TO INITIALIZE THE STRIPS
     for (uint8_t lightnum=0; lightnum < kNUM_STACKLIGHTS; lightnum++) {
         stack_lights[lightnum].setup_strip();
     }
-//    Serial.println("+++++++++++++++++++++++++++++");
-//    Serial.print("WILL LOAD NUMPIXELS into StackLight: ");Serial.println(SETTINGS->sl1_numpixels) ;
-//    Serial.println("+++++++++++++++++++++++++++++++");
-//   // stack_lights[0] = SNIPE_StackLight(1, SL1_PIN, SETTINGS->sl1_numpixels, NEO_GRB + NEO_KHZ800);
 
-    Serial.println("SETTING UP strip 1 for 4 pixels");
-    delay(3000);
-    stack_lights[0].set_numpixels(4);
-    delay(3000);
-    Serial.println("NUMPIXELS set to 4");
+//    Serial.println("SETTING UP strip 1 for 4 pixels");
+//    delay(3000);
+//    stack_lights[0].set_numpixels(4);
+//    delay(3000);
+//    Serial.println("NUMPIXELS set to 4");
 
     // Developer note: This next line is key to prevent our output_string (String class)
     // from growing in size over time and fragmenting the heap.  By calling this now
@@ -435,6 +446,8 @@ void loop() {
         // analogRead is slow...only do it every so often
         analog_read_worker();
     }
+
+    settings_change_worker();
     //delay(15);   // really slows things up, unnecessary
 }
 
@@ -507,6 +520,16 @@ void beepy_worker() {
     }
 }
 
+
+void settings_change_worker() {
+    if (SETTINGS_CHANGED and (millis() - SETTINGS_LAST_CHANGED > kSETTINGS_CHANGE_TIME)) {
+        Serial.println("---save out updated settings ---");
+        printUserSettings(SETTINGS);
+        writeSettingsToEEPROM(SETTINGS);
+        SETTINGS_CHANGED = false;
+    }
+
+}
 
 
 void analog_read_worker() {
@@ -1266,7 +1289,6 @@ void handle_SLB_worker(uint8_t sl_num) {
         resp_err_VALUE_ERROR(resp);
     }
     resp_2_output_string(resp);
-
 }
 
 bool try_handle_stackbright_query(uint8_t sl_num, String & resp) {
@@ -1541,6 +1563,75 @@ void handle_SLM_worker(uint8_t sl_num) {
     resp_2_output_string(resp);
 }
 
+
+bool try_handle_stackmode_query(uint8_t sl_num, String & resp) {
+    if (strcmp_P(subtokens[1], str_QUERY) != 0) {
+        return false;
+    }
+    char buff[8];
+    //  Got  SLP1:?    return   SLP1:99
+    resp += stack_lights[sl_num - 1].get_mode();
+
+    if ((stack_lights[sl_num - 1].get_mode() == MODE_FLASH) or
+        (stack_lights[sl_num - 1].get_mode() == MODE_PULSE) or
+        (stack_lights[sl_num - 1].get_mode() == MODE_RAINBOW) ) {
+        strcpy_P(buff, str_COLON);
+        resp += buff;
+        resp += stack_lights[sl_num - 1].get_cycle_ms();
+    }
+    return true;
+}
+
+
+bool try_handle_stackmode_numeric(uint8_t sl_num, String &resp) {
+    char buff[8];
+    bool handled = false;
+    // CHECK MODE FIRST:
+    char err[MAX_ERROR_STRING_LENGTH];
+    int mode = atoi(subtokens[1]);
+    // AT THIS POINT we should have a value to set, e.g. "SLM1:2" gotta convert 2nd token to a number
+    // NOTE that atoi returns 0 for just about any non-number
+    switch (mode) {
+        case MODE_OFF:
+        case MODE_STEADY:
+        case MODE_FLASH:
+        case MODE_PULSE:
+        case MODE_RAINBOW:
+            resp += mode;    // append our result: "SLM1:3" -> "SLM1:3" but "SLM1:FUN" -> "SLM1:0" due to atoi
+            //set # to mode, return string
+            // We are assuming sl_num has been doublechecked at this point...or bad bad array access
+            stack_lights[sl_num - 1].set_mode(mode);  // sets a flag...
+            handled = true;
+            break;
+        default:   // NOTE ONE OF OUR DEFINED MODES
+            handled = false;
+            break;
+    }
+    // IF we handled the mode, check for cycle time
+    if ((handled) and (subtokens[2] != NULL) and (strlen(subtokens[2]) != 0)) {
+        strcpy_P(buff, str_COLON);
+        resp += buff;
+        int cycle = atoi(subtokens[2]);
+        // The following must fully verify cycle
+        if (cycle == 0) {
+            // do nothing, atoi returns 0 if it fails or has characters
+            strcpy_P(err, str_VALUE_ERROR);
+            resp += err;
+        } else if (cycle < kMIN_CYCLE_TIME) {
+            cycle = kMIN_CYCLE_TIME;
+        } else if (cycle > kMAX_CYCLE_TIME) {
+            cycle = kMAX_CYCLE_TIME;
+        }
+        // NOW SET IT
+        if (cycle != 0) {
+            resp += cycle;
+            stack_lights[sl_num - 1].set_cycle_ms(cycle);
+        }
+    }
+    return true;
+}
+
+
 /**
  * function: handle_SLP_worker
  * sl_num:  which stack light are you controlling?  1, 2, or 3
@@ -1676,7 +1767,7 @@ void handle_SLX_worker(uint8_t sl_num) {
         handled = true;
 
         // WE GOT SUBTOKENS
-    } else if ((sl_num >= 1) && (sl_num <= kNUM_STACKLIGHTS + 1)) {  // this is a triple check actually
+    } else {
 
         handled = try_handle_stacknumled_query(sl_num, resp);
 
@@ -1693,113 +1784,39 @@ void handle_SLX_worker(uint8_t sl_num) {
     resp_2_output_string(resp);
 }
 
+bool try_handle_stacknumled_query(uint8_t sl_num, String & resp) {
+    if (strcmp_P(subtokens[1], str_QUERY) != 0) {
+        return false;
+    }
+    //  Got  SLX1:?    return   SLX1:99
+    resp += stack_lights[sl_num - 1].get_numpixels();
+    return true;
+}
+
 bool try_handle_stacknumled_numeric(uint8_t sl_num, String & resp) {
     String str_val_token = String(subtokens[1]);
-    uint8_t num_leds = 0;
+    bool handled = false;
     char *__endptr;
     // strtoul handles  '0x' or decimal if we give it base==0
     long numgiven = strtoul(str_val_token.c_str(), &__endptr, 0);
     // Use following block if you want to check that entire string is converted to a number.
     // For now we are happy with handling whatever number we can pull out. Ignore the rest.
-//    if (__endptr[0] == '\0') {  // strtoul sets endptr to last part of #, so /0 means we did the entire string
-//        handled = true;        // full string handled, no extra text.
-//        Serial.println("HANDLED THE ENTIRE NUMBER WE DID!");
-    if (__endptr[0] != '\0') {
-        // We did NOT handle the entire string.
-        //Serial.println("Did not handle entire.");
-        if (numgiven == 0) {
-            // And we got an error back in our conversion...did not start with a number
-            //Serial.println("returning FALSE");
-            return false;   // < could not handle...get out of here
+    if (__endptr[0] == '\0') {  // strtoul sets endptr to last part of #, so /0 means we did the entire string
+        if (numgiven > 255) {
+            numgiven = 255;
         }
+        resp += numgiven;
+        stack_lights[sl_num - 1].set_numpixels((uint8_t) numgiven);
+        handled = true;
+        // TODO:  SET time for updating EEPROM
     }
-    if (numgiven > 255) {
-        num_leds = 255;
-    }
-    //TODO:   1 -- update our strip  -- can we do this on the fly with new data?
-    //   TODO:   FREE, the re-assign new() the strip to take the change immediately
-    //TODO:   2 -- write to EEPROM
-    //TODO:   3 -- ASK FOR REBOOT??
-
-    return true;
-    }
-
-
-bool try_handle_stackmode_query(uint8_t sl_num, String & resp) {
-    if (strcmp_P(subtokens[1], str_QUERY) != 0) {
-        return false;
-    }
-    char buff[8];
-    //  Got  SLP1:?    return   SLP1:99
-    resp += stack_lights[sl_num - 1].get_mode();
-
-    if ((stack_lights[sl_num - 1].get_mode() == MODE_FLASH) or
-        (stack_lights[sl_num - 1].get_mode() == MODE_PULSE) or
-        (stack_lights[sl_num - 1].get_mode() == MODE_RAINBOW) ) {
-        strcpy_P(buff, str_COLON);
-        resp += buff;
-        resp += stack_lights[sl_num - 1].get_cycle_ms();
-    }
-    return true;
-}
-
-bool try_handle_stacknumled_query(uint8_t sl_num, String & resp) {
-    if (strcmp_P(subtokens[1], str_QUERY) != 0) {
-        return false;
-    }
-    //  Got  SLP1:?    return   SLP1:99
-    resp += stack_lights[sl_num - 1].numpixels;
-    return true;
+    return handled;
 }
 
 
-bool try_handle_stackmode_numeric(uint8_t sl_num, String &resp) {
-    char buff[8];
-    bool handled = false;
-    // CHECK MODE FIRST:
-    char err[MAX_ERROR_STRING_LENGTH];
-    int mode = atoi(subtokens[1]);
-    // AT THIS POINT we should have a value to set, e.g. "SLM1:2" gotta convert 2nd token to a number
-    // NOTE that atoi returns 0 for just about any non-number
-    switch (mode) {
-        case MODE_OFF:
-        case MODE_STEADY:
-        case MODE_FLASH:
-        case MODE_PULSE:
-        case MODE_RAINBOW:
-            resp += mode;    // append our result: "SLM1:3" -> "SLM1:3" but "SLM1:FUN" -> "SLM1:0" due to atoi
-            //set # to mode, return string
-            // We are assuming sl_num has been doublechecked at this point...or bad bad array access
-            stack_lights[sl_num - 1].set_mode(mode);  // sets a flag...
-            handled = true;
-            break;
-        default:   // NOTE ONE OF OUR DEFINED MODES
-            handled = false;
-            break;
-    }
-    // IF we handled the mode, check for cycle time
-    if ((handled) and (subtokens[2] != NULL) and (strlen(subtokens[2]) != 0)) {
-        strcpy_P(buff, str_COLON);
-        resp += buff;
-        int cycle = atoi(subtokens[2]);
-        // The following must fully verify cycle
-        if (cycle == 0) {
-            // do nothing, atoi returns 0 if it fails or has characters
-            strcpy_P(err, str_VALUE_ERROR);
-            resp += err;
-        } else if (cycle < kMIN_CYCLE_TIME) {
-            cycle = kMIN_CYCLE_TIME;
-        } else if (cycle > kMAX_CYCLE_TIME) {
-            cycle = kMAX_CYCLE_TIME;
-        }
-        // NOW SET IT
-        if (cycle != 0) {
-            resp += cycle;
-            stack_lights[sl_num - 1].set_cycle_ms(cycle);
-        }
-    }
-    return true;
-}
+
+
+
 
 /**
  * This is a debugging method that dumps all the stack light info over the serial port.
