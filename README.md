@@ -163,6 +163,8 @@ Commands are typically processed in the order they are received.
 However, with I2C commands there is some token processing
 precedence (see Commmands). 
 
+**You can have up to 5 tokens, but must keep command line length < 64 chars regardless.**
+
 _Note that there is no requirement regarding token order._
 
 ### Tokens:
@@ -232,7 +234,7 @@ case -insensitive- but this could change.
 
 ##### SID
 - **description:**     Station ID
-- **input argument:**  ?   or  stationID string, no spaces allowed
+- **input argument:**  ?   or  stationID string, no spaces allowed.  MAX LENGTH 24 chars
 - **value range:**     string value set by user, can NOT contain spaces
 - **examples:**
   - command:  `>SID:?`
@@ -458,7 +460,7 @@ _SLC commands use [D7] and [D8] and [D9] by default on a nano._
 #### SLX1, SLX2, SLX3
 - **description:** Stack Light Num Pixels   Set how many pixels are on a stacklight.  REQUIRES A REBOOT TO TAKE
 - **input argument:** ? or uint8_t number of pixels.
-- **input values:** 1:255
+- **input values:** 1:255      Will trim to min or max.
     - As hex string: '0xFF'  Leading 0x required.
     - As decimal:  '255'    No leading zero.  Max value <= 0xFFFFFF
     - If not properly formatted, will return a value error. Case insensitive.
@@ -471,6 +473,10 @@ _SLC commands use [D7] and [D8] and [D9] by default on a nano._
   - response: `@SLX2:10`   Will return value stored in EEPROM
   - command: `>SLX1:20.3`   Floats are NOT accepted
   - response: `SLX1:VALUE_ERROR`
+  - command: `>SLX1:0`      Will trim it back up to 1
+  - response: `@SLX1:1`
+  - command: `>SLX1:256`   Will trim back down to 255
+  - response  `@SLX1:255`
 
 ### I2C Commands
 _I2C commands use SCL and SDA pins.  This is [A4] and [A5] on a nano._

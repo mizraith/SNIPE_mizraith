@@ -17,7 +17,7 @@ void printString_P(const char *);
 int freeRam();
 void checkRAMandExitIfLow(uint8_t);
 void gotoEndLoop();
-//void checkRAM();
+//void handleRAM();
 
 # pragma mark I2C / Wire Helpers
 //static inline void wiresend(uint8_t);

@@ -32,7 +32,7 @@ READY_STRING = "#####READY#####"    # NEW IN V4
 VALUE_MISSING = "VALUE_MISSING"
 VALUE_ERROR = "VALUE_ERROR"
 Q_REQUIRED = "?_MISSING"
-ERR_SID_TOO_LONG = "SID_>_30"
+ERR_SID_TOO_LONG = "SID_>_24"
 OUT_OF_RANGE = "OUT_OF_RANGE"
 BYTE_SETTING_ERR = "BYTE_SETTING_ERR"
 NONE_FOUND = "NONE_FOUND"
@@ -372,6 +372,18 @@ class SnipeTests(unittest.TestCase):
         cmd = ">DESC"
         exp = "@DESC"
         self._handle_cmd_exp(cmd, exp)
+
+    def test_RAM(self):
+        print("\n--------------> ", sys._getframe().f_code.co_name,
+              " <-------------- ")  # cool trick prints current function name
+        cmd = ">RAM:?"
+        exp = "@RAM:"
+        self._handle_cmd_exp(cmd, exp)
+        # test without ?...new in V4
+        cmd = ">RAM"
+        exp = "@RAM"
+        self._handle_cmd_exp(cmd, exp)
+
 
     def test_HELP(self):
         print("\n--------------> ", sys._getframe().f_code.co_name,
@@ -830,13 +842,73 @@ class SnipeTests(unittest.TestCase):
         self._test_value_missing_conditions("SLT1")
 
 
+# We are going to test SLX but not let it linger long enough to avoid wearing out the EEPROM.
+# Tests with SLX and EEPROM write are in a different file.
+# NOTE:  Python tests go alphabetically, so we prepend with zzz ot put these last
 
+    def test_zzz1_SLX_good_values(self):
+        print("\n--------------> ", sys._getframe().f_code.co_name,
+              " <-------------- ")  # cool trick prints current function name
+        minval = 100
+        maxval = 10000
+        for light in range(1, 4):
+            for numleds in range(1, 255, 50):
+                cmd = f">SLX{light}:{numleds}"
+                exp = f"@SLX{light}:{numleds}"
+                self._handle_cmd_exp(cmd, exp)
 
+        # test out of range trimming
+        cmd = f">SLX1:0"
+        exp = f"@SLX1:1"
+        self._handle_cmd_exp(cmd, exp)
+        cmd = f">SLX:256"
+        exp = f"@SLX1:255"
+        self._handle_cmd_exp(cmd, exp)
 
+    def test_zzz2_SLX_bad_values(self):
+        print("\n--------------> ", sys._getframe().f_code.co_name,
+              " <-------------- ")  # cool trick prints current function name
+        # test misformatted as float
+        cmd = f">SLX1:50.3"
+        exp = f"!SLX1:" + VALUE_ERROR
+        self._handle_cmd_exp(cmd, exp)
 
-# SLC1, SLC2, SLC3
-# SLM1, SLM2, SLM3
-# SLA
+        # test misformatted as text
+        cmd = f">SLX1:NUMLEDS"
+        exp = f"!SLX1:" + VALUE_ERROR
+        self._handle_cmd_exp(cmd, exp)
+
+    def test_zzz3_SLX_query(self):
+        print("\n--------------> ", sys._getframe().f_code.co_name,
+              " <-------------- ")  # cool trick prints current function name
+        for i in range(1, 4):
+            cmd = f">SLX{i}:16"
+            exp = f"@SLX{i}:16"
+            self._handle_cmd_exp(cmd, exp)
+
+        for i in range(1, 4):
+            cmd = f">SLX{i}:?"
+            exp = f"@SLX{i}:16"
+            self._handle_cmd_exp(cmd, exp)
+
+    def test_zzz4_SLX_missing_value(self):
+        print("\n--------------> ", sys._getframe().f_code.co_name,
+              " <-------------- ")  # cool trick prints current function name
+        # poorly formatted command testing
+        self._test_value_missing_conditions("SLX1")
+
+    def test_zzz99_REBOOT(self):
+        """The last thing we do...reboot."""
+        print("\n--------------> ", sys._getframe().f_code.co_name,
+              " <-------------- ")  # cool trick prints current function name
+        # poorly formatted command testing
+        cmd = f">REBOOT"
+        print("-------------------------------- REBOOTING NOW ---------------------------------")
+        print("cmd:\t%s" % cmd)
+        tx = cmd + "\r\n"
+        time.sleep(SnipeTests.CMD_DELAY)     # time between commands
+        SnipeTests.ser.write(tx.encode())
+
 
 
 if __name__ == '__main__':

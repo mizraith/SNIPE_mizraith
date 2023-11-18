@@ -103,6 +103,7 @@ void printUserSettings(struct user_settings * SETTINGS) {
     Serial.print(F("#     SL2 # pixels  : ")), Serial.println(SETTINGS->sl2_numpixels, DEC);
     Serial.print(F("#     SL3 # pixels  : ")), Serial.println(SETTINGS->sl3_numpixels, DEC);
     Serial.println(F("# _____________________"));
+    Serial.println(F("#"));
 }
 
 

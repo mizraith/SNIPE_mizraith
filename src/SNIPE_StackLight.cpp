@@ -15,7 +15,25 @@ uint8_t SNIPE_StackLight::get_numpixels() {
     return this->numpixels;
 }
 
+/**
+ * For first time setup the strip doesn't exist, so we cannot make any strip calls.
+ * Additionally, we will NOT set the SETTINGS_CHANGED flag since we assume
+ * this is coming directly from settings.
+ * @param numpixels
+ * @param firsttime
+ */
+void SNIPE_StackLight::set_numpixels(uint8_t numpixels, bool firsttime) {
+    if (firsttime) {
+        this->numpixels = numpixels;
+        this->setup_strip();
+    } else {
+        this->set_numpixels(numpixels);
+    }
+
+}
+
 void SNIPE_StackLight::set_numpixels(uint8_t numpixels) {
+    //TODO:  do we need to add a "first time" flag and not call certain things like clear()
     if (this->numpixels != numpixels) {
         this->strip->clear();  // clear old strip in case we go from more to less
         prioritize_serial(this->id);
@@ -24,7 +42,6 @@ void SNIPE_StackLight::set_numpixels(uint8_t numpixels) {
         this->numpixels = numpixels;
         //other ways to do this, but this uses less RAM
         if (this->id == 1) {
-            Serial.println("CHANGING SETTINGS FOR STRIP 1");
             SETTINGS->sl1_numpixels = numpixels;
         } else if (this->id == 2) {
             SETTINGS->sl2_numpixels = numpixels;

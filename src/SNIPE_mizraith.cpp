@@ -136,6 +136,7 @@ void handle_BLINK();
 void handle_BEEP();
 void handle_HELP();
 void handle_REBOOT();
+void handleRAM();
 // Pins
 void handle_A_worker(uint8_t);
 void handle_D_worker(uint8_t);
@@ -184,14 +185,13 @@ void printBytesAsDec(uint8_t*, uint8_t);
 void perform_I2C_write();
 int perform_I2C_write_error();
 void perform_I2C_read();
-// Local RAM HELPER
-void checkRAM();
+
 
 #pragma mark Application Globals & Defaults
 const DateTime COMPILED_ON = DateTime(__DATE__, __TIME__);
 #define SNIPE_VERSION 4
 const String CURRENT_VERSION = "040";
-const String DESCRIPTION = "SNIPE_for_Arduino";
+const String DESCRIPTION = "SNIPE_v4_r0";
 #define kDEFAULT_SL1_NUMPIXELS  16
 #define kDEFAULT_SL2_NUMPIXELS  60
 #define kDEFAULT_SL3_NUMPIXELS  1
@@ -214,8 +214,8 @@ const String DESCRIPTION = "SNIPE_for_Arduino";
 // YOUR serialEvent wait limit below is highly dependent on baud rate.  Too short and neopixel.show() could clobber
 // serial input.  Too long and you become non-responsive.  Seems correct to roughly your 64char input time.
 // At 57600, 5760 chars/sec.  1 char every 0.173ms.   64chars input = 11ms. But string copies
-// At 115200, 11520 chars/sec, 1 car every 0.0868ms   64chars input = 5.5ms
-const uint8_t kSerialWaitLimit_ms = 5;  //  roughly your 64char input time.
+// At 115200, 11520 chars/sec, 1 car every 0.0868ms   64chars input = 5.5ms  30chars (max sid length) in
+const uint8_t kSerialWaitLimit_ms = 10;  //  roughly your 64char input time.
 // min and max full cycle time for our flash or pulse modes.
 #define kMIN_CYCLE_TIME 100
 #define kMAX_CYCLE_TIME 10000
@@ -232,15 +232,20 @@ unsigned long SETTINGS_LAST_CHANGED;
 // STRING LENGTH & EEPROM LOCATION CONSTANTS
 const int MAX_INPUT_LENGTH  = 64;
 const int MAX_OUTPUT_LENGTH = 96;
-const int SID_MAX_LENGTH    = 30;   //24 + null
+const int SID_MAX_LENGTH    = 25;   //24 + null
 const int SID_EEPROM_START_ADDRESS = 0;
-const int MAX_NUMBER_TOKENS = 10;
+const int MAX_NUMBER_TOKENS = 5;
 
 
 #pragma mark Variable Strings
 // VARIABLE STRINGS
 char SID[SID_MAX_LENGTH] = "USE_>SID:xxx_TO_SET";
-char input_buffer[MAX_INPUT_LENGTH];       // buffer to accumulate our input string into
+volatile char c;     // for use in serial event
+String serial_string = String("");
+volatile uint8_t cindex = 0;
+//const char NONE = -1;
+volatile bool accumulating_serial_string = false;
+//char input_buffer[MAX_INPUT_LENGTH];       // buffer to accumulate our input string into
 //char input_string[MAX_INPUT_LENGTH];       // copy of input_buffer for processing
 //char output_string[MAX_OUTPUT_LENGTH];   // buffer for building our output string
 char * subtokens[MAX_NUMBER_TOKENS];       // Yes, an array of char* pointers.  We should never have 10 subtokens!
@@ -263,9 +268,9 @@ String output_string = "";                 // might as well use the helper libra
 // STACK LIGHT CONTROLLER supporting variables
 #define kNUM_STACKLIGHTS 3
 SNIPE_StackLight stack_lights[kNUM_STACKLIGHTS] =  {
-        SNIPE_StackLight(1, SL1_PIN, 16, NEO_GRB + NEO_KHZ800),
-        SNIPE_StackLight(2, SL2_PIN, 60, NEO_GRB + NEO_KHZ800),
-        SNIPE_StackLight(3, SL3_PIN, 1, NEO_GRB + NEO_KHZ800),
+        SNIPE_StackLight(1, SL1_PIN, NEO_GRB + NEO_KHZ800),
+        SNIPE_StackLight(2, SL2_PIN, NEO_GRB + NEO_KHZ800),
+        SNIPE_StackLight(3, SL3_PIN, NEO_GRB + NEO_KHZ800),
 };
 
 
@@ -320,44 +325,6 @@ boolean beep_enabled = false;
  ***************************************************/
 
 void setup() {                 // AT 9600 we don't see any missed serial chars.  Otherwise we'll drop 1 in 25 messages.
-    Serial.begin(kBAUD_RATE);
-    Serial.setTimeout(kSERIAL_TIMEOUT_ms);
-    Wire.begin();
-    bool is_virgin_eeprom;
-
-    #ifdef DEBUG
-        serialPrintHeaderString();   // print this early to send out ######HEADER######
-    #endif
-
-    SETTINGS = new struct user_settings;
-    SETTINGS_LAST_CHANGED = millis();
-
-    is_virgin_eeprom = isVirginEEPROM();
-    loadSettingsFromEEPROM(SETTINGS);  // handles eeprom defaults
-    if (SETTINGS->snipe_version != SNIPE_VERSION) {
-        is_virgin_eeprom = true;        // re-init for change in snipe version
-    }
-
-
-    if (is_virgin_eeprom) {
-        DEBUG_PRINTLN(F("# Init'ing virgin EEPROM."));
-        loadDefaultSettings(SETTINGS);
-        #ifdef DEBUG
-            printUserSettings(SETTINGS);
-        #endif
-        DEBUG_PRINTLN("# LIST OF DEFAULTS FOLLOWS");
-        initEEPROM(1024, 0x00);
-        DEBUG_PRINT("# Will init SID to: " );DEBUG_PRINT(SID);DEBUG_PRINTLN();
-        writeSIDToEEPROM();      // write out the default SID
-        writeSettingsToEEPROM(SETTINGS);
-    }
-    readSIDFromEEPROM();
-
-    DEBUG_PRINTLN("# FINISHED LOADING SETTINGS");
-    #ifdef DEBUG
-        printUserSettings(SETTINGS);
-    #endif
-
     pinMode(ANALOG_INPUT, INPUT);
     pinMode(A1, INPUT);
     pinMode(A2, INPUT);
@@ -382,16 +349,78 @@ void setup() {                 // AT 9600 we don't see any missed serial chars. 
     digitalWrite(BEEP_PIN, LOW);
     digitalWrite(LED_PIN, LOW);
 
-    // Set our strips to be our setting value.
-    DEBUG_PRINTLN(F("LOADING NUMPIXELS INTO STRIPS"));
-    stack_lights[0].set_numpixels(SETTINGS->sl1_numpixels);
-    stack_lights[1].set_numpixels(SETTINGS->sl2_numpixels);
-    stack_lights[2].set_numpixels(SETTINGS->sl3_numpixels);
+    Serial.begin(kBAUD_RATE);
+    Serial.setTimeout(kSERIAL_TIMEOUT_ms);
+    Wire.begin();
+    bool is_virgin_eeprom;
 
-    //  THIS FIRST TIME THROUGH, WE NEED TO INITIALIZE THE STRIPS
-    for (uint8_t lightnum=0; lightnum < kNUM_STACKLIGHTS; lightnum++) {
-        stack_lights[lightnum].setup_strip();
+    // Developer note: This next lines are key to prevent our output_string (String class)
+    // from growing in size over time and fragmenting the heap.  By calling this now
+    // we end up saving about 50-60bytes of heap fragmentation.
+    if (output_string.reserve(MAX_OUTPUT_LENGTH)) {
+        DEBUG_PRINTLN(F("# >>>>>>>>>>Output string reserved"));
     }
+    if (serial_string.reserve(MAX_INPUT_LENGTH)) {
+        DEBUG_PRINTLN(F("# >>>>>>>>>>Serial string reserved"));
+    }
+    checkRAMandExitIfLow(1);
+
+    #ifdef DEBUG
+        serialPrintHeaderString();   // print this early to send out ######HEADER######
+    #endif
+
+    SETTINGS = new struct user_settings;
+    SETTINGS_LAST_CHANGED = millis();
+
+    is_virgin_eeprom = isVirginEEPROM();
+    loadSettingsFromEEPROM(SETTINGS);  // handles eeprom defaults
+    if (SETTINGS->snipe_version != SNIPE_VERSION) {
+        is_virgin_eeprom = true;        // re-init for change in snipe version
+    }
+
+
+    if (is_virgin_eeprom) {
+        DEBUG_PRINTLN(F("# Init'ing virgin EEPROM."));
+        loadDefaultSettings(SETTINGS);
+        #ifdef DEBUG
+            printUserSettings(SETTINGS);
+        #endif
+        DEBUG_PRINTLN(F("# LIST OF DEFAULTS FOLLOWS"));
+        initEEPROM(1024, 0x00);
+        DEBUG_PRINT("# Will init SID to: " );DEBUG_PRINT(SID);DEBUG_PRINTLN();
+        writeSIDToEEPROM();      // write out the default SID
+        writeSettingsToEEPROM(SETTINGS);
+    }
+    readSIDFromEEPROM();
+
+    DEBUG_PRINTLN(F("# FINISHED LOADING SETTINGS"));
+    #ifdef DEBUG
+        printUserSettings(SETTINGS);
+    #endif
+
+//    auto sl = new SNIPE_StackLight(1, SL1_PIN,  NEO_GRB + NEO_KHZ800);
+//    stack_lights[0] = sl;
+//    stack_lights[0] = new SNIPE_StackLight(1, SL1_PIN,  NEO_GRB + NEO_KHZ800);
+//    stack_lights[1] = new SNIPE_StackLight(2, SL1_PIN,  NEO_GRB + NEO_KHZ800);
+//    stack_lights[2] = new SNIPE_StackLight(3, SL1_PIN,  NEO_GRB + NEO_KHZ800);
+
+    // Set our strips to be our setting value.          --------------THERE IS SOME WEIRD TIMING THING HERE
+    // ------------------------------------------------------ANY DELAY AND WE SUFFER A REBOOT???
+    DEBUG_PRINTLN(F("LOADING NUMPIXELS INTO STRIPS"));         // first time thru if strip isn't set up this is rough
+    stack_lights[0].set_numpixels((uint8_t)SETTINGS->sl1_numpixels, true);
+    stack_lights[1].set_numpixels((uint8_t)SETTINGS->sl2_numpixels, true);
+    stack_lights[2].set_numpixels((uint8_t)SETTINGS->sl3_numpixels, true);
+    DEBUG_PRINTLN(F("DONE LOADING SETTINGS"));
+
+    // First time only, clear the settings changed flat
+    SETTINGS_CHANGED = false;
+
+    checkRAMandExitIfLow(2);
+
+//    //  THIS FIRST TIME THROUGH, WE NEED TO INITIALIZE THE STRIPS
+//    for (uint8_t lightnum=0; lightnum < kNUM_STACKLIGHTS; lightnum++) {
+//        stack_lights[lightnum].setup_strip();
+//    }
 
 //    Serial.println("SETTING UP strip 1 for 4 pixels");
 //    delay(3000);
@@ -399,12 +428,7 @@ void setup() {                 // AT 9600 we don't see any missed serial chars. 
 //    delay(3000);
 //    Serial.println("NUMPIXELS set to 4");
 
-    // Developer note: This next line is key to prevent our output_string (String class)
-    // from growing in size over time and fragmenting the heap.  By calling this now
-    // we end up saving about 50-60bytes of heap fragmentation.
-    output_string.reserve(MAX_OUTPUT_LENGTH);
-
-    checkRAMandExitIfLow(0);
+    //checkRAMandExitIfLow(0);
 
     #ifdef DEBUG
         printSerialInputInstructions();
@@ -523,7 +547,7 @@ void beepy_worker() {
 
 void settings_change_worker() {
     if (SETTINGS_CHANGED and (millis() - SETTINGS_LAST_CHANGED > kSETTINGS_CHANGE_TIME)) {
-        Serial.println("---save out updated settings ---");
+        DEBUG_PRINTLN("# ---save out updated settings ---");
         printUserSettings(SETTINGS);
         writeSettingsToEEPROM(SETTINGS);
         SETTINGS_CHANGED = false;
@@ -582,11 +606,6 @@ void analog_read_worker() {
 
  ***************************************************
  ***************************************************/
-volatile char c;
-String serial_string = String("");
-volatile uint8_t cindex = 0;
-//const char NONE = -1;
-volatile bool accumulating_serial_string = false;
 
 // New New New Version -- accumulate the entire string at once
 void serialEvent() {
@@ -595,14 +614,12 @@ void serialEvent() {
         if (c == char_CMD) {
             accumulating_serial_string = true;
             serial_string = String("");
-//            noInterrupts();     # Serial.readsStringUntil **requires** interrupts. DO NOT DISABLE THEM
             serial_string = Serial.readStringUntil('\n');   // '\n' TODO  try replacing terminator
             serial_string.trim();
-//            interrupts();
             input_string_ready = true;
             accumulating_serial_string = false;
             return;
-        } else if (!isspace(c)) {    // ------ AWAITING START CHARACTER
+        } else if (!isspace(c)) {    // any whitespace is ignored------ AWAITING START CHARACTER
                 char buff[MAX_ERROR_STRING_LENGTH];
                 strcpy_P(buff, str_INVALID);
                 accumulating_serial_string = false;
@@ -673,13 +690,13 @@ void serialEvent() {
  ***************************************************/
 void handleInputString() {
     //Note that the ">" has already been removed by this point.
-    //checkRAMandExitIfLow(1);
+    // checkRAMandExitIfLow(1);
     //long time_start = millis();
 
     processing_is_ok = true;  // ALWAYS STARTS AS TRUE....only set false if we encounter an error
 
-    //Serial.print(F("# RECEIVED_INPUT->"));
-    //Serial.println(input_string);
+//    DEBUG_PRINT(F("# RECEIVED_INPUT->"));
+//    DEBUG_PRINTLN(serial_string);
 
     char* token;
     char* tempstring;
@@ -687,17 +704,8 @@ void handleInputString() {
 
     output_string = "";                 // clear it
 
-    //char cpystring[MAX_INPUT_LENGTH];
-    //strcpy(cpystring, input_buffer);
-
-    //tempstring = strdup(input_buffer);
-
-    // NEW NEW NEW code
-    //serial_string.trim();   // remove whitespace -- done by serialEvent()
-    //Serial.print("#serial_string---->");Serial.println(serial_string);
     tempstring = strdup(serial_string.c_str());
-    //Serial.print("#tempstring------->");Serial.println(tempstring);
-
+    serial_string = "";
     tempstringptr = tempstring;    //store copy for later release
 
     if (tempstring != NULL) {
@@ -749,9 +757,10 @@ void handleToken(char* ctoken) {
     strcpy_P(colon, str_COLON);
     temptoken = strdup(ctoken);
     tokentofree = temptoken;         // keep a pointer around for later use
+    //tokentofree = ctoken;
     // SPLIT INTO SUBTOKENS AND STORE IN OUR GLOBAL ARRAY, so we don't have to do the work again
     uint8_t i = 0;
-    while ((subtoken = strsep(&tokentofree, colon)) != NULL) {
+    while ((subtoken = strsep(&temptoken, colon)) != NULL) {
         if (subtoken != NULL) {    // a 0-length subtoken _is_ acceptable...maybe there is no value.
             //DEBUG_PRINT(F("#subtoken--------->"));DEBUG_PRINTLN(subtoken);
             subtokens[i] = subtoken;
@@ -760,11 +769,11 @@ void handleToken(char* ctoken) {
     }  // end subtoken split
     subtokens[i] = NULL;  // End list with NULL flag
     // Debug
-    DEBUG_PRINT(F("# subtokens0------->"));DEBUG_PRINT(subtokens[0]);DEBUG_PRINTLN();
-    DEBUG_PRINT(F("# subtokens1------->"));DEBUG_PRINT(subtokens[1]);DEBUG_PRINTLN();
+    DEBUG_PRINT(F("# subtokens[0] ->"));DEBUG_PRINT(subtokens[0]);DEBUG_PRINTLN();
+    DEBUG_PRINT(F("# subtokens[1] ->"));DEBUG_PRINT(subtokens[1]);DEBUG_PRINTLN();
 
 
-    //checkRAMandExitIfLow(22);
+    checkRAMandExitIfLow(22);
 
     // make cmd into uppercase so that our commands are case insensitive
     i = 0;
@@ -791,7 +800,7 @@ void handleToken(char* ctoken) {
     } else if (strcmp_P(subtokens[0], str_REBOOT) == 0) {
         handle_REBOOT();
     } else if (strcmp_P(subtokens[0], str_RAM) == 0) {
-        checkRAM();
+        handleRAM();
         // ----------- PIN COMMANDS
     }  else if (strcmp_P(subtokens[0], str_A0) == 0) {
         handle_A_worker(0);
@@ -890,7 +899,7 @@ void handleToken(char* ctoken) {
     free(tokentofree);    // REMOVING THIS LINE INCREASES FAILURES SIGNIFICANTLY
     free(temptoken);
     free(subtoken);
-    //checkRAMandExitIfLow(222);
+    checkRAMandExitIfLow(222);
 }
 
 
@@ -929,7 +938,13 @@ void copy_subtoken0colon_into(String & resp) {
  * @return true if value is null or missing.  false if there is a value
  */
 bool resp_err_VALUE_MISSING(String & resp) {
-    if ( (subtokens[1] == NULL ) || (strlen(subtokens[1]) == 0)) {
+    bool missing = false;
+    if (subtokens[1] == NULL ) {
+        missing = true;
+    } else if (strlen(subtokens[1]) == 0) {   // don't index until we know it is NOT null
+        missing = true;
+    }
+    if (missing) {
         char err[MAX_ERROR_STRING_LENGTH];
         strcpy_P(err, str_VALUE_MISSING);
         resp += err;
@@ -1140,9 +1155,20 @@ void handle_HELP() {
 
 
 void handle_REBOOT() {
+    Serial.end();
     // this is a hard off, jump to 0, and this works
     asm volatile ("jmp 0");
     // NOTE:  the wdt_disable() method just plain didn't work.
+}
+
+void handleRAM() {
+    char buff[10];
+    String resp("");
+
+    copy_subtoken0colon_into(resp);
+    int x = freeRam();
+    resp += x;
+    resp_2_output_string(resp);
 }
 
 
@@ -1223,23 +1249,23 @@ void stacklight_startup_sequence() {
     uint8_t n = 0;
     uint8_t max_numpixels = 0;
     for (uint8_t lightnum=0; lightnum < kNUM_STACKLIGHTS; lightnum++) {
-        max_numpixels = max(max_numpixels, stack_lights[lightnum].numpixels );
+        max_numpixels = max(max_numpixels, stack_lights[lightnum].get_numpixels() );
     }
     for(uint8_t x=0; x < numwashclrs; x++) {
         wash_color = wash_colors[x];
         for (uint8_t i = 0; i < max_numpixels; i++) {
             for (uint8_t lightnum=0; lightnum < kNUM_STACKLIGHTS; lightnum++) {
                 //Serial.print("i: ");Serial.print(i);
-                n = min(i, stack_lights[lightnum].numpixels - 1);
+                n = min(i, stack_lights[lightnum].get_numpixels() - 1);
                 //Serial.print("  numpix: ");Serial.println(stack_lights[lightnum].numpixels);
                 stack_lights[lightnum].strip->setPixelColor(n, wash_color);
 
                 prioritize_serial(lightnum + 1);
                 stack_lights[lightnum].strip->show();
-                delay(3);
+                delay(2);
             }
         }
-        delay(50);
+        delay(25);
     }
 }
 
@@ -1274,7 +1300,6 @@ void handle_SLB_worker(uint8_t sl_num) {
     if (resp_err_VALUE_MISSING(resp)) {
         processing_is_ok = false;
         handled = true;
-
         // STEP 2A:   WE GOT SUBTOKENS
     } else  {
 
@@ -1313,6 +1338,8 @@ bool try_handle_stackbright_numeric(uint8_t sl_num, String & resp) {
         resp += inputval;
         stack_lights[sl_num - 1].set_brightness((uint8_t)inputval);
         handled = true;
+    } else {
+        handled=false;
     }
     return handled;
 }
@@ -1398,6 +1425,8 @@ bool try_handle_stacklight_query(uint8_t sl_num, String &resp) {
  */
 bool try_handle_stacklight_numeric(uint8_t sl_num, String &resp) {
     char buff[kCOLORLENGTH];
+    DEBUG_PRINT(F("## subtoken[1]: "));
+    DEBUG_PRINTLN(subtokens[1]);
     String str_val_token = String(subtokens[1]);
     bool handled = false;
     uint32_t clr = 0;
@@ -1410,10 +1439,10 @@ bool try_handle_stacklight_numeric(uint8_t sl_num, String &resp) {
 //        handled = true;        // full string handled, no extra text.
 //        Serial.println("HANDLED THE ENTIRE NUMBER WE DID!");
     if (__endptr[0] != '\0') {
-        // We did NOT handle the entire string.
-        //Serial.println("Did not handle entire.");
+        // We did NOT handle the entire string...maybe ok, we'll take what we can get
+        //return false;
         if (longcolor == 0) {
-            // And we got an error back in our conversion...did not start with a number
+            // And we got a conversion error...did not start with a number
             //Serial.println("returning FALSE");
             return false;   // < could not handle...get out of here
         }
@@ -1802,6 +1831,9 @@ bool try_handle_stacknumled_numeric(uint8_t sl_num, String & resp) {
     // Use following block if you want to check that entire string is converted to a number.
     // For now we are happy with handling whatever number we can pull out. Ignore the rest.
     if (__endptr[0] == '\0') {  // strtoul sets endptr to last part of #, so /0 means we did the entire string
+        if (numgiven <= 0) {
+            numgiven = 1;      // tested...setting length to 0 really messes up the neopixel strip
+        }
         if (numgiven > 255) {
             numgiven = 255;
         }
@@ -2246,39 +2278,6 @@ void perform_I2C_read() {
 }
 
 
-#pragma mark RAM Helpers
-/***************************************************
- ***************************************************
- *   RAM Helpers
- ***************************************************
- ***************************************************/
-
-void checkRAM() {
-    char buff[10];
-    String resp("");
-    strcpy_P(buff, str_RAM);
-    resp = buff;
-    strcpy_P(buff, str_COLON);
-    resp += buff;
-    if ( (subtokens[1] == NULL ) || (strlen(subtokens[1]) == 0)) {  // didn't give us a long enough token
-        processing_is_ok = false;
-        char err[MAX_ERROR_STRING_LENGTH];
-        strcpy_P(err, str_VALUE_MISSING);
-        resp += err;
-    } else if (strcmp_P(subtokens[1], str_QUERY) == 0)  {
-        int x = freeRam();
-        resp += x;
-    } else {
-        processing_is_ok = false;
-        char err[MAX_ERROR_STRING_LENGTH];
-        strcpy_P(err, str_Q_REQUIRED);
-        resp += err;
-    }
-    strcpy_P(buff, str_SPACE);
-    resp += buff;
-    //DEBUG_PRINT(F("# RESP: "));DEBUG_PRINTLN(resp);
-    output_string.concat(resp);
-}
 
 
 
