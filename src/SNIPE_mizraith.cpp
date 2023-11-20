@@ -705,8 +705,8 @@ void handleInputString() {
     output_string = "";                 // clear it
 
     tempstring = strdup(serial_string.c_str());
-    serial_string = "";
-    tempstringptr = tempstring;    //store copy for later release
+    tempstringptr = tempstring;    // WITHOUT THIS POINTER COPY WE GET MEMORY LEAKS  <?>
+    serial_string = "";           // clear input string
 
     if (tempstring != NULL) {
         char space[3];
@@ -731,7 +731,7 @@ void handleInputString() {
 
     // clean up
     output_string = "";
-    free(tempstringptr);   // GETTING RID OF THIS LINE SIGNIFICANTLY INCREASES FAILURES   !?
+    free(tempstringptr);   // GETTING RID OF THIS CAUSES MEMORY LEAKS
     free(tempstring);
 
     //long time_end = millis();
