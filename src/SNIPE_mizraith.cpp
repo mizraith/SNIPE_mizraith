@@ -1816,7 +1816,6 @@ bool try_handle_stacknumled_numeric(uint8_t sl_num, String & resp) {
         resp += numgiven;
         stack_lights[sl_num - 1].set_numpixels((uint8_t) numgiven);
         handled = true;
-        // TODO:  SET time for updating EEPROM
     }
     return handled;
 }
