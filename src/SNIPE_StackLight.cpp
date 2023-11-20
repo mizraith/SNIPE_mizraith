@@ -29,11 +29,9 @@ void SNIPE_StackLight::set_numpixels(uint8_t numpixels, bool firsttime) {
     } else {
         this->set_numpixels(numpixels);
     }
-
 }
 
 void SNIPE_StackLight::set_numpixels(uint8_t numpixels) {
-    //TODO:  do we need to add a "first time" flag and not call certain things like clear()
     if (this->numpixels != numpixels) {
         this->strip->clear();  // clear old strip in case we go from more to less
         prioritize_serial(this->id);
@@ -51,6 +49,8 @@ void SNIPE_StackLight::set_numpixels(uint8_t numpixels) {
         this->setup_strip();
         SETTINGS_CHANGED = true;
         SETTINGS_LAST_CHANGED = millis();
+        this->set_mode(this->mode);
+        this->set_color(this->color);
     }
 }
 

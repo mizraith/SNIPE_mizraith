@@ -396,26 +396,15 @@ _SLC commands use [D7] and [D8] and [D9] by default on a nano._
   - 2:  On, Pulsing.  Option subtoken for full-cycle blink rate in ms.
   - 3:  On, Flashing.  Optional subtoken for full-cycle blink rate in ms.
   - 4:  On, Rainbow.  Wash through colors over cycle_ms time.
-- **Deprecated: cycle rate argument:** <optional> DEPRECATED -- use SLT instead -- DO NOT USE
-  - in milliseconds full cycle time.
-  - default: 1000
-  - MIN: 100   (setting below this -> 100)
-  - MAX: 10000  (setting above this -> 5000)
 - **examples:**
   - command: `>SLM1:1`
   - response:`@SLM1:1`   The mode for #1 is ON, Steady State.
-  - command: `>SLM1:3:500`  deprecated The mode for #3 is now flashing every 500ms
-  - response: `@SLM1:3:500`  This would round up to 100ms pulse rate.
-  - command: `>SLM1:3:55`  deprecated The mode for #3 is no flashing every 100ms
-  - repsonse: `@SLM1:3:100`  Returns the value it rounded up to.
+  - command: `>SLM1:3`   go to flashing mode.  Cycle rate set by SLT command
+  - response: `@SLM1:3`  This would round up to 100ms pulse rate.
   - command: `>SLM1:0`
   - response: `@SLM1:0`  The light for stack light #1 is off
-  - command: `>SLM1:0:1000`   deprecated You can even set the cycle time in steady mode (to carry forward)
-  - response: `@SLM1:0:1000`
-  - command:  `>SLM1:1:1000.8`  deprecated You *can* send a float, but everything after the "." is ignored.
-  - response: `@SLM1:1:1000`
-  - command:  `>SLM1:1:abcd`   Alpha's won't get parsed as values
-  - response:  `@SLM1:1:VALUE_ERROR`   The mode is accepted (so "@", not "!" but VALUE_ERROR for cycle subtoken)
+  - command:  `>SLM1:abc`   Alphas might work...but atoi() and uint8_t clipping is used for conversion, so good luck.
+  - response:  `@SLM1:0`   The mode is accepted (so "@", not "!" but VALUE_ERROR for cycle subtoken)
   
 #### SLP1, SLP2, SLP3
 - **description:** Stack Light Percentage   Set how many of the lights are on
@@ -436,7 +425,7 @@ _SLC commands use [D7] and [D8] and [D9] by default on a nano._
   - response: `@SLP1:40`
 
 #### SLT1, SLT2, SLT3
-- **description:** Stack Light cycle Time.  What cycle are pulse/flash/rainbow in.
+- **description:** Stack Light cycle Time.  What cycle are pulse/flash/rainbow in.  Can be set in any mode.
 - **input argument:** ? or full cycle time in milliseconds full cycle time.
 - **input values:**
     - default: 1000    (1 second)
@@ -446,13 +435,11 @@ _SLC commands use [D7] and [D8] and [D9] by default on a nano._
 - **examples:**
   - command: `>SLT1:1000`
   - response: `@SLT1:1000`   1 second full cycle time
-  - command: `>SLT1:2000`
-  - response: `@SLT1:2000`   2 second full cycle time.
   - command: `>SLT1:10001`   Greater than the max
   - response: `>SLT1:10000`   Results in a round down to the max (or round up to min)
   - command:  `>SLT1:0xFF`  Hex is accepted
   - response: `@SLT1:255`
-  - command: `>SLT1:500.3`    But floats are NOT
+  - command: `>SLT1:500.3`    But floats are NOT accepted.   Integers only please.
   - response: `SLT1:VALUE_ERROR`
   - command: `>SLT1:?`         standard query syntax
   - response: `@SLT1:255`

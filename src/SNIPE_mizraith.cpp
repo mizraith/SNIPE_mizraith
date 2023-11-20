@@ -242,7 +242,7 @@ const int MAX_NUMBER_TOKENS = 5;
 char SID[SID_MAX_LENGTH] = "USE_>SID:xxx_TO_SET";
 volatile char c;     // for use in serial event
 String serial_string = String("");
-volatile uint8_t cindex = 0;
+//volatile uint8_t cindex = 0;
 //const char NONE = -1;
 volatile bool accumulating_serial_string = false;
 //char input_buffer[MAX_INPUT_LENGTH];       // buffer to accumulate our input string into
@@ -1162,7 +1162,6 @@ void handle_REBOOT() {
 }
 
 void handleRAM() {
-    char buff[10];
     String resp("");
 
     copy_subtoken0colon_into(resp);
@@ -1401,8 +1400,8 @@ bool try_handle_stacklight_query(uint8_t sl_num, String &resp) {
     //  Got  SLC1:?    return   SL1:0xAABBCC:COLOR
     //resp += C2HS(stack_lights[sl_num -1].color);  // "color 2 hex string"
     char *tempstr = new char[UNS_HEX_STR_SIZE];
-    uint32_t c = stack_lights[sl_num - 1].get_color();
-    color_uint_to_hex_string(c, tempstr, UNS_HEX_STR_SIZE);
+    uint32_t color = stack_lights[sl_num - 1].get_color();
+    color_uint_to_hex_string(color, tempstr, UNS_HEX_STR_SIZE);
     resp += tempstr;
     delete[] tempstr;
 
@@ -1429,7 +1428,7 @@ bool try_handle_stacklight_numeric(uint8_t sl_num, String &resp) {
     DEBUG_PRINTLN(subtokens[1]);
     String str_val_token = String(subtokens[1]);
     bool handled = false;
-    uint32_t clr = 0;
+    uint32_t clr;
     char *__endptr;
     // strtoul handles  '0x' or decimal if we give it base==0
     long longcolor = strtoul(str_val_token.c_str(), &__endptr, 0);
@@ -1606,17 +1605,14 @@ bool try_handle_stackmode_query(uint8_t sl_num, String & resp) {
         (stack_lights[sl_num - 1].get_mode() == MODE_RAINBOW) ) {
         strcpy_P(buff, str_COLON);
         resp += buff;
-        resp += stack_lights[sl_num - 1].get_cycle_ms();
     }
     return true;
 }
 
 
 bool try_handle_stackmode_numeric(uint8_t sl_num, String &resp) {
-    char buff[8];
     bool handled = false;
     // CHECK MODE FIRST:
-    char err[MAX_ERROR_STRING_LENGTH];
     int mode = atoi(subtokens[1]);
     // AT THIS POINT we should have a value to set, e.g. "SLM1:2" gotta convert 2nd token to a number
     // NOTE that atoi returns 0 for just about any non-number
@@ -1636,28 +1632,7 @@ bool try_handle_stackmode_numeric(uint8_t sl_num, String &resp) {
             handled = false;
             break;
     }
-    // IF we handled the mode, check for cycle time
-    if ((handled) and (subtokens[2] != NULL) and (strlen(subtokens[2]) != 0)) {
-        strcpy_P(buff, str_COLON);
-        resp += buff;
-        int cycle = atoi(subtokens[2]);
-        // The following must fully verify cycle
-        if (cycle == 0) {
-            // do nothing, atoi returns 0 if it fails or has characters
-            strcpy_P(err, str_VALUE_ERROR);
-            resp += err;
-        } else if (cycle < kMIN_CYCLE_TIME) {
-            cycle = kMIN_CYCLE_TIME;
-        } else if (cycle > kMAX_CYCLE_TIME) {
-            cycle = kMAX_CYCLE_TIME;
-        }
-        // NOW SET IT
-        if (cycle != 0) {
-            resp += cycle;
-            stack_lights[sl_num - 1].set_cycle_ms(cycle);
-        }
-    }
-    return true;
+    return handled;
 }
 
 

@@ -44,6 +44,7 @@ mode_rainbow = "4"
 
 setcolor = "SLC"
 setmode = "SLM"
+setcycletime = "SLT"
 setpercentage = "SLP"
 
 NUM_CMDS = 0
@@ -137,14 +138,15 @@ time.sleep(0.5)
 
 
 # set flash mode at 500ms
-print(f"{'Setting Flash Mode':-^80}")
-cmd = lead + setmode + lightnum + delim + mode_flash + delim + "1000"    # 500 is ms in flash cycle
+print(f"{'Setting Flash Mode':-^80}")            # yes, you can set two commands at a time if separated by a space
+#   >SLM1:2 SLT1:1000
+cmd = lead + setmode + lightnum + delim + mode_flash + " " + setcycletime + lightnum + delim + "1000"    # 500 is ms in flash cycle
 send_command(cmd)
 time.sleep(2)
-cmd = lead + setmode + lightnum + delim + mode_flash + delim + "500"    # 500 is ms in flash cycle
+cmd = lead + setmode + lightnum + delim + mode_flash + " " + setcycletime + lightnum + delim + "500"    # 500 is ms in flash cycle
 send_command(cmd)
 time.sleep(2)
-cmd = lead + setmode + lightnum + delim + mode_flash + delim + "250"    # 500 is ms in flash cycle
+cmd = lead + setmode + lightnum + delim + mode_flash + " " + setcycletime + lightnum + delim + "250"    # 500 is ms in flash cycle
 send_command(cmd)
 time.sleep(2)
 # change color on the fly
@@ -157,7 +159,7 @@ time.sleep(1)
 
 # set pulse mode at 2000 ms
 print(f"{'Setting Pulse Mode':-^80}")
-cmd = lead + setmode + lightnum + delim + mode_pulse + delim + "2000"
+cmd = lead + setmode + lightnum + delim + mode_pulse + " " + setcycletime + lightnum + delim + "2000"
 send_command(cmd)
 time.sleep(3)
 
@@ -185,7 +187,7 @@ time.sleep(1)
 
 # why not rainbow with a long interval
 print(f"{'Setting Rainbow Mode':-^80}")
-cmd = lead + setmode + lightnum + delim + mode_rainbow + delim + "5000"    # 5 second cycle
+cmd = lead + setmode + lightnum + delim + mode_rainbow + " " + setcycletime + lightnum + delim + "5000"    # 5 second cycle
 send_command(cmd)
 time.sleep(2)
 
@@ -237,7 +239,7 @@ for x in range(0, 100):
 time.sleep(1)
 print(f"{'Percentage Complete -- setting dark':-^80}")
 cmd2 = lead + setmode + lightnum2 + delim + mode_off
-cmd1 = lead + setmode + lightnum + delim + mode_rainbow + delim + "5000"
+cmd1 = lead + setmode + lightnum + delim + mode_rainbow + " " + setcycletime + lightnum + delim + "5000"
 send_command(cmd2)
 send_command(cmd1)
 

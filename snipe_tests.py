@@ -754,43 +754,12 @@ class SnipeTests(unittest.TestCase):
     def test_SLM_values(self):
         print("\n--------------> ", sys._getframe().f_code.co_name,
               " <-------------- ")  # cool trick prints current function name
-        default = "500"
-        minval = 100
-        maxval = 10000
         # test with no value given...default is 500ms on startup
         for i in range(1, 4):
             for mode in range(0, 5):
                 cmd = f">SLM{i}:{mode}"
                 exp = f"@SLM{i}:{mode}"
                 self._handle_cmd_exp(cmd, exp)
-        # test in range cycle values, regardless of mode
-        for mode in range(0, 5):
-            for cycle in range(minval, maxval, 2000):
-                cmd = f">SLM1:{mode}:{cycle}"
-                exp = f"@SLM1:{mode}:{cycle}"
-                self._handle_cmd_exp(cmd, exp)
-
-        # test below range
-        cmd = f">SLM1:1:{minval - 5}"
-        exp = f"@SLM1:1:{minval}"
-        self._handle_cmd_exp(cmd, exp)
-
-        # test above range
-        cmd = f">SLM1:1:{maxval + 5}"
-        exp = f"@SLM1:1:{maxval}"
-        self._handle_cmd_exp(cmd, exp)
-
-        # test messed up value
-        cmd = f">SLM1:1:abcd"
-        exp = f"@SLM1:1:" + VALUE_ERROR
-        self._handle_cmd_exp(cmd, exp)
-
-        # test float value -- it works but ignores the decimal
-        cmd = f">SLM1:1:1000.8"
-        exp = f"@SLM1:1:1000"
-        self._handle_cmd_exp(cmd, exp)
-
-
 
     def test_SLT_good_values(self):
         print("\n--------------> ", sys._getframe().f_code.co_name,
