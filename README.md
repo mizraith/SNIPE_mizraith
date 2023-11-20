@@ -295,7 +295,14 @@ case -insensitive- but this could change.
   - response `@REBOOT:GOODBYE`
 - _Note: Be prepared to go through the startup preamble again. Depending on your system you may or may not have to re-establish your serial port again._
 
- 
+##### RAM
+- **description:**     How much free RAM is there.  Generally used for debugging but can be useful if you are pushing lots of pixels and have concerns.   Anyting < 200 is cause for concern.
+- **input argument:**  IGNORED  can be <none> or ?
+- **examples:**
+  - command:  `>RAM`
+  - response: `@RAM:512`
+
+  
 ### Pin Control Commands     
 ##### [A0], A1, A2, A3
 - **description:**     Get the Analog input

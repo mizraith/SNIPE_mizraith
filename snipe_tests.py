@@ -376,6 +376,19 @@ class SnipeTests(unittest.TestCase):
     def test_RAM(self):
         print("\n--------------> ", sys._getframe().f_code.co_name,
               " <-------------- ")  # cool trick prints current function name
+
+        cmd = ">RAM:?"
+        exp = "@RAM:"
+        self._handle_cmd_exp(cmd, exp)
+        # test without ?...new in V4
+        cmd = ">RAM"
+        exp = "@RAM:"
+        self._handle_cmd_exp(cmd, exp)
+
+
+    def test_RAM(self):
+        print("\n--------------> ", sys._getframe().f_code.co_name,
+              " <-------------- ")  # cool trick prints current function name
         cmd = ">RAM:?"
         exp = "@RAM:"
         self._handle_cmd_exp(cmd, exp)

@@ -201,9 +201,9 @@ void SNIPE_StackLight::update_pulse_color() {
     // calculate and put result in current color
     if (mode_did_change) {
         mode_did_change = false;
-    } else if (millis() < update_time) {    // not a flip, how much longer until we do?
+    } else if (millis() <= update_time) {    // not a flip, how much longer until we do?
         // how far along are we in our cycle_ms
-        unsigned long remaining_ms = cycle_ms - (update_time - millis());
+        unsigned long remaining_ms = (cycle_ms / 2) - (update_time - millis());
         //when going down, or when remaining == cycle_ms, we start at 255
         uint8_t brightness = (uint8_t)((255 * remaining_ms) / (cycle_ms / 2));  // our cycleposition within our half step is our brightness
         if (flash_on_pulse_up) {

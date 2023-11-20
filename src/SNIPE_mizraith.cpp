@@ -39,8 +39,10 @@ _Changes in 4.0:  Added Stack light commands_.
  * The second makes the messages verbose with timing, etc.
  * Uses  SNIPE_DebugUtils.h   and DEBUG_PRINT()  or DEBUG_PRINTLN() calls
  **************************************************************************** */
-#define DEBUG
-#define DETAIL_DEBUG_ENABLED
+
+//#define DEBUG
+//#define DETAIL_DEBUG_ENABLED
+
 /* ***************************************************************************** */
 
 #pragma clang diagnostic push
@@ -191,7 +193,7 @@ void perform_I2C_read();
 const DateTime COMPILED_ON = DateTime(__DATE__, __TIME__);
 #define SNIPE_VERSION 4
 const String CURRENT_VERSION = "040";
-const String DESCRIPTION = "SNIPE_v4_r0";
+const String DESCRIPTION = "SNIPE_v4_r00";
 #define kDEFAULT_SL1_NUMPIXELS  16
 #define kDEFAULT_SL2_NUMPIXELS  60
 #define kDEFAULT_SL3_NUMPIXELS  1
@@ -772,8 +774,7 @@ void handleToken(char* ctoken) {
     DEBUG_PRINT(F("# subtokens[0] ->"));DEBUG_PRINT(subtokens[0]);DEBUG_PRINTLN();
     DEBUG_PRINT(F("# subtokens[1] ->"));DEBUG_PRINT(subtokens[1]);DEBUG_PRINTLN();
 
-
-    checkRAMandExitIfLow(22);
+    // checkRAMandExitIfLow(22);
 
     // make cmd into uppercase so that our commands are case insensitive
     i = 0;
@@ -899,7 +900,7 @@ void handleToken(char* ctoken) {
     free(tokentofree);    // REMOVING THIS LINE INCREASES FAILURES SIGNIFICANTLY
     free(temptoken);
     free(subtoken);
-    checkRAMandExitIfLow(222);
+    //checkRAMandExitIfLow(222);
 }
 
 
@@ -2086,7 +2087,7 @@ void handle_I2F() {
  ***************************************************/
 
 void serialPrintHeaderString() {
-    Serial.println();
+    //Serial.println();
     Serial.println(F("#####HEADER#####"));
     Serial.println(F("#--------------------------------------------------"));
     Serial.println(F("# SNIPE v4 for Arduino"));
