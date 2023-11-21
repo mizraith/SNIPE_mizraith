@@ -234,14 +234,14 @@ unsigned long SETTINGS_LAST_CHANGED;
 // STRING LENGTH & EEPROM LOCATION CONSTANTS
 const int MAX_INPUT_LENGTH  = 64;
 const int MAX_OUTPUT_LENGTH = 96;
-const int SID_MAX_LENGTH    = 25;   //24 + null
+const int SID_MAX_LENGTH    = 24;   //24 + null
 const int SID_EEPROM_START_ADDRESS = 0;
 const int MAX_NUMBER_TOKENS = 5;
 
 
 #pragma mark Variable Strings
 // VARIABLE STRINGS
-char SID[SID_MAX_LENGTH] = "USE_>SID:xxx_TO_SET";
+char SID[SID_MAX_LENGTH + 1] = "USE_>SID:xxx_TO_SET";
 volatile char c;     // for use in serial event
 String serial_string = String("");
 //volatile uint8_t cindex = 0;
@@ -359,17 +359,16 @@ void setup() {                 // AT 9600 we don't see any missed serial chars. 
     // Developer note: This next lines are key to prevent our output_string (String class)
     // from growing in size over time and fragmenting the heap.  By calling this now
     // we end up saving about 50-60bytes of heap fragmentation.
-    if (output_string.reserve(MAX_OUTPUT_LENGTH)) {
+    if (output_string.reserve(MAX_OUTPUT_LENGTH + 1)) {
         DEBUG_PRINTLN(F("# >>>>>>>>>>Output string reserved"));
     }
-    if (serial_string.reserve(MAX_INPUT_LENGTH)) {
+    if (serial_string.reserve(MAX_INPUT_LENGTH + 1)) {
         DEBUG_PRINTLN(F("# >>>>>>>>>>Serial string reserved"));
     }
-    checkRAMandExitIfLow(1);
+    //checkRAMandExitIfLow(1);
 
-    #ifdef DEBUG
-        serialPrintHeaderString();   // print this early to send out ######HEADER######
-    #endif
+
+    serialPrintHeaderString();   // print this early to send out ######HEADER######
 
     SETTINGS = new struct user_settings;
     SETTINGS_LAST_CHANGED = millis();
@@ -417,7 +416,7 @@ void setup() {                 // AT 9600 we don't see any missed serial chars. 
     // First time only, clear the settings changed flat
     SETTINGS_CHANGED = false;
 
-    checkRAMandExitIfLow(2);
+    //checkRAMandExitIfLow(2);
 
 //    //  THIS FIRST TIME THROUGH, WE NEED TO INITIALIZE THE STRIPS
 //    for (uint8_t lightnum=0; lightnum < kNUM_STACKLIGHTS; lightnum++) {
@@ -550,7 +549,9 @@ void beepy_worker() {
 void settings_change_worker() {
     if (SETTINGS_CHANGED and (millis() - SETTINGS_LAST_CHANGED > kSETTINGS_CHANGE_TIME)) {
         DEBUG_PRINTLN("# ---save out updated settings ---");
-        printUserSettings(SETTINGS);
+        #ifdef DEBUG
+            printUserSettings(SETTINGS);
+        #endif
         writeSettingsToEEPROM(SETTINGS);
         SETTINGS_CHANGED = false;
     }
@@ -1242,8 +1243,9 @@ void handle_D_worker(uint8_t numpin) {
 
 #pragma mark StackLight Commands
 void stacklight_startup_sequence() {
-    Serial.println(F("# Doing Stack Light Startup Sequence"));
+    Serial.println(F("# Stack Light Startup Sequence"));
     const uint8_t numwashclrs = 5;
+    const char * wash_names[numwashclrs] = {cRED.name_p, cYELLOW.name_p, cGREEN.name_p, cBLUE.name_p, cBLACK.name_p};
     uint32_t wash_colors[numwashclrs] = {cRED.value, cYELLOW.value, cGREEN.value, cBLUE.value, cBLACK.value};
     uint32_t wash_color;
     uint8_t n = 0;
@@ -1252,7 +1254,10 @@ void stacklight_startup_sequence() {
         max_numpixels = max(max_numpixels, stack_lights[lightnum].get_numpixels() );
     }
     for(uint8_t x=0; x < numwashclrs; x++) {
+        char buff[kCOLORLENGTH];
+        strcpy_P(buff, wash_names[x]);
         wash_color = wash_colors[x];
+        Serial.print(F("#\tShowing: "));Serial.println(buff);
         for (uint8_t i = 0; i < max_numpixels; i++) {
             for (uint8_t lightnum=0; lightnum < kNUM_STACKLIGHTS; lightnum++) {
                 //Serial.print("i: ");Serial.print(i);
@@ -2102,6 +2107,14 @@ void serialPrintHeaderString() {
     Serial.print(F(" @ "));
     Serial.print(COMPILED_ON.hour(), DEC);
     Serial.println(COMPILED_ON.minute(), DEC);
+    Serial.println(F("# Type '>HELP'  for more detail."));
+    Serial.println(F("#--------------------------------------------------"));
+    Serial.print(F("# Current Station ID (SID): "));
+    Serial.println(SID);
+    Serial.print(F("# Current Version (VER)   : "));
+    Serial.println(CURRENT_VERSION);
+    Serial.print(F("# Description (DESC)      : "));
+    Serial.println(DESCRIPTION);
     Serial.println(F("#--------------------------------------------------"));
     Serial.println(F("#"));
 }
@@ -2116,16 +2129,22 @@ void printSerialInputInstructions( ) {
     Serial.println(F("#   > = start   @ = resp  # = comment  ! = error"    ));
     Serial.println(F("#   Commands are:"));
     Serial.print  (F("#   "));
+    printString_P(str_HELP);printString_P(str_SPACE);printString_P(str_SID); printString_P(str_SPACE);
+    printString_P(str_VER); printString_P(str_SPACE);printString_P(str_BEEP); printString_P(str_SPACE);
+    printString_P(str_DESC); printString_P(str_SPACE);printString_P(str_BLINK);printString_P(str_SPACE);
+    printString_P(str_REBOOT);
+    Serial.println();
+    Serial.print  (F("#   "));
+    printString_P(str_SLB); printString_P(str_SPACE); printString_P(str_SLC); printString_P(str_SPACE);
+    printString_P(str_SLM); printString_P(str_SPACE); printString_P(str_SLP); printString_P(str_SPACE);
+    printString_P(str_SLT); printString_P(str_SPACE); printString_P(str_SLX); printString_P(str_SPACE);
+    Serial.println();
+    Serial.print  (F("#   "));
     printString_P(str_A0); printString_P(str_SPACE); printString_P(str_A1); printString_P(str_SPACE);
     printString_P(str_A2); printString_P(str_SPACE); printString_P(str_A3); printString_P(str_SPACE);
     printString_P(str_D2); printString_P(str_SPACE); printString_P(str_D3); printString_P(str_SPACE);
     printString_P(str_D4); printString_P(str_SPACE); printString_P(str_D5); printString_P(str_SPACE);
     printString_P(str_D6);
-    Serial.println();
-    Serial.print  (F("#   "));
-    printString_P(str_SID); printString_P(str_SPACE);
-    printString_P(str_VER); printString_P(str_SPACE);
-    printString_P(str_DESC); printString_P(str_SPACE); printString_P(str_BLINK);
     Serial.println();
     Serial.print  (F("#   "));
     printString_P(str_I2A); printString_P(str_SPACE); printString_P(str_I2S); printString_P(str_SPACE);
@@ -2140,12 +2159,9 @@ void printSerialInputInstructions( ) {
     Serial.print  F(("#   Max Number of Tokens: "));
     Serial.println(MAX_NUMBER_TOKENS, DEC);
     Serial.print  F(("#   Max SID Length: "));
-    Serial.println(SID_MAX_LENGTH, DEC);
+    Serial.println(SID_MAX_LENGTH - 1, DEC);
     Serial.print  F(("#   Max Output Length: "));
     Serial.println(MAX_OUTPUT_LENGTH, DEC);
-    Serial.println(F("#"));
-    Serial.print(F("# Current Station ID (SID): "));
-    Serial.println(SID);
     Serial.println(F("#"));
     Serial.println(F("#--------------------------------------------------"));
 }

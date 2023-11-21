@@ -8,7 +8,7 @@
 #include <Arduino.h>
 #include <EEPROM.h>
 
-#define DEBUG
+//#define DEBUG
 
 // MUST come after the SID, which starts typically @0 and goes for 30 bytes...
 #define kSETTINGS_START_ADDRESS  100
