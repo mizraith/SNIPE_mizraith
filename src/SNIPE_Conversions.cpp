@@ -142,6 +142,31 @@ char *C2HS(uint32_t x) {
     return color_uint_to_hex_string(x, dest, UNS_HEX_STR_SIZE);
 }
 
+/**
+ * Custom function to convert a long to a bin32 representation.  Uses modulo 32 operations
+ * repeatedly and indexes into the standard base32 alphabet.
+ * e.g.     906,104,873 --> JBEEA3
+ *          857,146,382 --> OABORZ
+ *          907,546,378 --> KYDQB3
+ *          923,665,426 --> SAB4Q3
+ * @param i
+ * @return
+ */
+String ltob32( unsigned long i )
+{
+    unsigned long u = i ;
+    String b32("") ;
+    char base32StandardAlphabet[] = {"ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"};
+    do
+    {
+        int d = u % 32 ;
+        b32 += base32StandardAlphabet[d];
+        u /= 32 ;
+    } while( u > 0 );
+    return b32 ;
+}
+
+
 
 
 /**

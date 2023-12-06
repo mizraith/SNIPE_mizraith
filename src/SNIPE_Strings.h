@@ -72,6 +72,8 @@ const char str_ARB  [] PROGMEM = "ARB";     // ARB units
 const char str_BIN  [] PROGMEM = "BIN";     // BIN units
 
 // Commands & identifiers
+const char str_SN   [] PROGMEM = "SN";       // 8 character Serial Number, base32 ID, not guaranteed unique over massive number
+const char str_UID  [] PROGMEM = "UID";     // Unique ID
 const char str_SID  [] PROGMEM = "SID";     // Station ID
 const char str_TID  [] PROGMEM = "TID";     // Transaction ID
 const char str_VER  [] PROGMEM = "VER";     // Version
@@ -147,6 +149,8 @@ const char str_BLACK            [] PROGMEM =    "BLACK";
 const char str_DEFAULT          [] PROGMEM =    "DEFAULT";
 const char str_FLASH            [] PROGMEM =    "FLASH";
 const char str_PULSE            [] PROGMEM =    "PULSE";
+const char str_STEADY           [] PROGMEM =    "STEADY";
+const char str_RAINBOW          [] PROGMEM =    "RAINBOW";
 const uint8_t kCOLORLENGTH = 12;   // color names above NEVER get longer than this
 
 

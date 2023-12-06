@@ -7,7 +7,7 @@ Date:         6/28/2023
 # SNIPE_mizraith
 **Extensible serial to I2C-and-more tool.  Easily control your Arduino over a comm port. Now with Andon Stack Light Tower type features.  Control some neopixels (slowly) over serial!**
 
-_Major Release:_ 4.0 rc1
+_Major Release:_ 4.1 rc4
 
 _Grammar Version:_   2.0
 
@@ -53,6 +53,10 @@ _Changes in 4.0:  Added Stack light commands_.
 #include <Arduino.h>    // we make good use of String() class
 #include <avr/pgmspace.h>
 #include <EEPROM.h>
+
+// For auto serial number generation based on unique uC ID
+#include <MicrocontrollerID.h>
+
 // Uses SCL and SDA pins
 #include <Wire.h>
 // DOWNLOAD on github.com/mizraith  included for the datetime class.  Wire.h makes the RTCLib happy.
@@ -131,6 +135,9 @@ void resp_2_output_string(String &);
 void resp_err_VALUE_ERROR(String &);
 // COMMAND HANDLING
 // General
+String get_SN_worker();
+void handle_SN();
+void handle_UID();
 void handle_SID();
 void handle_VER();
 void handle_DESC();
@@ -152,6 +159,7 @@ bool try_handle_stacklight_query(uint8_t, String &);
 bool try_handle_stacklight_numeric(uint8_t, String &);
 bool try_handle_stacklight_colorname(uint8_t, String &);
 void handle_SLM_worker(uint8_t);
+bool try_handle_stackmode_modename(uint8_t, String &);
 bool try_handle_stackmode_numeric(uint8_t, String &);
 bool try_handle_stackmode_query(uint8_t, String &);
 void handle_SLP_worker(uint8_t);
@@ -192,8 +200,8 @@ void perform_I2C_read();
 #pragma mark Application Globals & Defaults
 const DateTime COMPILED_ON = DateTime(__DATE__, __TIME__);
 #define SNIPE_VERSION 4
-const String CURRENT_VERSION = "040";
-const String DESCRIPTION = "SNIPE_v4_r00";
+const String CURRENT_VERSION = "041";
+const String DESCRIPTION = "SNIPE_v4.1";
 #define kDEFAULT_SL1_NUMPIXELS  16
 #define kDEFAULT_SL2_NUMPIXELS  60
 #define kDEFAULT_SL3_NUMPIXELS  1
@@ -242,6 +250,9 @@ const int MAX_NUMBER_TOKENS = 5;
 #pragma mark Variable Strings
 // VARIABLE STRINGS
 char SID[SID_MAX_LENGTH + 1] = "USE_>SID:xxx_TO_SET";
+char UID[25] = "ABCDEFABCDEFABCDEFABCDEF";
+String SN = String("XXXXXX");
+
 volatile char c;     // for use in serial event
 String serial_string = String("");
 //volatile uint8_t cindex = 0;
@@ -367,9 +378,11 @@ void setup() {                 // AT 9600 we don't see any missed serial chars. 
     }
     //checkRAMandExitIfLow(1);
 
+    //Set the UID and SN based on the micocontroller's unique hardware ID
+    MicroID.getUniqueIDString(&UID[0]);   // GIVES US a hex string, e.g.:
+    SN = get_SN_worker();
 
-    serialPrintHeaderString();   // print this early to send out ######HEADER######
-
+    // Now deal with settings, load, check for update, save out
     SETTINGS = new struct user_settings;
     SETTINGS_LAST_CHANGED = millis();
 
@@ -378,7 +391,6 @@ void setup() {                 // AT 9600 we don't see any missed serial chars. 
     if (SETTINGS->snipe_version != SNIPE_VERSION) {
         is_virgin_eeprom = true;        // re-init for change in snipe version
     }
-
 
     if (is_virgin_eeprom) {
         DEBUG_PRINTLN(F("# Init'ing virgin EEPROM."));
@@ -393,6 +405,8 @@ void setup() {                 // AT 9600 we don't see any missed serial chars. 
         writeSettingsToEEPROM(SETTINGS);
     }
     readSIDFromEEPROM();
+
+    serialPrintHeaderString();   // print this early to send out ######HEADER######
 
     DEBUG_PRINTLN(F("# FINISHED LOADING SETTINGS"));
     #ifdef DEBUG
@@ -779,15 +793,18 @@ void handleToken(char* ctoken) {
 
     // make cmd into uppercase so that our commands are case insensitive
     i = 0;
-    while (subtokens[0][i])
-    {
+    while (subtokens[0][i]) {
         c = subtokens[0][i];
         subtokens[0][i] = toupper(c);
         i++;
     }
 
     // MATCH OUR TOKEN WITH OUR HANDLE-ABLE STRINGS
-    if        (strcmp_P(subtokens[0], str_SID) == 0) {     // could use (0 == strcmp(subtokens[0], "SID")) (strcmp_P(subtokens[0], PSTR("SID")) == 0 ) (cmd.equalsIgnoreCase(str_SID))
+    if        (strcmp_P(subtokens[0], str_SN) == 0 ) {
+        handle_SN();
+    } else if (strcmp_P(subtokens[0], str_UID) == 0) {
+        handle_UID();
+    } else if (strcmp_P(subtokens[0], str_SID) == 0) {     // could use (0 == strcmp(subtokens[0], "SID")) (strcmp_P(subtokens[0], PSTR("SID")) == 0 ) (cmd.equalsIgnoreCase(str_SID))
         handle_SID();
     } else if (strcmp_P(subtokens[0], str_VER) == 0) {
         handle_VER();
@@ -1002,6 +1019,91 @@ void resp_err_VALUE_ERROR(String & resp) {
  ***************************************************
  ***************************************************/
 #pragma mark General Commands
+/**
+ * function: handle_SN
+ * appends:  the Snipe Serial Number to the display.  May not be unique across
+ * very large number of devices, but it's shorter than the UID.
+ * e.g, if the UID:59363033303317040E
+ *        UID            Last 4 digit uint32 val   uint32_t->base32         string -> base32
+ * 59363033303317040E -> 857,146,382               OABORZ                   GU4TGNRTGAZTGMZQGMZTCNZQGQYEK=
+ * 583731333536021029 -> 906,104,873               JBEEA3
+ * 553836323536180F0A -> 907,546,378               KYDQB3                   GU2TGOBTGYZTEMZVGM3DCOBQIYYEC=
+ * 5535363232370E0412 -> 923,665,426               SAB4Q3                   GU2TGNJTGYZTEMZSGM3TARJQGQYTE=
+ * and we are going to return the last 8 characters before the =: RJQGQYTE
+ */
+
+void handle_SN() {
+    String resp("");
+
+    copy_subtoken0colon_into(resp);
+
+    // We use Microcontroller-id library to get the serial number of our AVR
+    // There are 3 ways to do this, but we'll use the first
+    // This allows the string to truncate, but longer than our SID
+    //char id [20];    // 20 is long enough on the nano
+    //MicroID.getUniqueIDString(id);   // GIVES US a hex string, e.g.:  // GIVES US a hex string, e.g.:
+    // get last 8 bytes
+    //char * endchars;
+    //endchars = (char *)id + strlen(id) - 8;
+
+    uint8_t intid [IDSIZE];
+    MicroID.getUniqueID(intid,  IDSIZE);
+    //Serial.print("IDSIZE: ");Serial.println(IDSIZE);
+
+//    // We are going to take the last 5 bytes so that we stay within an unsigned long
+//    unsigned long endvalue = 0;   // 4 bytes wide   4.3B possibilities
+//    // AVR is 9 bytes long, but we will take last 4 bytes 2.8...unsigned long is 4 bytes
+//    for (uint8_t x = IDSIZE - 3; x <= IDSIZE; x++) {
+//        endvalue = (endvalue << 8) + intid[x-1];
+//        //Serial.print(x-1);Serial.print(":0x");Serial.print(intid[x-1], HEX);Serial.print("   total:");Serial.println(endvalue);
+//    }
+//    //Serial.print("endvalue: ");Serial.println(endvalue);
+//
+//    String snstr("");
+//    snstr = ltob32(endvalue);
+//    //Serial.print("xstr b32: "); Serial.println(xstr);
+
+    resp += SN;
+    resp_2_output_string(resp);
+}
+
+String get_SN_worker() {
+    String snstr = String("");
+    uint8_t intid [IDSIZE];        // based on MicroID library define
+    MicroID.getUniqueID(intid,  IDSIZE);
+    //Serial.print("IDSIZE: ");Serial.println(IDSIZE);
+
+    // We are going to take the last 5 bytes so that we stay within an unsigned long
+    unsigned long endvalue = 0;   // 4 bytes wide   4.3B possibilities
+    // AVR is 9 bytes long, but we will take last 4 bytes 2.8...unsigned long is 4 bytes
+    for (uint8_t x = IDSIZE - 3; x <= IDSIZE; x++) {
+        endvalue = (endvalue << 8) + intid[x-1];
+        //Serial.print(x-1);Serial.print(":0x");Serial.print(intid[x-1], HEX);Serial.print("   total:");Serial.println(endvalue);
+    }
+    snstr = ltob32(endvalue);
+    return snstr;
+}
+
+
+/**
+ * function: handle_UID
+ * appends:  the Unique ID of the SNIPE to the display
+ * Since this is long for some, we offer a shorted SN
+ * e.g.:  @UID:59363033303317040E
+ *        @UID:583731333536021029
+ */
+void handle_UID() {
+    String resp("");
+    copy_subtoken0colon_into(resp);
+    // We use Microcontroller-id library to get the serial number of our AVR
+    // There are 3 ways to do this, but we'll use the first
+    // This allows the string to truncate, but longer than our SID
+    //char id [20];    // 20 is long enough on the nano
+    //MicroID.getUniqueIDString(id);   // GIVES US a hex string, e.g.:
+    resp += UID;
+    resp_2_output_string(resp);
+}
+
 
 /**
  * function: handle_SID
@@ -1585,6 +1687,11 @@ void handle_SLM_worker(uint8_t sl_num) {
         handled = try_handle_stackmode_query(sl_num, resp);
 
         if (!handled) {
+            // check text name first so we don't accidentally convert text to a number...
+            handled =  try_handle_stackmode_modename(sl_num, resp);
+        }
+
+        if (!handled) {
             handled = try_handle_stackmode_numeric(sl_num, resp);
         }
     }
@@ -1613,6 +1720,46 @@ bool try_handle_stackmode_query(uint8_t sl_num, String & resp) {
         resp += buff;
     }
     return true;
+}
+
+
+/**
+ * Checks our value token to see if it matches a known mode ("STEADY", "FLASH"...).  Case sensitive of course
+ * @param sl_num   already pre-checked to be valid
+ * @param resp    String response we will append our results to.
+ */
+bool try_handle_stackmode_modename(uint8_t sl_num, String &resp) {
+    char buff[kCOLORLENGTH];   // also plenty for our mode names
+    bool handled = false;
+    //Serial.print("# TRYING TO HANDLE A MODE NAME GIVEN: ");
+    //Serial.println(subtokens[1]);
+    String str_val_token = String(subtokens[1]);
+    str_val_token.toUpperCase();
+
+    uint8_t newmode = stack_lights[sl_num - 1].get_mode();
+    if ((strcmp_P(str_val_token.c_str(), str_DEFAULT) == 0) or (strcmp_P(str_val_token.c_str(), str_OFF) == 0)) {
+        newmode = MODE_OFF;
+        handled = true;
+    } else if (strcmp_P(str_val_token.c_str(), str_STEADY) == 0) {
+        newmode = MODE_STEADY;
+        handled = true;
+    } else if (strcmp_P(str_val_token.c_str(), str_FLASH) == 0) {
+        newmode = MODE_FLASH;
+        handled = true;
+    } else if (strcmp_P(str_val_token.c_str(), str_PULSE) == 0) {
+        newmode = MODE_PULSE;
+        handled = true;
+    } else if (strcmp_P(str_val_token.c_str(), str_RAINBOW) == 0) {
+        newmode = MODE_RAINBOW;
+        handled = true;
+    } else {
+        handled = false;
+    }
+    if (handled) {
+        stack_lights[sl_num - 1].set_mode(newmode);
+        resp += newmode;
+    }
+    return handled;
 }
 
 
@@ -2095,9 +2242,12 @@ void serialPrintHeaderString() {
     Serial.println(F("#####HEADER#####"));
     Serial.println(F("#--------------------------------------------------"));
     Serial.println(F("# SNIPE v4 for Arduino"));
+    Serial.println(F("# "));
+    Serial.print(  F("# UID:"));Serial.println(UID);
+    Serial.print(  F("# SN:"));Serial.println(SN);
     Serial.println(F("#--------------------------------------------------"));
     Serial.println(F("# Red Byer    github.com/mizraith"));
-    Serial.println(F("# VERSION DATE: 11/15/2023"));
+    Serial.println(F("# VERSION DATE: 12/5/2023"));
     Serial.print(F("# COMPILED ON: "));
     Serial.print(COMPILED_ON.month());
     Serial.print(F("/"));

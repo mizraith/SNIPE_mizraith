@@ -41,6 +41,8 @@ void convertByteArrayToHexString(byte *, uint8_t, char *);
 byte getHexNibbleFromChar(char);
 char getCharFromHexNibble(uint8_t);
 
+# pragma mark Base32
+String ltob32( unsigned long i );
 
 # pragma mark String <-> Numbers
 void get2CharStringFrom8BitNumber(char *buffstr, const char *padding, uint8_t value);
