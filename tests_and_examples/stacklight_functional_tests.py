@@ -8,9 +8,9 @@ import time
 
 #sl = serial.Serial("COM7", 57600)         # 115200 / 57600 / 38400 / 19200  /  9600
 #  PASSES TESTING AT 115200   If you change baud rate, re-test to make sure wait timing is not impacted.
-#sl = serial.Serial("/dev/cu.usbserial-A92517JR", 115200, timeout=0.25)
+sl = serial.Serial("/dev/cu.usbserial-A92517JR", 115200, timeout=0.25)
 #sl = serial.Serial("/dev/cu.usbserial-A702Y4T1", 115200, timeout=0.25)
-sl = serial.Serial("/dev/tty.usbserial-A9H2AMEW", 115200, timeout=0.25)
+#sl = serial.Serial("/dev/tty.usbserial-A9H2AMEW", 115200, timeout=0.25)
 
 
 # DELAY BETWEEN TX AND RX --- impacts failure rate and retries if you send messages too quick.
@@ -41,6 +41,8 @@ mode_flash = "2"
 mode_pulse = "3"
 mode_rainbow = "4"
 
+serialnumber = "SN"
+uniqueID = "UID"
 
 setcolor = "SLC"
 setmode = "SLM"
@@ -112,6 +114,13 @@ while True:
         break
 #  Done with our header
 
+# Let's get our UID and Serial Number for example
+print(f"{'Getting UniqueID and Serial Number':-^80}")
+cmd = lead + uniqueID
+send_command(cmd)
+cmd = lead + serialnumber
+send_command(cmd)
+
 # set mode to ON
 cmd1 = lead + setmode + lightnum + delim + mode_on
 send_command(cmd1)
@@ -120,6 +129,7 @@ send_command(cmd2)
 
 # set the color using words   don't have to be all caps
 colors = ["RED", "yellow", "ORANGE", "GREEN", "aqua", "VIOLET", "BLUE", "INDIGO"]
+modes  = ["OFF", "STEADY", "FLASH", "PULSE", "RAINBOW"]   # again, don't have to be all caps
 
 print(f"{'Setting Colors':-^80}")
 for color in colors:
@@ -135,6 +145,7 @@ send_command(cmd)
 cmd = lead + setcolor + lightnum2 + delim + "BLACK"
 send_command(cmd)
 time.sleep(0.5)
+
 
 
 # set flash mode at 500ms
@@ -154,8 +165,6 @@ print(f"{'Setting Back to Red':-^80}")
 cmd = lead + setcolor + lightnum + delim + "RED"
 send_command(cmd)
 time.sleep(1)
-
-
 
 # set pulse mode at 2000 ms
 print(f"{'Setting Pulse Mode':-^80}")

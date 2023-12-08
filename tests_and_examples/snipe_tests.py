@@ -4,6 +4,8 @@
 # TEST SUITE FOR SNIPE 
 #   UPDATED to use Python3 syntax adn Python3 pyserial.
 #
+#   This also serves as an exmaple on how to send commands and check responses.
+#
 # To use the test suite, first load up your Arduino with SNIPE and
 # make a note of the comm port (e.g. /dev/tty.usbmodem1411).
 #
@@ -38,6 +40,7 @@ BYTE_SETTING_ERR = "BYTE_SETTING_ERR"
 NONE_FOUND = "NONE_FOUND"
 DATA_LENGTH_ERR = "DATA_LENGTH_ERR"
 
+# color names are case-insensitive
 colors = {"RED": "0xFF0000",
           "ORANGE": "0xFF5500",
           "YELLOW": "0xFFFF00",
@@ -48,6 +51,14 @@ colors = {"RED": "0xFF0000",
           "VIOLET": "0xFF00FF",
           "WHITE": "0xFFFFFF",
           "BLACK": "0x000000"}
+
+# mode names are case-insensitive
+modes = {"OFF"     : 0,
+         "DEFAULT" : 0,
+         "STEADY"  : 1,
+         "FLASH"   : 2,
+         "PULSE"   : 3,
+         "RAINBOW" : 4}
 
 global NUM_TX
 NUM_TX = 0
@@ -312,6 +323,28 @@ class SnipeTests(unittest.TestCase):
     #     cmd = ">ECHO:3"
     #     exp = "!ECHO:" + VALUE_ERROR
     #     self._handle_cmd_exp(cmd, exp)
+
+    def test_UID(self):
+        print("\n--------------> ", sys._getframe().f_code.co_name,
+              " <-------------- ")  # cool trick prints current function name
+        cmd = ">UID"
+        exp = "@UID:"
+        self._handle_cmd_exp(cmd, exp)
+
+        cmd = ">UID:?"
+        exp = "@UID:"
+        self._handle_cmd_exp(cmd, exp)
+
+    def test_SN(self):
+        print("\n--------------> ", sys._getframe().f_code.co_name,
+              " <-------------- ")  # cool trick prints current function name
+        cmd = ">SN"
+        exp = "@SN:"
+        self._handle_cmd_exp(cmd, exp)
+
+        cmd = ">SN:?"
+        exp = "@SN:"
+        self._handle_cmd_exp(cmd, exp)
 
     def test_SID(self):
         print("\n--------------> ", sys._getframe().f_code.co_name,
@@ -773,6 +806,32 @@ class SnipeTests(unittest.TestCase):
                 cmd = f">SLM{i}:{mode}"
                 exp = f"@SLM{i}:{mode}"
                 self._handle_cmd_exp(cmd, exp)
+
+
+    def test_SLM1_modenames(self):
+        print("\n--------------> ", sys._getframe().f_code.co_name,
+              " <-------------- ")  # cool trick prints current function name
+
+        # SET by uppercase name
+        for key, value in modes.items():
+            cmd = f">SLM1:{key}"
+            exp = f"@SLM1:{value}:{key}"
+            if value in [0, "0"]:
+                exp = f"@SLM1:0:OFF"   # override "DEFAULT" which returns "OFF"
+            self._handle_cmd_exp(cmd, exp)
+
+        # SET with lowercase name
+        for key, value in modes.items():
+            cmd = f">SLM1:{key.lower()}"
+            exp = f"@SLM1:{value}:{key}"
+            if value in [0, "0"]:
+                exp = f"@SLM1:0:OFF"   # override "DEFAULT" which returns "OFF"
+            self._handle_cmd_exp(cmd, exp)
+
+        # Fail intentionally
+        cmd = f">SLM1:rojo"
+        exp = f"!SLM1:" + VALUE_ERROR
+        self._handle_cmd_exp(cmd, exp)
 
     def test_SLT_good_values(self):
         print("\n--------------> ", sys._getframe().f_code.co_name,

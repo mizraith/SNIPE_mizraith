@@ -7,15 +7,9 @@ Date:         6/28/2023
 # SNIPE_mizraith
 **Extensible serial to I2C-and-more tool.  Easily control your Arduino over a comm port. Now with Andon Stack Light Tower type features.  Control some neopixels (slowly) over serial!**
 
-_Major Release:_ 4.1 rc4
+_Major Release:_ 4.1
 
 _Grammar Version:_   2.0
-
-_Changes since 1.0:  Added TID:?, BLINK:? and ECHO:[0:1] commands._
-
-_Changes in 4.0:  Added Stack light commands_.
-                    ECHO removed -- 2 line responses suck to parse sometimes.
-                    TID removed -- never really used.  Makes parsing more complex.
 
 ## README
  **See the README.md file for extensive set of grammar definition, explanation and examples.**
@@ -30,7 +24,7 @@ _Changes in 4.0:  Added Stack light commands_.
 - 6/2023       UPDATE 4.0  includes StackLight commands for Neopixel RGB LED control.
 - 8/2023       4.0 still in progress and debugging.
 - 11/2023      4.0 rc3  Language grammar overhaul.  New stack light features.
-
+- 12/2023      4.1 (rc4) Updated wtih UID/SID and mode string handling.
 *************************************************************************** */
 
 /* ***************************************************************************
@@ -133,6 +127,7 @@ void copy_subtoken0colon_into(String &);
 bool resp_err_VALUE_MISSING(String &);
 void resp_2_output_string(String &);
 void resp_err_VALUE_ERROR(String &);
+void append_mode_name(uint8_t, String &);
 // COMMAND HANDLING
 // General
 String get_SN_worker();
@@ -1005,6 +1000,25 @@ void resp_err_VALUE_ERROR(String & resp) {
     resp +=  err;
 }
 
+void append_mode_name(uint8_t sl_num, String & resp) {
+    char buff[kCOLORLENGTH];
+    strcpy_P(buff, str_COLON);
+    resp += buff;
+    // hackish way for now...should create a list to index into
+    if (stack_lights[sl_num - 1].get_mode() == MODE_OFF) {
+        strcpy_P(buff, str_OFFSTR);
+    } else if (stack_lights[sl_num - 1].get_mode() == MODE_STEADY) {
+        strcpy_P(buff, str_STEADY);
+    } else if (stack_lights[sl_num - 1].get_mode() == MODE_FLASH) {
+        strcpy_P(buff, str_FLASH);
+    } else if (stack_lights[sl_num - 1].get_mode() == MODE_PULSE) {
+        strcpy_P(buff, str_PULSE);
+    } else if (stack_lights[sl_num - 1].get_mode() == MODE_RAINBOW) {
+        strcpy_P(buff, str_RAINBOW);
+    }
+    resp += buff;
+}
+
 #pragma mark COMMAND HANDLER EXPLANATION
 /**
  * Command handlers must all share the same philosophy.
@@ -1690,7 +1704,6 @@ void handle_SLM_worker(uint8_t sl_num) {
             // check text name first so we don't accidentally convert text to a number...
             handled =  try_handle_stackmode_modename(sl_num, resp);
         }
-
         if (!handled) {
             handled = try_handle_stackmode_numeric(sl_num, resp);
         }
@@ -1700,6 +1713,9 @@ void handle_SLM_worker(uint8_t sl_num) {
     if (!handled) {
         processing_is_ok = false;
         resp_err_VALUE_ERROR(resp);
+    } else {
+        // append mode name
+        append_mode_name(sl_num, resp);  // << NEW feature for human readability
     }
     resp_2_output_string(resp);
 }
@@ -1709,19 +1725,10 @@ bool try_handle_stackmode_query(uint8_t sl_num, String & resp) {
     if (strcmp_P(subtokens[1], str_QUERY) != 0) {
         return false;
     }
-    char buff[8];
     //  Got  SLP1:?    return   SLP1:99
     resp += stack_lights[sl_num - 1].get_mode();
-
-    if ((stack_lights[sl_num - 1].get_mode() == MODE_FLASH) or
-        (stack_lights[sl_num - 1].get_mode() == MODE_PULSE) or
-        (stack_lights[sl_num - 1].get_mode() == MODE_RAINBOW) ) {
-        strcpy_P(buff, str_COLON);
-        resp += buff;
-    }
     return true;
 }
-
 
 /**
  * Checks our value token to see if it matches a known mode ("STEADY", "FLASH"...).  Case sensitive of course
@@ -1729,7 +1736,6 @@ bool try_handle_stackmode_query(uint8_t sl_num, String & resp) {
  * @param resp    String response we will append our results to.
  */
 bool try_handle_stackmode_modename(uint8_t sl_num, String &resp) {
-    char buff[kCOLORLENGTH];   // also plenty for our mode names
     bool handled = false;
     //Serial.print("# TRYING TO HANDLE A MODE NAME GIVEN: ");
     //Serial.println(subtokens[1]);
@@ -1737,7 +1743,7 @@ bool try_handle_stackmode_modename(uint8_t sl_num, String &resp) {
     str_val_token.toUpperCase();
 
     uint8_t newmode = stack_lights[sl_num - 1].get_mode();
-    if ((strcmp_P(str_val_token.c_str(), str_DEFAULT) == 0) or (strcmp_P(str_val_token.c_str(), str_OFF) == 0)) {
+    if ((strcmp_P(str_val_token.c_str(), str_DEFAULT) == 0) or (strcmp_P(str_val_token.c_str(), str_OFFSTR) == 0)) {
         newmode = MODE_OFF;
         handled = true;
     } else if (strcmp_P(str_val_token.c_str(), str_STEADY) == 0) {
@@ -1766,7 +1772,14 @@ bool try_handle_stackmode_modename(uint8_t sl_num, String &resp) {
 bool try_handle_stackmode_numeric(uint8_t sl_num, String &resp) {
     bool handled = false;
     // CHECK MODE FIRST:
-    int mode = atoi(subtokens[1]);
+    //int mode = atoi(subtokens[1]);  // NOTE: has a nasty habit of returning 0 for strings...
+    char *__endptr;
+    // strtoul handles  '0x' or decimilar if we give it base==0
+    long mode = strtoul(subtokens[1], &__endptr, 0);
+    if (__endptr[0] != '\0') {  // strtoul sets endptr to last part of #, so /0 means we did the entire string
+        handled = false;    // we did NOT parse entire string...user gave us some weird string
+        return handled;
+    }
     // AT THIS POINT we should have a value to set, e.g. "SLM1:2" gotta convert 2nd token to a number
     // NOTE that atoi returns 0 for just about any non-number
     switch (mode) {

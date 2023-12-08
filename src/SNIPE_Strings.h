@@ -147,6 +147,7 @@ const char str_VIOLET           [] PROGMEM =    "VIOLET";
 const char str_WHITE            [] PROGMEM =    "WHITE";
 const char str_BLACK            [] PROGMEM =    "BLACK";
 const char str_DEFAULT          [] PROGMEM =    "DEFAULT";
+const char str_OFFSTR           [] PROGMEM =    "OFF";
 const char str_FLASH            [] PROGMEM =    "FLASH";
 const char str_PULSE            [] PROGMEM =    "PULSE";
 const char str_STEADY           [] PROGMEM =    "STEADY";

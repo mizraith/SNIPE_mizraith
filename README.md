@@ -1,15 +1,18 @@
 # SNIPE_mizraith
 **Extensible serial to I2C-and-more tool.  Easily control your Arduino over a comm port. Now with Andon Stack Light Tower type features.  Control some neopixels (slowly) over serial!**
 
-_Major Release:_ 4.0
+_Major Release:_ 4.1
 
 _Grammar Version:_   2.0
+* `:?` no longer required for commands with query-only behavior.
+* Improved ability to parse input values and match strings.
 
-_Changes since 1.0:  Added TID:?, BLINK:? and ECHO:[0:1] commands._
-
-_Changes in 4.0:  Added Stack light commands_.
-    ECHO removed -- 2 line responses suck to parse sometimes.
-    TID removed -- never really used.  Makes parsing more complex.
+_Changes in 4.0:
+* Baud rate updated to 115200
+* Added Stack light commands_ SLx
+* Added UID, SN, HELP, BEEP, REBOOT, commands.
+* ECHO removed -- 2 line responses suck to parse sometimes.
+* TID removed -- never really used.  Makes parsing more complex.
 
 <!-- TOC -->
 * [SNIPE_mizraith](#snipemizraith)
@@ -84,7 +87,7 @@ SOFTWARE.</i>
           
 ## Purpose:   
 SNIPE turns an Arduino into a simple to use lab swiss army
-knife instrument, kinda like a poor-man's Labjack.   SNIPE exposes a simple (and easily extended) serial
+knife instrument, kinda like a poor-man's 'Labjack'.   SNIPE exposes a simple (and easily extended) serial
 protocol that allows you to do the following:
 
 1. Communicate with any I2C target
@@ -105,12 +108,13 @@ protocol that allows you to do the following:
 ## Hardware Recommendation:
 SNIPE is best run on an Arduino with a USB-serial port built in, preferably
 one of Arduino's that uses an FTDI chip.  The Nano v3 with a mega328
-is a great candidate.  
+is a great candidate due to its low cost and fairly small form factor and
+5V logic.
 
-Here's why -- after programming your Arduino with SNIPE, you can 
+One benefit of the FTDI chip is that after programming your Arduino with SNIPE, you can 
 use FTDI's free FTDI_PROG utility to edit the USB device 
 descriptors and make your device appear as a general
-purpose comm port.   At that point, no special drivers are needed and
+purpose comm port (if you want).   At that point, no special drivers are needed and
 your end users will NOT have to download and install the Arduino
 software just to use SNIPE.   Your SNIPE hardware then becomes a useful
 general purpose tool (for <$30 you can replace similar $300 I2C sniffers).
@@ -122,10 +126,12 @@ from the marvelous RTClib from Jeelabs and is available as a standalone
 arduino library called "mizraith_DateTime".
 See: https://github.com/mizraith/mizraith_DateTime
 
-**Arduino EEPROM, Wire:** SNIPE also makes use of the following built-in Arduino libraries: EEPROM, Wire
+**Arduino EEPROM, Wire, String:** SNIPE also makes use of the following built-in Arduino libraries: EEPROM, Wire
 
 **Adafruit Neopixel:**  Wonderful library for controlling WS2812/2811 "neopixels" over digital ports.
 See: https://github.com/adafruit/Adafruit_NeoPixel
+
+**MicrocontrollerID** to get unique ID from the on board Atmel chip.
 
 
 ## Serial Protocol:
@@ -185,7 +191,7 @@ The order of subtokens is generally agreed to be one of the following:
     
 #### Start Characters:
         '>' is used to **start a normal command** to SNIPE
-        '#' is used to significy a **non-value response**, like a comment or header string
+        '#' is used to significy a **non-value response**, like a comment, debug msg, or header string
         '@' is used for **value response**
         '!' is used for **error responses**
        
@@ -229,12 +235,32 @@ case -insensitive- but this could change.
     - `@HELP`     Final confirmation
   - command:  `>?`
   - response: 
-    - `same as above....`
-    -  `@HELP`
+    - `# same as above....`
+    -  `@HELP`    Message is done with the @HELP response as final output.
+
+##### UID
+- **description:**     Unique ID.  Gets unique ID from microntroller as hex string (no leading 0x)
+- **input argument:**  None required.  ? is optional.
+
+- **examples:**
+  - command:  `>UID`
+  - response: `@UID:59363033303317040E`
+  - command:  `>UID:?`
+  - response: `@UID:59363033303317040E`
+
+##### SN
+- **description:**     Serial Number. Returns a *shorter*  bin32 6-character string based on the final 32bits of the UID.  Not guaranteed to be unique, but effectifely so unless you have a billion devices attached.
+- **input argument:**  None required.  ? is optional.
+  59363033303317040E -> 857,146,382               OABORZ
+- **examples:**
+  - command:  `>SN`    
+  - response: `@SN:OABORZ`   For UID 59363033303317040E  --> OABORZ
+  - command:  `>SN:?`
+  - response: `@SN:OABORZ`
 
 ##### SID
 - **description:**     Station ID
-- **input argument:**  ?   or  stationID string, no spaces allowed.  MAX LENGTH 24 chars
+- **input argument:**  ?   or  stationID string. User settable persistent value, no spaces allowed.  MAX LENGTH 24 chars
 - **value range:**     string value set by user, can NOT contain spaces
 - **examples:**
   - command:  `>SID:?`
@@ -252,19 +278,19 @@ case -insensitive- but this could change.
   - command:  `>DESC`                   same as if ? included
   - response: `@DESC:SNIPE_FOR_ARDUINO`
   - command:  `>DESC:will_ignore_this`
-  - response: `@DESC:SNIPE_FOR_ARDUINO`
+  - response: `@DESC:SNIPE_v4.1`
   - command:  `>DESC:? VER:?`
-  - response: `@DESC:SNIPE_FOR_ARDUINO VER:012`
+  - response: `@DESC:SNIPE_v4.1  VER:041`
 
 ##### VER
 - **description:**     Version
 - **input argument:**  IGNORED  can be <none> or ?
-- **value range:**     integer number as string  0:999
+- **value range:**     integer number as string  0:999.  MMm (041 is version 4.1)
 - **examples:**
   - command:  `>VER:?`
-  - response: `@VER:012`
+  - response: `@VER:041`
   - command:  `>VER`   same as if ? was included
-  - response: `@VER:012`
+  - response: `@VER:041`
 
 ##### BLINK
 - **description:**     Blinks the Arduino onboard LED (D13 typically)
@@ -302,7 +328,6 @@ case -insensitive- but this could change.
   - command:  `>RAM`
   - response: `@RAM:512`
 
-  
 ### Pin Control Commands     
 ##### [A0], A1, A2, A3
 - **description:**     Get the Analog input
@@ -353,7 +378,7 @@ case -insensitive- but this could change.
 _SLC commands use [D7] and [D8] and [D9] by default on a nano._
 #### SLC1, SLC2, SLC3
 - **description:** Stack Light Color.  Sets the stack light color.
-- **input argument:** ? or color value  0xRRGGBB. 
+- **input argument:** ? or color value  0xRRGGBB or defined color name (see below). 
 - **input values:** 
   - As hex string: '0x123456'  Leading 0x required.
   - As decimal:  '255'    No leading zero.  Max value <= 0xFFFFFF
@@ -395,23 +420,29 @@ _SLC commands use [D7] and [D8] and [D9] by default on a nano._
 - _NOTE:  **SLC1** --> **[D7]**, **SLC2** -->**[D8]**, **SLC3** --> **[D9]**_
 
 #### SLM1, SLM2, SLM3
-- **description:**  Stack Light Mode.  Sets the stack light mode for the target.
-- **input argument:** ? or integer argument.
+- **description:**  Stack Light Mode.  Sets the stack light mode for the target. Response now includes mode names.
+- **input argument:** ? or integer argument or mode name (case insensitive).
 - **input values:**
-  - 0:  Off (Same as `SLC:0x0` but retains set color.)
-  - 1:  On, Steady State
-  - 2:  On, Pulsing.  Option subtoken for full-cycle blink rate in ms.
-  - 3:  On, Flashing.  Optional subtoken for full-cycle blink rate in ms.
-  - 4:  On, Rainbow.  Wash through colors over cycle_ms time.
+  - defined int value | defined mode name:  *(case insensitive)*
+    - `0`  | `OFF`  :  Off (Same as `SLC1:0x0` but retains set color.)
+    - `0`  | `DEFAULT` : Off  Same as SLM1:0 or SLM1:OFF
+    - `1`  | `STEADY` :  On, Steady State
+    - `2`  | `FLASH`  :  On, Pulsing.  Option subtoken for full-cycle blink rate in ms.
+    - `3`  | `PULSE`  :  On, Flashing.  Optional subtoken for full-cycle blink rate in ms.
+    - `4`  | `RAINBOW`  On, Rainbow.  Wash through colors over cycle_ms time.
 - **examples:**
   - command: `>SLM1:1`
-  - response:`@SLM1:1`   The mode for #1 is ON, Steady State.
-  - command: `>SLM1:3`   go to flashing mode.  Cycle rate set by SLT command
-  - response: `@SLM1:3`  This would round up to 100ms pulse rate.
+  - response:`@SLM1:1:STEADY`   The mode for #1 is ON, Steady State.
+  - command: `>SLM1:steady`   using mode name
+  - response:`@SLM1:1:STEADY`   
+  - command: `>SLM1:FLASH`   go to Flash mode using mode name.  Cycle rate set by SLT command
+  - response: `@SLM1:2:FLASH`  
+  - command: `>SLM1:3`   go to pulse mode.  Cycle rate set by SLT command
+  - response: `@SLM1:3:PULSE`  
   - command: `>SLM1:0`
-  - response: `@SLM1:0`  The light for stack light #1 is off
-  - command:  `>SLM1:abc`   Alphas might work...but atoi() and uint8_t clipping is used for conversion, so good luck.
-  - response:  `@SLM1:0`   The mode is accepted (so "@", not "!" but VALUE_ERROR for cycle subtoken)
+  - response: `@SLM1:0:OFF`  The light for stack light #1 is off
+  - command:  `>SLM1:abc`   Alphas no longer default to something random
+  - response:  `!SLM1:VALUE_ERROR`   The mode is accepted (so "@", not "!" but VALUE_ERROR for cycle subtoken)
   
 #### SLP1, SLP2, SLP3
 - **description:** Stack Light Percentage   Set how many of the lights are on
@@ -452,7 +483,7 @@ _SLC commands use [D7] and [D8] and [D9] by default on a nano._
   - response: `@SLT1:255`
 
 #### SLX1, SLX2, SLX3
-- **description:** Stack Light Num Pixels   Set how many pixels are on a stacklight.  REQUIRES A REBOOT TO TAKE
+- **description:** Stack Light Num Pixels   Set how many pixels are on a stacklight.  UPDATES on the fly, but you may want to reboot after a 10second delay (the time before it decides things are stable and it can write the setting to EEPROM).
 - **input argument:** ? or uint8_t number of pixels.
 - **input values:** 1:255      Will trim to min or max.
     - As hex string: '0xFF'  Leading 0x required.
@@ -595,7 +626,7 @@ The grammar currently utilizes the following error messages:
             DATA_LENGTH_ERR
             SID
             
-## Test Suite
+## Test Suite & Examples
 SNIPE comes with a python script for testing the full communications
 protocol.  This script is in the main directory as SNIPE_tests.py.  
 The script utilizes python 2.7 and pyserial to do the work. Should 
