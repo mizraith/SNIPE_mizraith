@@ -7,7 +7,7 @@ _Grammar Version:_   2.0
 * `:?` no longer required for commands with query-only behavior.
 * Improved ability to parse input values and match strings.
 
-_Changes in 4.0:
+_Changes up through 4.1_
 * Baud rate updated to 115200
 * Added Stack light commands_ SLx
 * Added UID, SN, HELP, BEEP, REBOOT, commands.
@@ -21,33 +21,35 @@ _Changes in 4.0:
   * [Hardware Recommendation:](#hardware-recommendation)
   * [Dependencies](#dependencies)
   * [Serial Protocol:](#serial-protocol)
+    * [Header Mode:](#header-mode)
     * [Messages:](#messages)
     * [Tokens:](#tokens)
       * [Subtoken Order:](#subtoken-order)
       * [Start Characters:](#start-characters)
-      * [Values (escaping):](#values-escaping)
+      * [I2C Values (escaping):](#i2c-values-escaping)
       * [Units:](#units)
-  * [Identifiers:](#identifiers)
-        * [[A0], A1, A2, A3](#a0-a1-a2-a3)
-        * [D1, D2, D3, D4, D5, [D6]](#d1-d2-d3-d4-d5-d6-)
-        * [ECHO](#echo)
-        * [SID](#sid-)
-        * [DESC](#desc-)
-        * [VER](#ver-)
   * [Commands:](#commands)
+    * [General Commands](#general-commands)
+        * [HELP  or   ?](#help--or--)
+        * [UID](#uid)
+        * [SN](#sn)
+        * [SID](#sid)
+        * [DESC](#desc)
+        * [VER](#ver)
+        * [BLINK](#blink)
+      * [BEEP](#beep)
+      * [REBOOT](#reboot)
+      * [RAM](#ram)
     * [Pin Control Commands](#pin-control-commands-)
-        * [[A0], A1, A2, A3](#a0-a1-a2-a3-1)
-        * [D2, D3, D4, D5, D6](#d2-d3-d4-d5-d6-)
-    * [Macro Commands](#macro-commands)
-        * [ECHO](#echo-1)
-        * [SID](#sid--1)
-        * [DESC](#desc--1)
-        * [VER](#ver--1)
-        * [BLINK](#blink-)
+        * [[A0], A1, A2, A3](#a0-a1-a2-a3)
+        * [[D2], D3, D4, D5, [[D6]]](#d2-d3-d4-d5-d6-)
     * [Stack Light Commands](#stack-light-commands)
+      * [SLB1, SLB2, SLB3](#slb1-slb2-slb3)
       * [SLC1, SLC2, SLC3](#slc1-slc2-slc3)
       * [SLM1, SLM2, SLM3](#slm1-slm2-slm3)
-      * [SLA](#sla)
+      * [SLP1, SLP2, SLP3](#slp1-slp2-slp3)
+      * [SLT1, SLT2, SLT3](#slt1-slt2-slt3)
+      * [SLX1, SLX2, SLX3](#slx1-slx2-slx3)
     * [I2C Commands](#i2c-commands)
         * [I2A](#i2a-)
         * [I2S](#i2s-)
@@ -57,7 +59,7 @@ _Changes in 4.0:
         * [I2F](#i2f-)
   * [Sending I2C Commands -- More Detail:](#sending-i2c-commands----more-detail)
   * [Error Messages:](#error-messages)
-  * [Test Suite](#test-suite)
+  * [Test Suite & Examples](#test-suite--examples)
 <!-- TOC -->
 
 #### License:
