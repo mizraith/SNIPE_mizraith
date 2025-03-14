@@ -25,6 +25,7 @@ _Grammar Version:_   2.0
 - 8/2023       4.0 still in progress and debugging.
 - 11/2023      4.0 rc3  Language grammar overhaul.  New stack light features.
 - 12/2023      4.1 (rc4) Updated wtih UID/SID and mode string handling.
+- 3/2025       4.2 Minor tweak to speed up stacklight discovery.  No longer spins through all colors on serial port open.
 *************************************************************************** */
 
 /* ***************************************************************************
@@ -195,10 +196,10 @@ void perform_I2C_read();
 #pragma mark Application Globals & Defaults
 const DateTime COMPILED_ON = DateTime(__DATE__, __TIME__);
 #define SNIPE_VERSION 4
-const String CURRENT_VERSION = "041";
-const String DESCRIPTION = "SNIPE_v4.1";
+const String CURRENT_VERSION = "042";
+const String DESCRIPTION = "SNIPE_v4.2";
 #define kDEFAULT_SL1_NUMPIXELS  16
-#define kDEFAULT_SL2_NUMPIXELS  60
+#define kDEFAULT_SL2_NUMPIXELS  50
 #define kDEFAULT_SL3_NUMPIXELS  1
 
 #pragma mark Pinouts
@@ -419,7 +420,9 @@ void setup() {                 // AT 9600 we don't see any missed serial chars. 
     DEBUG_PRINTLN(F("LOADING NUMPIXELS INTO STRIPS"));         // first time thru if strip isn't set up this is rough
     stack_lights[0].set_numpixels((uint8_t)SETTINGS->sl1_numpixels, true);
     stack_lights[1].set_numpixels((uint8_t)SETTINGS->sl2_numpixels, true);
+    stack_lights[1].set_brightness(32);    // don't start off too bright on  the light strip.  Can be annoying
     stack_lights[2].set_numpixels((uint8_t)SETTINGS->sl3_numpixels, true);
+    stack_lights[2].set_brightness(32);
     DEBUG_PRINTLN(F("DONE LOADING SETTINGS"));
 
     // First time only, clear the settings changed flat
@@ -443,9 +446,9 @@ void setup() {                 // AT 9600 we don't see any missed serial chars. 
     #ifdef DEBUG
         printSerialInputInstructions();
         handle_SLINFO_worker();
+        stacklight_startup_sequence();
     #endif
     // PRINT OUT STACKLIGHT INFO -- should comment out
-    stacklight_startup_sequence();
 
     SL_next_heartbeat = millis();    // Set to now
     printSerialSNIPE_READY();
@@ -2260,7 +2263,7 @@ void serialPrintHeaderString() {
     Serial.print(  F("# SN:"));Serial.println(SN);
     Serial.println(F("#--------------------------------------------------"));
     Serial.println(F("# Red Byer    github.com/mizraith"));
-    Serial.println(F("# VERSION DATE: 12/5/2023"));
+    Serial.println(F("# VERSION DATE: 3/14/2025"));
     Serial.print(F("# COMPILED ON: "));
     Serial.print(COMPILED_ON.month());
     Serial.print(F("/"));
